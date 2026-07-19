@@ -109,7 +109,7 @@ class RealFacilitator implements FacilitatorClient {
   }
   async verify(): Promise<VerifyResult> {
     throw new Error(
-      "real facilitator not wired yet — keep MODE=mock, or implement via @make-software/casper-x402 (js/examples/facilitator)",
+      "real facilitator not wired yet. Keep MODE=mock, or implement via @make-software/casper-x402 (js/examples/facilitator)",
     );
   }
   async settle(): Promise<SettleResult> {

@@ -122,7 +122,7 @@ export async function executePaidCall(opts: {
   // Payment cleared → run the tool.
   const result = await getHandler(tool.handler)(input);
   const resultHash = hashResult(result);
-  step("result", "200 OK — tool result delivered", true, result);
+  step("result", "200 OK: tool result delivered", true, result);
 
   const settlement: Settlement = {
     id: "stl_" + settle.deployHash.slice(0, 16),
@@ -141,7 +141,7 @@ export async function executePaidCall(opts: {
     mode: fac.name.startsWith("real") ? "real" : "mock",
     createdAt: new Date().toISOString(),
   };
-  recordSettlement(settlement);
+  await recordSettlement(settlement);
 
   const receipt: Receipt = {
     settlementId: settlement.id,

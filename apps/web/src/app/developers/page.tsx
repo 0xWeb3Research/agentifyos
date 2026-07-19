@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 const MCP_TOOLS = [
   { name: "search_tools", spends: false, desc: "Find tools by free text. Returns slug, price, and input schema." },
-  { name: "get_tool", spends: false, desc: "Full detail for one tool — price, schemas, stats." },
+  { name: "get_tool", spends: false, desc: "Full detail for one tool: price, schemas, stats." },
   { name: "call_tool", spends: true, desc: "Pay for a tool and return its result plus an on-chain receipt." },
   { name: "get_balance", spends: false, desc: "This wallet's on-chain CSPR and WCSPR." },
   { name: "list_settlements", spends: false, desc: "Recent marketplace payments, each with a deploy hash." },
@@ -23,7 +23,7 @@ const ENDPOINTS = [
   { method: "GET", path: "/api/discovery/resources", desc: "The whole catalog, machine-readable." },
   { method: "GET", path: "/api/discovery/search?query=", desc: "Search it." },
   { method: "GET", path: "/api/settlements", desc: "Recent on-chain settlements." },
-  { method: "POST", path: "/api/mcp", desc: "MCP over HTTP — search_tools, get_tool, call_tool." },
+  { method: "POST", path: "/api/mcp", desc: "MCP over HTTP: search_tools, get_tool, call_tool." },
   { method: "GET", path: "/llms.txt", desc: "Agent-readable manifest of the whole marketplace." },
 ];
 
@@ -68,7 +68,7 @@ export default function DevelopersPage() {
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <CodeBlock
-            label="1 — ask, and get quoted"
+            label="1 · ask, and get quoted"
             code={`curl -i http://localhost:8402/api/t/cspr-market-data
 
 HTTP/1.1 402 Payment Required
@@ -87,7 +87,7 @@ PAYMENT-REQUIRED: true
 }`}
           />
           <CodeBlock
-            label="2 — pay, and get the data"
+            label="2 · pay, and get the data"
             code={`curl http://localhost:8402/api/t/cspr-market-data \\
   -H "PAYMENT-SIGNATURE: $(base64_signed_payload)"
 
@@ -115,7 +115,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           Point Claude Desktop, Claude Code, or Cursor at the marketplace and it can buy
           tools on its own. The server holds its own Casper key and does the real 402
-          handshake — a call from Claude produces a genuine on-chain settlement.
+          handshake. A call from Claude produces a genuine on-chain settlement.
         </p>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -169,7 +169,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         </div>
         <p className="mt-3 max-w-[68ch] text-[13px] leading-relaxed text-fg-secondary">
           Read-only tools are annotated so hosts can auto-approve them.{" "}
-          <span className="font-mono text-[12px]">call_tool</span> deliberately is not — it
+          <span className="font-mono text-[12px]">call_tool</span> deliberately is not. It
           moves real money, so your client should ask first.
         </p>
       </Container>
@@ -182,7 +182,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           Same thing from a terminal. It holds its own key and pays over the same public
-          endpoint — nothing privileged.
+          endpoint, nothing privileged.
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <CodeBlock
@@ -198,9 +198,9 @@ pnpm agentify receipts              # recent settlements`}
             code={`$ pnpm agentify call cspr-market-data
 
 REQ   GET /api/t/cspr-market-data          +0ms
-402   payment required — ~$0.0020         +50ms
+402   payment required: ~$0.0020          +50ms
 SIG   signed EIP-712 as 0041611f2c09…     +58ms
-PAID  settled — e50c18e49e666b66…      +11823ms
+PAID  settled · e50c18e49e666b66…      +11823ms
 
 receipt
   cost      $0.0020
@@ -236,7 +236,7 @@ receipt
         <div className="mt-5 rounded-[var(--radius-card)] border border-border bg-surface p-6">
           <Eyebrow>llms.txt</Eyebrow>
           <p className="mt-2.5 max-w-[64ch] text-[14px] leading-relaxed text-fg-secondary">
-            A plain-text manifest of the whole marketplace, written for language models —
+            A plain-text manifest of the whole marketplace, written for language models:
             every tool, its price, and how to call it. Point a crawler or an agent at{" "}
             <a href="/llms.txt" className="font-mono text-[13px] text-accent hover:underline">
               /llms.txt

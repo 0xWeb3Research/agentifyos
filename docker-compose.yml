@@ -22,5 +22,20 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: agentifyos-redis
+    restart: unless-stopped
+    ports:
+      - "6404:6379"
+    volumes:
+      - agentifyos_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
 volumes:
   agentifyos_pgdata:
+  agentifyos_redis:

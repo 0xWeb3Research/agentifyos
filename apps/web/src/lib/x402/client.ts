@@ -91,7 +91,7 @@ export async function fetchWithPayment(
   }
 
   const priceUsd = usdOf(requirements);
-  step("402", `payment required — ${requirements.amount} atomic ${requirements.extra?.symbol ?? "WCSPR"} (~$${priceUsd.toFixed(4)})`, requirements);
+  step("402", `payment required: ${requirements.amount} atomic ${requirements.extra?.symbol ?? "WCSPR"} (~$${priceUsd.toFixed(4)})`, requirements);
 
   if (typeof opts.maxUsd === "number" && priceUsd > opts.maxUsd + 1e-9) {
     step("error", `price $${priceUsd.toFixed(4)} exceeds budget $${opts.maxUsd}`);
@@ -117,7 +117,7 @@ export async function fetchWithPayment(
     return { ok: false, status: paid.status, error: body?.error ?? String(paid.status), requirements, steps };
   }
 
-  step("paid", `settled — ${body?.receipt?.deployHash?.slice(0, 16) ?? "?"}…`, body?.receipt);
+  step("paid", `settled · ${body?.receipt?.deployHash?.slice(0, 16) ?? "?"}…`, body?.receipt);
   return {
     ok: true,
     status: paid.status,

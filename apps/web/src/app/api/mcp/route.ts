@@ -21,7 +21,7 @@ const TOOL_DEFS = [
   {
     name: "get_tool",
     description:
-      "Fetch the full manifest for one tool by slug — input/output schema, price events, publisher, and on-chain stats.",
+      "Fetch the full manifest for one tool by slug: input/output schema, price events, publisher, and on-chain stats.",
     inputSchema: {
       type: "object",
       properties: { slug: { type: "string", description: "tool slug" } },

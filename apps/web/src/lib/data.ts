@@ -1,4 +1,5 @@
 import { PLATFORM_FEE } from "./config";
+import { appendSettlement, readSettlements } from "./store/ledger";
 import { publishers, settlementBacklog, stats, tools } from "./seed";
 import type { Publisher, Settlement, ToolStats, ToolWithStats } from "./types";
 
@@ -76,11 +77,19 @@ export function searchTools(
   });
 }
 
-export function getSettlements(limit = 24): Settlement[] {
+/** Seeded demo backlog + in-process activity (used by the simulation view). */
+export function getSeededSettlements(limit = 24): Settlement[] {
   return liveSettlements.slice(0, limit);
 }
 
-export function recordSettlement(s: Settlement): void {
+/** The durable ledger — what actually settled. */
+export async function getSettlements(limit = 24): Promise<Settlement[]> {
+  const real = await readSettlements(limit);
+  return real.length ? real : liveSettlements.slice(0, limit);
+}
+
+export async function recordSettlement(s: Settlement): Promise<void> {
+  await appendSettlement(s);
   liveSettlements.unshift(s);
   if (liveSettlements.length > 200) liveSettlements.pop();
   const st = liveStats.get(s.toolId);

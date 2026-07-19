@@ -68,7 +68,7 @@ export function buildRequirements(
     payTo,
     maxTimeoutSeconds: 60,
     resource: resourceUrl,
-    description: `${tool.name} — ${event.title}`,
+    description: `${tool.name} · ${event.title}`,
     mimeType: "application/json",
     extra: CSPR.asset,
   };

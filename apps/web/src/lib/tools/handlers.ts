@@ -24,8 +24,8 @@ const pageScraper: ToolHandler = async (input) => {
   const words = 380 + stableInt(url, 600);
   return {
     url,
-    title: `${host} — extracted page`,
-    markdown: `# ${host}\n\nAgentic commerce is the practice of letting autonomous software agents transact directly. On ${host}, the page describes how HTTP 402 turns any endpoint into a metered, pay-per-call service. Agents discover the resource, sign a payment authorization, and receive the content in a single round trip — no API keys, no accounts.\n\n- Machine-to-machine settlement in seconds\n- Wallet address doubles as identity\n- The payment record is the usage record`,
+    title: `${host} · extracted page`,
+    markdown: `# ${host}\n\nAgentic commerce is the practice of letting autonomous software agents transact directly. On ${host}, the page describes how HTTP 402 turns any endpoint into a metered, pay-per-call service. Agents discover the resource, sign a payment authorization, and receive the content in a single round trip. No API keys, no accounts.\n\n- Machine-to-machine settlement in seconds\n- Wallet address doubles as identity\n- The payment record is the usage record`,
     wordCount: words,
     links: [`https://${host}/docs`, `https://${host}/pricing`],
     fetchedAt: new Date().toISOString(),

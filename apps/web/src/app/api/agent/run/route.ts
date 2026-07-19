@@ -108,12 +108,7 @@ export async function POST(req: Request) {
   if (MODE === "real") {
     try {
       const casper = await import("@/lib/x402/casper");
-      const path = await import("node:path");
-      const real = casper.loadWalletFromFile(
-        process.env.AGENT_KEY_PEM
-          ? path.resolve(process.cwd(), process.env.AGENT_KEY_PEM)
-          : path.join(process.cwd(), "keys", "agent.pem"),
-      );
+      const real = casper.loadRoleWallet("agent");
       shown = { accountHash: real.address, publicKey: real.publicKeyHex, label: "agent" };
     } catch {
       /* fall back to the demo identity if keys are unavailable */

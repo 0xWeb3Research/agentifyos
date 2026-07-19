@@ -45,7 +45,7 @@ export async function executeRealPaidCall(opts: {
   };
 
   if (typeof opts.budgetRemainingUsd === "number" && event.usd > opts.budgetRemainingUsd + 1e-9) {
-    step("error", `budget exceeded — need ${event.usd}, have ${opts.budgetRemainingUsd}`, false);
+    step("error", `budget exceeded: need ${event.usd}, have ${opts.budgetRemainingUsd}`, false);
     return { ...base, error: "budget_exceeded" };
   }
 
@@ -54,10 +54,10 @@ export async function executeRealPaidCall(opts: {
   let agentW: Awaited<ReturnType<typeof casper.loadWalletFromFile>>;
   let facW: typeof agentW;
   try {
-    agentW = casper.loadWalletFromFile(keyPath(process.env.AGENT_KEY_PEM, "agent.pem"));
-    facW = casper.loadWalletFromFile(keyPath(process.env.FACILITATOR_KEY_PEM, "facilitator.pem"));
+    agentW = casper.loadRoleWallet("agent");
+    facW = casper.loadRoleWallet("facilitator");
   } catch (e) {
-    step("error", "real mode needs keys — run `pnpm casper:keygen`", false, {
+    step("error", "real mode needs keys: run `pnpm casper:keygen`", false, {
       error: (e as Error).message,
     });
     return { ...base, error: "missing_keys" };
@@ -96,7 +96,7 @@ export async function executeRealPaidCall(opts: {
   step(
     "settle",
     settle.success
-      ? `settled on Casper testnet — ${settle.deployHash.slice(0, 16)}…`
+      ? `settled on Casper testnet · ${settle.deployHash.slice(0, 16)}…`
       : `settle failed: ${settle.reason}`,
     settle.success,
     settle,
@@ -107,7 +107,7 @@ export async function executeRealPaidCall(opts: {
   }
 
   const result = await getHandler(tool.handler)(input);
-  step("result", "200 OK — tool result delivered", true, result);
+  step("result", "200 OK: tool result delivered", true, result);
 
   const settlement: Settlement = {
     id: "stl_" + settle.deployHash.slice(0, 16),
@@ -126,7 +126,7 @@ export async function executeRealPaidCall(opts: {
     mode: "real",
     createdAt: new Date().toISOString(),
   };
-  recordSettlement(settlement);
+  await recordSettlement(settlement);
 
   const receipt: Receipt = {
     settlementId: settlement.id,
@@ -144,7 +144,7 @@ export async function executeRealPaidCall(opts: {
         : null,
     createdAt: settlement.createdAt,
   };
-  step("receipt", "receipt issued — verifiable on testnet.cspr.live", true, receipt);
+  step("receipt", "receipt issued: verifiable on testnet.cspr.live", true, receipt);
 
   return { ...base, ok: true, result, receipt, settlement };
 }

@@ -55,7 +55,6 @@ export async function GET(
   // ══ REAL MODE — settle on Casper testnet ══════════════════════════════════
   if (MODE === "real") {
     const casper = await import("@/lib/x402/casper");
-    const path = await import("node:path");
 
     const requirements = {
       scheme: "exact" as const,
@@ -73,7 +72,7 @@ export async function GET(
         {
           x402Version: 2,
           error: "payment_required",
-          accepts: [{ ...requirements, resource, description: `${tool.name} — ${event.title}`, mimeType: "application/json" }],
+          accepts: [{ ...requirements, resource, description: `${tool.name} · ${event.title}`, mimeType: "application/json" }],
         },
         { status: 402, headers: { "PAYMENT-REQUIRED": "true", ...NO_STORE } },
       );
@@ -91,11 +90,7 @@ export async function GET(
       return NextResponse.json({ error: v.reason, payer: v.payer }, { status: 402, headers: NO_STORE });
     }
 
-    const facilitator = casper.loadWalletFromFile(
-      process.env.FACILITATOR_KEY_PEM
-        ? path.resolve(process.cwd(), process.env.FACILITATOR_KEY_PEM)
-        : path.join(process.cwd(), "keys", "facilitator.pem"),
-    );
+    const facilitator = casper.loadRoleWallet("facilitator");
     const settle = await casper.settleOnChain(facilitator, payload, requirements);
     if (!settle.success) {
       return NextResponse.json({ error: settle.reason }, { status: 402, headers: NO_STORE });
@@ -121,7 +116,7 @@ export async function GET(
       mode: "real",
       createdAt: new Date().toISOString(),
     };
-    recordSettlement(settlement);
+    await recordSettlement(settlement);
 
     const receipt: Receipt = {
       settlementId: settlement.id,
@@ -191,7 +186,7 @@ export async function GET(
     mode: "mock",
     createdAt: new Date().toISOString(),
   };
-  recordSettlement(settlement);
+  await recordSettlement(settlement);
 
   const receipt: Receipt = {
     settlementId: settlement.id,

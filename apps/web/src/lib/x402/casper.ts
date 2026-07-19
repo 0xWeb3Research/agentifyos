@@ -5,6 +5,7 @@
 // APIs verified live against casper-js-sdk@5.0.12 + @casper-ecosystem/casper-eip-712@1.2.1
 // (see scripts/casper-probe.ts, scripts/casper/sign-test.ts).
 import { readFileSync } from "node:fs";
+import path from "node:path";
 import { webcrypto } from "node:crypto";
 import * as CasperNS from "casper-js-sdk";
 import * as Eip712NS from "@casper-ecosystem/casper-eip-712";
@@ -54,6 +55,30 @@ export function loadWallet(pem: string, algo = KeyAlgorithm.ED25519): CasperWall
 
 export function loadWalletFromFile(pemPath: string, algo = KeyAlgorithm.ED25519): CasperWallet {
   return loadWallet(readFileSync(pemPath, "utf8"), algo);
+}
+
+/**
+ * Load a role key from the environment first, then from disk.
+ *
+ * Hosted deploys (Railway, Vercel) can't ship PEM files, so the key is supplied
+ * inline via e.g. FACILITATOR_KEY_PEM_CONTENT. Locally we keep using
+ * keys/<role>.pem, which stays gitignored.
+ */
+export function loadRoleWallet(
+  role: "facilitator" | "agent" | "treasury",
+  algo = KeyAlgorithm.ED25519,
+): CasperWallet {
+  const upper = role.toUpperCase();
+  const inline = process.env[`${upper}_KEY_PEM_CONTENT`];
+  if (inline && inline.includes("BEGIN")) {
+    // Railway-style env vars often arrive with literal \n escapes.
+    return loadWallet(inline.replace(/\\n/g, "\n"), algo);
+  }
+  const fromEnv = process.env[`${upper}_KEY_PEM`];
+  const pemPath = fromEnv
+    ? path.resolve(process.cwd(), fromEnv)
+    : path.join(process.cwd(), "keys", `${role}.pem`);
+  return loadWalletFromFile(pemPath, algo);
 }
 
 // ── x402 wire types (official ExactCasper shape) ────────────────────────────
@@ -267,7 +292,7 @@ export async function settleOnChain(
       payer,
       reason:
         `facilitator unfunded (${(Number(gasBalance) / 1e9).toFixed(2)} CSPR, needs ` +
-        `~${(Number(paymentMotes) / 1e9).toFixed(0)}) — fund ${facilitator.publicKeyHex} ` +
+        `~${(Number(paymentMotes) / 1e9).toFixed(0)}). Fund ${facilitator.publicKeyHex} ` +
         `at https://testnet.cspr.live/tools/faucet (see docs/TESTNET.md §2)`,
     };
   }
@@ -290,7 +315,7 @@ export async function settleOnChain(
       network: req.network,
       payer,
       reason: unfunded
-        ? `facilitator unfunded — send CSPR to ${facilitator.publicKeyHex} (see docs/TESTNET.md §2)`
+        ? `facilitator unfunded: send CSPR to ${facilitator.publicKeyHex} (see docs/TESTNET.md §2)`
         : `submit failed: ${msg}`,
     };
   }
