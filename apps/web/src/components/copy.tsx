@@ -27,7 +27,7 @@ export function CodeBlock({
   return (
     <div
       className={clsx(
-        "overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface",
+        "min-w-0 overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface",
         className,
       )}
     >
@@ -44,6 +44,68 @@ export function CodeBlock({
       <pre className="overflow-x-auto px-3.5 py-3 font-mono text-[12px] leading-relaxed text-fg-secondary">
         {code}
       </pre>
+    </div>
+  );
+}
+
+// A labelled, copyable value with an optional block-explorer link. Long hex
+// hashes truncate rather than forcing the page to scroll sideways.
+export function CopyRow({
+  label,
+  value,
+  href,
+  mono = true,
+}: {
+  label: string;
+  value: string;
+  href?: string;
+  mono?: boolean;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="flex min-w-0 flex-col gap-1 py-2.5 sm:flex-row sm:items-center sm:gap-4">
+      <span className="label shrink-0 text-muted sm:w-[132px]">{label}</span>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <button
+          type="button"
+          title={`${value} — click to copy`}
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(value);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1400);
+            } catch {
+              /* clipboard unavailable */
+            }
+          }}
+          className={clsx(
+            "press min-w-0 flex-1 truncate text-left text-fg-secondary transition-colors hover:text-fg",
+            mono ? "font-mono text-[12px]" : "text-[13px]",
+          )}
+        >
+          {value}
+        </button>
+        <span
+          className={clsx(
+            "label shrink-0 transition-opacity",
+            copied ? "text-success opacity-100" : "text-muted opacity-0",
+          )}
+          aria-live="polite"
+        >
+          copied
+        </span>
+        {href && (
+          <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            title="Open on the block explorer"
+            className="press label shrink-0 text-muted transition-colors hover:text-accent"
+          >
+            ↗
+          </a>
+        )}
+      </div>
     </div>
   );
 }

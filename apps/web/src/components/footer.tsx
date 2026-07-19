@@ -15,6 +15,7 @@ export function Footer() {
         <nav className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-fg-secondary">
           <Link href="/tools" className="hover:text-fg">Tools</Link>
           <Link href="/explain" className="hover:text-fg">How it works</Link>
+          <Link href="/docs" className="hover:text-fg">Docs</Link>
           <Link href="/agent" className="hover:text-fg">Agent demo</Link>
           <Link href="/developers" className="hover:text-fg">Developers</Link>
           <Link href="/publish" className="hover:text-fg">Publish</Link>

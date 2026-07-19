@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Container, Eyebrow, Button, Arrow } from "@/components/ui";
+import { AddressBook } from "@/components/addresses";
 import { MoneyDiagram, PaymentDiagram, SystemDiagram } from "@/components/diagram/diagrams";
 
 export const metadata: Metadata = {
@@ -77,6 +79,31 @@ export default function ExplainPage() {
         <div className="mt-6">
           <SystemDiagram />
         </div>
+      </Container>
+
+      {/* 4 */}
+      <Container className="py-8">
+        <div className="flex items-baseline gap-3">
+          <span className="stat text-muted">04</span>
+          <h2 className="text-[22px] font-medium tracking-[-0.02em]">
+            The actual addresses
+          </h2>
+        </div>
+        <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+          None of the above is hypothetical. These are the live Casper testnet
+          accounts and the contract this instance settles through — click any value
+          to copy it, or open the arrow to see it on the block explorer.
+        </p>
+        <div className="mt-6 max-w-[760px]">
+          <AddressBook />
+        </div>
+        <p className="mt-5 text-[13px] text-fg-secondary">
+          Gas budgets, entry-point signatures, and the funding runbook live in{" "}
+          <Link href="/docs/addresses" className="text-accent hover:underline">
+            the address reference
+          </Link>
+          .
+        </p>
       </Container>
 
       <Container className="py-14">

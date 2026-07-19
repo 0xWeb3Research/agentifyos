@@ -28,3 +28,56 @@ export function explorerTx(deployHash: string): string {
 export function explorerAccount(accountHash: string): string {
   return `${CSPR.explorerBase}/account/${accountHash}`;
 }
+export function explorerContractPackage(packageHash: string): string {
+  return `${CSPR.explorerBase}/contract-package/${packageHash}`;
+}
+
+// ── the three demo accounts ──────────────────────────────────────────────────
+// Public keys only — the matching PEMs stay in apps/web/keys/ and are gitignored.
+// Read from env so a deployed instance advertises its own accounts rather than
+// the values that happened to be baked in at build time.
+export type RoleKey = "facilitator" | "treasury" | "agent";
+
+export interface RoleAccount {
+  role: RoleKey;
+  title: string;
+  blurb: string;
+  publicKey: string;
+  accountHash: string;
+}
+
+export const ROLE_ACCOUNTS: RoleAccount[] = [
+  {
+    role: "facilitator",
+    title: "Facilitator",
+    blurb: "Submits every settlement on-chain and pays the gas.",
+    publicKey:
+      process.env.FACILITATOR_PUBLIC_KEY ||
+      "01e3d2d1883d8c63bb4b6e0df05ea9c2f42c6a483c704cfcd8a727e2e4373252ae",
+    accountHash:
+      process.env.FACILITATOR_ACCOUNT_HASH ||
+      "e0c57785b93365efc81063aabdcec6056d6f1523da33acdb5c2001620aad8796",
+  },
+  {
+    role: "treasury",
+    title: "Treasury",
+    blurb: "Wraps CSPR into WCSPR, then funds agents with it.",
+    publicKey:
+      process.env.TREASURY_PUBLIC_KEY ||
+      "014ea619c544f11f034674ccccb44c8758c354f674af2bf3138514a501539706ab",
+    accountHash:
+      process.env.TREASURY_ACCOUNT_HASH ||
+      "4ee08c54de78389c1466980260051c44f6dc367391ae37dc3f473896dbbeb666",
+  },
+  {
+    role: "agent",
+    title: "Agent",
+    blurb: "The buyer. Signs x402 payments and holds zero CSPR.",
+    publicKey:
+      process.env.AGENT_PUBLIC_KEY ||
+      "01e565e859f9bab3f7cb1eb666ffa7aa12879e27639f7c000a079e859edbbfde0c",
+    accountHash:
+      process.env.AGENT_ACCOUNT_HASH ||
+      "41611f2c0902ede544b2a61e557b47b5ca5b313a03bbaa45765eb80075ca9e1e",
+  },
+];
