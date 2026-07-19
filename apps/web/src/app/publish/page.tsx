@@ -5,6 +5,7 @@ import { clsx } from "clsx";
 import { Arrow, Button, Container, Eyebrow, StatusPill } from "@/components/ui";
 import { CodeBlock } from "@/components/copy";
 import { ToolCard } from "@/components/tool-card";
+import { WalletConnect, type SessionInfo } from "@/components/wallet-connect";
 import type { Capability, SchemaField, ToolWithStats } from "@/lib/types";
 
 const CATEGORIES = ["Web Data", "AI", "DeFi", "RWA", "Identity", "Media"] as const;
@@ -43,6 +44,10 @@ export default function PublishPage() {
   ]);
   const [output, setOutput] = useState<Row>({ name: "result", type: "object" });
   const [published, setPublished] = useState(false);
+  // Publishing is gated on proving you control a Casper account: the account
+  // you sign in with becomes your payout address, so you can only list tools
+  // that pay you.
+  const [session, setSession] = useState<SessionInfo | null>(null);
 
   function setInputRow(i: number, key: keyof Row, val: string) {
     setInputs((prev) => prev.map((r, idx) => (idx === i ? { ...r, [key]: val } : r)));
@@ -161,6 +166,32 @@ export default function PublishPage() {
             One manifest becomes a listing, a discovery record, and an MCP tool. Fill it in on the
             left, watch it take shape on the right, then let an agent settle the first call.
           </p>
+        </div>
+        <div
+          className="animate-fade-up mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[var(--radius-card)] border border-border bg-surface p-4 sm:p-5"
+          style={{ animationDelay: "30ms" }}
+        >
+          <div className="min-w-0">
+            <Eyebrow>{session ? "payouts go to" : "sign in to publish"}</Eyebrow>
+            <p className="mt-1.5 max-w-[54ch] text-[13px] leading-relaxed text-fg-secondary">
+              {session ? (
+                <>
+                  Every payment for this tool settles to{" "}
+                  <span className="font-mono text-[12px] text-fg">
+                    {session.address.slice(0, 14)}…{session.address.slice(-6)}
+                  </span>
+                  , the account you signed in with.
+                </>
+              ) : (
+                <>
+                  No email, no password. Sign a one-time message with your Casper Wallet to
+                  prove the account is yours — it becomes your payout address. Signing moves
+                  no funds and costs no gas.
+                </>
+              )}
+            </p>
+          </div>
+          <WalletConnect onSession={setSession} />
         </div>
       </Container>
 
@@ -308,9 +339,24 @@ export default function PublishPage() {
             </div>
           </div>
 
-          <Button onClick={() => setPublished(true)} className="w-full">
-            Publish tool <Arrow />
+          <Button
+            onClick={() => setPublished(true)}
+            disabled={!session}
+            className="w-full"
+          >
+            {session ? (
+              <>
+                Publish tool <Arrow />
+              </>
+            ) : (
+              "Connect a wallet to publish"
+            )}
           </Button>
+          {!session && (
+            <p className="stat text-center text-muted">
+              publishing requires a signed-in Casper account
+            </p>
+          )}
         </div>
 
         {/* ── RIGHT: sticky live preview ───────────────────────────── */}

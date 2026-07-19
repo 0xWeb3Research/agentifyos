@@ -19,7 +19,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "test:e2e": "playwright test",
     "agentify": "tsx scripts/cli.ts",
-    "mcp": "tsx scripts/mcp-server.ts"
+    "mcp": "tsx scripts/mcp-server.ts",
+    "authtest": "tsx scripts/auth-test.ts"
   },
   "dependencies": {
     "@casper-ecosystem/casper-eip-712": "1.2.1",
