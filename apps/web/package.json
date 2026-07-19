@@ -1,0 +1,53 @@
+{
+  "name": "@agentifyos/web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev -p 8402",
+    "build": "next build",
+    "start": "next start -p 8402",
+    "lint": "next lint",
+    "selftest": "tsx scripts/selftest.ts",
+    "casper:keygen": "tsx scripts/casper/keygen.ts",
+    "casper:balance": "tsx scripts/casper/balance.ts",
+    "casper:signtest": "tsx scripts/casper/sign-test.ts && tsx scripts/casper/module-test.ts",
+    "casper:wrap": "tsx scripts/casper/wrap.ts",
+    "casper:transfer": "tsx scripts/casper/transfer.ts",
+    "casper:pay": "tsx scripts/casper/pay-real.ts",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "test:e2e": "playwright test",
+    "agentify": "tsx scripts/cli.ts",
+    "mcp": "tsx scripts/mcp-server.ts"
+  },
+  "dependencies": {
+    "@casper-ecosystem/casper-eip-712": "1.2.1",
+    "@make-software/casper-x402": "1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@prisma/client": "^6.7.0",
+    "@x402/core": "2.19.0",
+    "@x402/fetch": "2.19.0",
+    "@xyflow/react": "^12.11.2",
+    "casper-js-sdk": "5.0.12",
+    "clsx": "^2.1.1",
+    "geist": "^1.7.2",
+    "next": "^16.2.10",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "redis": "^6.1.0",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prisma": "^6.7.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3"
+  }
+}

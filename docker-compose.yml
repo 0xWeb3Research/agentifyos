@@ -1,0 +1,26 @@
+# AgentifyOS — real-mode infra. The app runs mock-first with in-memory seed data
+# and does NOT require this to be up. Bring it up only for the DB-backed "real" path:
+#   pnpm db:up && pnpm db:push && pnpm db:seed
+# Weird ports chosen to avoid collision with sibling projects
+# (agentfare 3000/4021, agentskart 7402/5402/6402).
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: agentifyos-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agentifyos
+      POSTGRES_PASSWORD: agentifyos
+      POSTGRES_DB: agentifyos
+    ports:
+      - "5404:5432"
+    volumes:
+      - agentifyos_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentifyos -d agentifyos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  agentifyos_pgdata:

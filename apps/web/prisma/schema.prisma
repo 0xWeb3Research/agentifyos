@@ -1,0 +1,111 @@
+// AgentifyOS real-mode schema. The app runs mock-first on in-memory seed data;
+// this is the Postgres backing for MODE=real / USE_DB=1.
+// Bring it up: `pnpm db:up && pnpm db:push && pnpm db:seed`.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Publisher {
+  id        String   @id
+  handle    String   @unique
+  name      String
+  payTo     String
+  monogram  String
+  color     String
+  tools     Tool[]
+  createdAt DateTime @default(now())
+}
+
+model Tool {
+  id            String       @id
+  slug          String       @unique
+  name          String
+  tagline       String
+  category      String
+  tags          String[]
+  capabilities  String[]
+  originUrl     String
+  handler       String?
+  inputSchema   Json
+  outputSchema  Json
+  outputExample Json
+  status        String       @default("unverified") // draft | unverified | verified
+  featured      Boolean      @default(false)
+  monogram      String
+  color         String
+  createdAt     DateTime     @default(now())
+
+  publisher    Publisher    @relation(fields: [publisherId], references: [id])
+  publisherId  String
+  priceEvents  PriceEvent[]
+  settlements  Settlement[]
+  stats        ToolStats?
+}
+
+model PriceEvent {
+  id        String  @id @default(cuid())
+  tool      Tool    @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  toolId    String
+  name      String
+  title     String
+  usd       Float
+  freeTrial Boolean @default(false)
+
+  @@unique([toolId, name])
+}
+
+model ToolStats {
+  toolId        String @id
+  tool          Tool   @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  totalCalls    Int    @default(0)
+  distinctBuyers Int   @default(0)
+  successRate   Float  @default(1)
+  revenueUsd    Float  @default(0)
+  avgLatencyMs  Int    @default(1200)
+  last30dCalls  Int    @default(0)
+  rating        Float  @default(0)
+}
+
+model Settlement {
+  id           String   @id
+  tool         Tool     @relation(fields: [toolId], references: [id], onDelete: Cascade)
+  toolId       String
+  toolSlug     String
+  toolName     String
+  eventName    String
+  payer        String
+  payerLabel   String
+  amountUsd    Float
+  amountAtomic String
+  deployHash   String
+  network      String
+  status       String   @default("settled") // verified | settled | failed
+  latencyMs    Int
+  mode         String   @default("mock")
+  createdAt    DateTime @default(now())
+  receipt      Receipt?
+
+  @@index([toolId])
+  @@index([createdAt])
+}
+
+model Receipt {
+  settlementId       String     @id
+  settlement         Settlement @relation(fields: [settlementId], references: [id], onDelete: Cascade)
+  tool               String
+  event              String
+  costUsd            Float
+  payer              String
+  deployHash         String
+  resultHash         String
+  network            String
+  explorerUrl        String
+  budgetRemainingUsd Float?
+  createdAt          DateTime   @default(now())
+}

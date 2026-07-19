@@ -1,0 +1,29 @@
+{
+  "name": "agentifyos",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AgentifyOS — Apify for AI agents, settled with x402 on Casper. The marketplace where autonomous agents discover, pay for, and use tools.",
+  "packageManager": "pnpm@10.24.0",
+  "scripts": {
+    "dev": "pnpm --filter @agentifyos/web dev",
+    "build": "pnpm --filter @agentifyos/web build",
+    "start": "pnpm --filter @agentifyos/web start",
+    "lint": "pnpm --filter @agentifyos/web lint",
+    "typecheck": "pnpm -r exec tsc --noEmit",
+    "selftest": "pnpm --filter @agentifyos/web selftest",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:push": "pnpm --filter @agentifyos/web db:push",
+    "db:seed": "pnpm --filter @agentifyos/web db:seed",
+    "test:e2e": "pnpm --filter @agentifyos/web test:e2e"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "sharp"
+    ]
+  }
+}

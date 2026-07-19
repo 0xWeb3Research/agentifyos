@@ -1,0 +1,32 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# next
+.next/
+out/
+next-env.d.ts
+
+# build
+dist/
+build/
+*.tsbuildinfo
+
+# env & keys
+.env
+.env.local
+.env.*.local
+keys/
+*.pem
+
+# prisma
+prisma/*.db
+
+# playwright
+test-results/
+playwright-report/
+.playwright/
+
+# os / editor
+.DS_Store
+*.log
