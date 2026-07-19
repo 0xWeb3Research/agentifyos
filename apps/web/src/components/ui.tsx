@@ -150,7 +150,7 @@ export function Container({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={clsx("mx-auto w-full max-w-[1200px] px-6", className)}>{children}</div>;
+  return <div className={clsx("mx-auto w-full max-w-[1200px] px-4 sm:px-6", className)}>{children}</div>;
 }
 
 // ── mono eyebrow label ───────────────────────────────────────────────────────

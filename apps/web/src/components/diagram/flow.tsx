@@ -59,7 +59,7 @@ function StepNodeImpl({ data }: NodeProps<StepNode>) {
   return (
     <div
       className={clsx(
-        "w-[210px] rounded-[var(--radius-md)] border px-3.5 py-3",
+        "w-[240px] rounded-[var(--radius-md)] border px-3.5 py-3",
         TONE[tone],
       )}
     >
@@ -117,7 +117,7 @@ export function Diagram({
   // Without intrinsic sizes the first (server) pass measures nodes as zero and
   // fitView frames the wrong box — which clips nodes at the edges.
   const prepared = useMemo(
-    () => nodes.map((n) => ({ initialWidth: 210, initialHeight: 96, ...n })),
+    () => nodes.map((n) => ({ initialWidth: 240, initialHeight: 104, ...n })),
     [nodes],
   );
 

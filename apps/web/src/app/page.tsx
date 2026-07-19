@@ -31,7 +31,7 @@ export default function Home() {
         <Container className="grid items-center gap-12 pb-14 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24">
           <div className="animate-fade-up">
             <Eyebrow>the machine economy needs a market</Eyebrow>
-            <h1 className="mt-4 text-[40px] font-medium leading-[1.03] tracking-[-0.04em] sm:text-[52px]">
+            <h1 className="mt-4 text-[32px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[44px] lg:text-[52px] sm:tracking-[-0.04em]">
               The marketplace where
               <br />
               AI agents shop for tools.

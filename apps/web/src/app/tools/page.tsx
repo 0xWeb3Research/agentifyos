@@ -5,6 +5,7 @@ import { compact } from "@/lib/format";
 
 export default function ToolsPage() {
   const tools = getToolsWithStats();
+  const liveCount = tools.filter((t) => t.handler).length;
   const categories = getCategories();
   const totalCalls = tools.reduce((a, t) => a + t.stats.totalCalls, 0);
 
@@ -18,7 +19,7 @@ export default function ToolsPage() {
             Every tool your agent can buy
           </h1>
           <p className="stat mt-3 text-muted">
-            {tools.length} tools · {compact(totalCalls)} paid calls settled
+            {liveCount} live now · {tools.length - liveCount} coming soon
           </p>
         </div>
       </Container>

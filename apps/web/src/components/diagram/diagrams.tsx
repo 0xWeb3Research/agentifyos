@@ -12,13 +12,13 @@ const success = { stroke: "#008b37" };
 // the right-to-left edges straight through the nodes.
 const payNodes: Node[] = [
   { id: "agent", type: "step", position: { x: 0, y: 0 }, data: { tag: "the buyer", label: "AI agent", caption: "holds a keypair + WCSPR, no CSPR, no account", noIn: true } },
-  { id: "tool", type: "step", position: { x: 0, y: 120 }, data: { tag: "step 1", label: "Calls a paid tool", caption: "GET /api/t/page-scraper" } },
-  { id: "402", type: "step", position: { x: 0, y: 240 }, data: { tag: "step 2", label: "HTTP 402", caption: "the price, the token, and who to pay", tone: "warn" } },
-  { id: "sign", type: "step", position: { x: 0, y: 360 }, data: { tag: "step 3", label: "Agent signs", caption: "EIP-712 authorization, off-chain and free", tone: "accent" } },
-  { id: "fac", type: "step", position: { x: 0, y: 480 }, data: { tag: "step 4", label: "Facilitator", caption: "verifies the signature, then pays the gas", tone: "accent" } },
-  { id: "chain", type: "step", position: { x: 0, y: 600 }, data: { tag: "step 5", label: "Casper testnet", caption: "transfer_with_authorization moves the WCSPR", tone: "chain" } },
-  { id: "result", type: "step", position: { x: 0, y: 720 }, data: { tag: "step 6", label: "Result + receipt", caption: "data, plus a deploy hash you can open on cspr.live", tone: "success", noOut: true } },
-  { id: "note", type: "note", position: { x: 300, y: 400 }, data: { text: "The agent never touches gas. That is the whole trick: it signs a message, and someone else pays the fee." } },
+  { id: "tool", type: "step", position: { x: 0, y: 150 }, data: { tag: "step 1", label: "Calls a paid tool", caption: "GET /api/t/page-scraper" } },
+  { id: "402", type: "step", position: { x: 0, y: 300 }, data: { tag: "step 2", label: "HTTP 402", caption: "the price, and who to pay", tone: "warn" } },
+  { id: "sign", type: "step", position: { x: 0, y: 450 }, data: { tag: "step 3", label: "Agent signs", caption: "EIP-712 authorization, off-chain and free", tone: "accent" } },
+  { id: "fac", type: "step", position: { x: 0, y: 600 }, data: { tag: "step 4", label: "Facilitator", caption: "verifies it, then pays the gas", tone: "accent" } },
+  { id: "chain", type: "step", position: { x: 0, y: 750 }, data: { tag: "step 5", label: "Casper testnet", caption: "moves the WCSPR on-chain", tone: "chain" } },
+  { id: "result", type: "step", position: { x: 0, y: 900 }, data: { tag: "step 6", label: "Result + receipt", caption: "data + a verifiable\ndeploy hash", tone: "success", noOut: true } },
+  { id: "note", type: "note", position: { x: 300, y: 470 }, data: { text: "The agent never touches gas. That is the whole trick: it signs a message, and someone else pays the fee." } },
 ];
 
 const payEdges: Edge[] = [
@@ -69,6 +69,6 @@ const sysEdges: Edge[] = [
   { id: "s5", source: "engine", target: "chain", style: accent, animated: true },
 ];
 
-export const PaymentDiagram = () => <Diagram nodes={payNodes} edges={payEdges} height={940} />;
+export const PaymentDiagram = () => <Diagram nodes={payNodes} edges={payEdges} height={1180} />;
 export const MoneyDiagram = () => <Diagram nodes={moneyNodes} edges={moneyEdges} height={860} />;
 export const SystemDiagram = () => <Diagram nodes={sysNodes} edges={sysEdges} height={680} />;

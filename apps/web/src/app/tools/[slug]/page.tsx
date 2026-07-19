@@ -113,7 +113,7 @@ export default async function ToolDetailPage({
 
         {/* ── two columns ───────────────────────────────────────────── */}
         <div
-          className="mt-10 grid gap-8 border-t border-border pt-10 lg:grid-cols-[1fr_360px]"
+          className="mt-10 grid min-w-0 gap-8 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_360px]"
         >
           {/* left — main */}
           <div className="min-w-0 space-y-10">
@@ -143,7 +143,7 @@ export default async function ToolDetailPage({
           </div>
 
           {/* right — sticky sidebar */}
-          <aside className="flex flex-col gap-5 lg:sticky lg:top-20 lg:self-start">
+          <aside className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-20 lg:self-start">
             {/* pricing card */}
             <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
               <Eyebrow>pricing</Eyebrow>

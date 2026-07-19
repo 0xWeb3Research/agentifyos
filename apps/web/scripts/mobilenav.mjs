@@ -1,0 +1,13 @@
+import { chromium } from "@playwright/test";
+const out = "/private/tmp/claude-501/-Users-sidharthp-Documents-Projects-x402-research/48db66e8-95b7-4021-96cc-4eb5ffe9c257/scratchpad";
+const b = await chromium.launch();
+const p = await b.newPage({ viewport: { width: 390, height: 800 }, deviceScaleFactor: 2 });
+await p.goto("http://localhost:8402/tools", { waitUntil: "networkidle" });
+await p.getByRole("button", { name: /open menu/i }).click();
+await p.waitForTimeout(500);
+const links = await p.locator("header nav a").count();
+console.log("menu open, nav links visible:", links);
+const ow = await p.evaluate(() => document.documentElement.scrollWidth - 390);
+console.log("overflow with menu open:", ow + "px");
+await p.screenshot({ path: `${out}/m-menu.png` });
+await b.close();

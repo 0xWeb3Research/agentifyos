@@ -195,9 +195,9 @@ export default function PublishPage() {
         </div>
       </Container>
 
-      <Container className="grid items-start gap-8 pb-24 lg:grid-cols-[1fr_400px]">
+      <Container className="grid min-w-0 items-start gap-8 pb-24 lg:grid-cols-[minmax(0,1fr)_400px]">
         {/* ── LEFT: the form ───────────────────────────────────────── */}
-        <div className="animate-fade-up space-y-5" style={{ animationDelay: "40ms" }}>
+        <div className="animate-fade-up min-w-0 space-y-5" style={{ animationDelay: "40ms" }}>
           <Field label="tool name">
             <input
               className={inputCls}
@@ -361,7 +361,7 @@ export default function PublishPage() {
 
         {/* ── RIGHT: sticky live preview ───────────────────────────── */}
         <aside
-          className="animate-fade-up lg:sticky lg:top-24 space-y-4"
+          className="animate-fade-up min-w-0 space-y-4 lg:sticky lg:top-24"
           style={{ animationDelay: "80ms" }}
         >
           <span className="label">live preview</span>
