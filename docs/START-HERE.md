@@ -407,6 +407,16 @@ that step is already built.
 
 ---
 
+## Just want to see it?
+
+The agent demo is live and open — **[agentifyos.xyz/agent](https://agentifyos.xyz/agent)**.
+No wallet, no setup: type a task, press run, and watch an agent pay for tools and
+settle on Casper testnet, with every payment linking to the block explorer. It
+runs on a shared testnet wallet with a daily budget, so it's real but can't be
+drained. Full explanation in **[TESTNET.md](./TESTNET.md)**.
+
+---
+
 ## Where to go next
 
 - **[HOW-IT-WORKS.md](./HOW-IT-WORKS.md)**: the architecture in technical detail

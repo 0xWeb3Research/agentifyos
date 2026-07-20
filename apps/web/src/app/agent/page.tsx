@@ -97,6 +97,16 @@ export default function AgentPage() {
           <p className="mt-3 font-mono text-[13px] leading-relaxed text-fg-secondary">
             one task, four paid tools. Every call metered, signed, and settled on-chain via x402.
           </p>
+          <div className="mt-5 flex flex-wrap items-start gap-2.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-3">
+            <Chip tone="success">open demo</Chip>
+            <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-fg-secondary">
+              Run it now — no wallet needed. Payments settle from a shared testnet
+              wallet under a daily budget, so the run is real but bounded. To use
+              your own session instead of the shared budget,{" "}
+              <span className="text-fg">sign in with Casper</span>{" "}
+              when prompted. It&apos;s testnet — no real money anywhere.
+            </p>
+          </div>
         </div>
       </Container>
       <Suspense fallback={null}>

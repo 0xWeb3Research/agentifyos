@@ -9,6 +9,34 @@ testnet value; nothing is simulated.
 
 ---
 
+## The zero-setup path — just watch it happen
+
+You don't need any of this to *see* a real settlement. The hosted agent demo is
+open to anyone:
+
+**→ [agentifyos.xyz/agent](https://agentifyos.xyz/agent)**
+
+Type a task, press **Run agent**, and watch it discover tools, pay for each, and
+settle on Casper testnet — every payment links to a transaction on
+[testnet.cspr.live](https://testnet.cspr.live). No wallet, no install, no signup.
+
+How it stays safe to leave open:
+
+- Payments settle from a **shared testnet wallet**, never yours.
+- Anonymous runs draw on a **global daily budget** (`DEMO_DAILY_USD_CAP`, default
+  $2/day). Once it's spent, the demo asks you to come back tomorrow — the wallet
+  can't be drained.
+- It's **testnet** throughout. The tokens are worthless practice tokens.
+
+Want your own session instead of the shared budget? **Sign in with Casper
+Wallet** when the page prompts you. Signing proves who you are; it costs no gas
+and moves nothing from your account. Signed-in runs skip the shared cap.
+
+The rest of this guide is for running your **own** instance and pushing payments
+from your **own** keys.
+
+---
+
 ## 0. What you need
 
 | | |
