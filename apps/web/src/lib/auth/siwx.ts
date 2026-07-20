@@ -22,8 +22,19 @@ const CHALLENGE_TTL_MS = 5 * 60_000;
 const SESSION_TTL_MS = 7 * 24 * 60 * 60_000;
 export const SESSION_COOKIE = "agentifyos_session";
 
-const secret = () =>
-  process.env.AUTH_SECRET || "dev-only-insecure-secret-set-AUTH_SECRET-in-production";
+// Session tokens are HMAC'd with this. A deployment that fell back to the
+// development default would let anyone who knows the string forge a session for
+// any wallet, so refuse to run rather than silently accept it in production.
+const secret = () => {
+  const s = process.env.AUTH_SECRET;
+  if (s) return s;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_SECRET is not set. Refusing to sign sessions with the development default.",
+    );
+  }
+  return "dev-only-insecure-secret-set-AUTH_SECRET-in-production";
+};
 
 // ── challenges ──────────────────────────────────────────────────────────────
 // Single-use and short-lived. Kept in-process: a challenge is only valid for a

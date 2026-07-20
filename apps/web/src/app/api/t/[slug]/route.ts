@@ -93,7 +93,10 @@ export async function GET(
     const facilitator = casper.loadRoleWallet("facilitator");
     const settle = await casper.settleOnChain(facilitator, payload, requirements);
     if (!settle.success) {
-      return NextResponse.json({ error: settle.reason }, { status: 402, headers: NO_STORE });
+      return NextResponse.json(
+        { error: settle.reason, deployHash: settle.deployHash || undefined },
+        { status: 402, headers: NO_STORE },
+      );
     }
 
     const result = await getHandler(tool.handler)(input);
