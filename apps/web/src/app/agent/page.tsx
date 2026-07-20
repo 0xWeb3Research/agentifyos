@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Arrow, Button, Chip, Container, Eyebrow } from "@/components/ui";
 import { WireLog } from "@/components/wire-log";
+import { WalletConnect, type SessionInfo } from "@/components/wallet-connect";
 import { explorerTx } from "@/lib/config";
 import { compact, shortHash, usd } from "@/lib/format";
 import type { WireStep } from "@/lib/x402/loop";
@@ -11,14 +12,16 @@ import type { Receipt } from "@/lib/types";
 
 // ── the agent runner demo ─────────────────────────────────────────────────────
 // The client asks the server to run a task, then replays the returned trace
-// progressively — one wire step at a time — so a batch response feels like a
+// progressively, one wire step at a time, so a batch response feels like a
 // live agent discovering tools and paying for them, call by call.
 
+// The budget the client REQUESTS. The server clamps it to its own cap and
+// reports the granted figure back in `budgetUsd`. That value drives the meter.
 const BUDGET = 0.1;
 
 // Each tool call is a REAL Casper settlement that waits for on-chain finality
 // (~12s), so the default keeps a browser run comfortably short. The four-tool
-// "Full run" takes ~100s — reliable via `pnpm casper:pay` / the API, but long
+// "Full run" takes ~100s. Reliable via `pnpm casper:pay` / the API, but long
 // enough that a browser request can be cut off before it returns.
 const FULL_TASK =
   "You have 0.1 WCSPR. Get the live CSPR price, scrape https://casper.network/blog/agentic-commerce, summarize it, and attest the summary.";
@@ -44,7 +47,7 @@ const TOOL_TASKS: Record<string, string> = {
     "Get the live CSPR price and notarize the result as an on-chain attestation.",
 };
 
-// Per-kind reveal cadence — the on-chain settle gets the longest beat.
+// Per-kind reveal cadence: the on-chain settle gets the longest beat.
 const STAGGER: Record<string, number> = {
   request: 130,
   "402": 150,
@@ -115,11 +118,14 @@ function AgentRunner() {
   const [wireSteps, setWireSteps] = useState<WireStep[]>([]);
   const [completed, setCompleted] = useState<Completed[]>([]);
   const [budget, setBudget] = useState(BUDGET);
+  // What the server actually granted after clamping: the meter's denominator.
+  const [budgetCap, setBudgetCap] = useState(BUDGET);
   const [wallet, setWallet] = useState<RunResponse["wallet"] | null>(null);
   const [totals, setTotals] = useState<{ totalCostUsd: number; budgetRemainingUsd: number } | null>(
     null,
   );
   const [error, setError] = useState<string | null>(null);
+  const [needsAuth, setNeedsAuth] = useState(false);
 
   const cancelled = useRef(false);
   const wireRef = useRef<HTMLDivElement>(null);
@@ -141,6 +147,7 @@ function AgentRunner() {
     setWireSteps([]);
     setCompleted([]);
     setBudget(BUDGET);
+    setBudgetCap(BUDGET);
     setTotals(null);
 
     let data: RunResponse;
@@ -150,8 +157,34 @@ function AgentRunner() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ task, budgetUsd: BUDGET }),
       });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      data = (await res.json()) as RunResponse;
+      // Non-200s carry a JSON body saying why (401 auth required in real mode,
+      // 429 rate limited). Surface the server's reason, don't guess connectivity.
+      const body = (await res.json().catch(() => null)) as
+        | (RunResponse & { error?: string; reason?: string; retryAfterSec?: number })
+        | null;
+      if (!res.ok || !body || !Array.isArray(body.steps)) {
+        if (res.status === 401) {
+          setNeedsAuth(true);
+          setError(
+            body?.reason ?? "authentication required: sign in with your Casper wallet first.",
+          );
+        } else if (res.status === 429) {
+          setError(
+            `rate limited: try again in ${body?.retryAfterSec ? `${body.retryAfterSec}s` : "a moment"}.`,
+          );
+        } else {
+          setError(
+            body?.reason ??
+              body?.error ??
+              (res.ok
+                ? "the agent runner returned an unexpected response."
+                : `the agent runner returned HTTP ${res.status}.`),
+          );
+        }
+        setRunning(false);
+        return;
+      }
+      data = body;
     } catch {
       setError("could not reach the agent runner. Is the dev server up?");
       setRunning(false);
@@ -160,8 +193,16 @@ function AgentRunner() {
     if (cancelled.current) return;
     setWallet(data.wallet);
 
+    // The server clamps the requested budget to its own cap. Render the budget
+    // it reports back, not the value we asked for.
+    const granted = typeof data.budgetUsd === "number" && data.budgetUsd >= 0
+      ? data.budgetUsd
+      : BUDGET;
+    setBudgetCap(granted);
+    setBudget(granted);
+
     // Replay the trace: announce each thought, stream its wire steps, then land
-    // the receipt and tick the budget down — one tool at a time.
+    // the receipt and tick the budget down, one tool at a time.
     const acc: WireStep[] = [];
     let seq = 0;
 
@@ -249,7 +290,9 @@ function AgentRunner() {
                 <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-tint">
                   <div
                     className="h-full rounded-full bg-success transition-[width] duration-500 ease-[var(--ease-out)]"
-                    style={{ width: `${Math.max(0, (budget / BUDGET) * 100)}%` }}
+                    style={{
+                      width: `${budgetCap > 0 ? Math.max(0, (budget / budgetCap) * 100) : 0}%`,
+                    }}
                   />
                 </div>
               </div>
@@ -261,9 +304,30 @@ function AgentRunner() {
           </div>
 
           {error && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-error/30 bg-error-tint px-3 py-1.5 text-[13px] text-error">
-              <span className="font-mono text-[11px] uppercase tracking-[0.05em]">error</span>
-              {error}
+            <div className="mt-3 flex flex-col gap-3">
+              <div className="inline-flex items-start gap-2 self-start rounded-[var(--radius-sm)] border border-error/30 bg-error-tint px-3 py-1.5 text-[13px] text-error">
+                <span className="mt-[2px] font-mono text-[11px] uppercase tracking-[0.05em]">error</span>
+                <span className="min-w-0">{error}</span>
+              </div>
+
+              {/* An auth error is only useful if you can act on it from here. */}
+              {needsAuth && (
+                <div className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-border bg-surface p-4">
+                  <p className="text-[13px] leading-relaxed text-fg-secondary">
+                    This demo spends real WCSPR from the server&apos;s wallet, so it
+                    asks who you are first. Signing costs nothing and moves no funds
+                    from your account.
+                  </p>
+                  <WalletConnect
+                    onSession={(s: SessionInfo | null) => {
+                      if (s) {
+                        setNeedsAuth(false);
+                        setError(null);
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -272,7 +336,7 @@ function AgentRunner() {
       {/* ── two-column result ─────────────────────────────────────────── */}
       <Container className="pb-16">
         <div className="grid gap-6 lg:grid-cols-2">
-          {/* LEFT — reasoning + receipts */}
+          {/* LEFT: reasoning + receipts */}
           <div className="animate-fade-up" style={{ animationDelay: "120ms" }}>
             <div className="mb-3 flex items-center justify-between">
               <Eyebrow>agent trace</Eyebrow>
@@ -299,7 +363,7 @@ function AgentRunner() {
             )}
           </div>
 
-          {/* RIGHT — live wire log */}
+          {/* RIGHT: live wire log */}
           <div
             className="animate-fade-up lg:sticky lg:top-6 lg:self-start"
             style={{ animationDelay: "160ms" }}

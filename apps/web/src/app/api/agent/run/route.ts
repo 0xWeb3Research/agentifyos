@@ -13,10 +13,13 @@ import { hashResult, makeWallet } from "@/lib/x402/payment";
 import { executePaidCall, planTask } from "@/lib/x402/loop";
 import type { WireStep } from "@/lib/x402/loop";
 import type { Receipt } from "@/lib/types";
+import { authorizeSpend } from "@/lib/security/authz";
+import { resolveSpendBudget, reserveDemoSpend } from "@/lib/security/spend";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
 
 // The agent runner. Plans a task into an ordered list of live tools, then walks
-// the x402 handshake for each one in-process — threading the result of each call
-// into the next — while metering spend against a wallet budget. The client
+// the x402 handshake for each one in-process, threading the result of each call
+// into the next, while metering spend against a wallet budget. The client
 // replays the returned trace progressively so the demo feels live.
 
 interface AgentStep {
@@ -32,24 +35,50 @@ interface AgentStep {
 }
 
 export async function POST(req: Request) {
+  // In real mode this handler spends from the server-held Casper keys, so gate
+  // it before doing any work. Mock mode is always allowed (nothing settles on-chain).
+  const auth = authorizeSpend(req);
+  if (!auth.allowed) {
+    return NextResponse.json({ error: "unauthorized", reason: auth.reason }, { status: 401 });
+  }
+  const rl = rateLimit(`agent-run:${clientIp(req)}`, 10, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const body = (await req.json().catch(() => ({}))) as {
     task?: unknown;
     budgetUsd?: unknown;
   };
   const task = typeof body.task === "string" ? body.task : "";
-  const budgetUsd =
-    typeof body.budgetUsd === "number" && Number.isFinite(body.budgetUsd)
-      ? body.budgetUsd
-      : undefined;
 
   const tools = getToolsWithStats();
   const wallet = makeWallet("demo-agent", "atlas-01");
   const baseUrl = new URL(req.url).origin;
   const plan = planTask(task, tools);
 
-  // Context threaded between calls — the agent reasons over prior outputs.
+  // Context threaded between calls: the agent reasons over prior outputs.
   const ctx: { markdown?: string; lastResult?: unknown } = {};
-  let remaining = budgetUsd ?? 0.1;
+  // Client budget is a request, not an entitlement; it is clamped to the server cap.
+  const budgetUsd = resolveSpendBudget(body.budgetUsd);
+
+  // An anonymous caller only reaches here when ALLOW_UNAUTH_SPEND is on — the
+  // open public demo. Per-IP rate limiting caps how FAST one client spends but
+  // not how much the wallet can lose in a day, so charge the run's maximum
+  // against a global daily allowance before doing any work. Signed-in callers
+  // are accountable to an account and skip this.
+  if (MODE === "real" && !auth.session) {
+    const demo = await reserveDemoSpend(budgetUsd);
+    if (!demo.ok) {
+      return NextResponse.json(
+        {
+          error: "demo_budget_exhausted",
+          reason: `today's public demo budget of $${demo.capUsd.toFixed(2)} is spent. Sign in with Casper to run it with your own session, or try again tomorrow.`,
+        },
+        { status: 429 },
+      );
+    }
+  }
+
+  let remaining = budgetUsd;
   let totalCostUsd = 0;
   const steps: AgentStep[] = [];
 
@@ -103,7 +132,7 @@ export async function POST(req: Request) {
   const ok = steps.length > 0 && steps.every((s) => s.ok);
 
   // In real mode the on-chain payer is the Casper key in keys/agent.pem, not the
-  // in-process demo wallet — report the identity that actually signed.
+  // in-process demo wallet, so report the identity that actually signed.
   let shown = { accountHash: wallet.accountHash, publicKey: wallet.publicKey, label: wallet.label };
   if (MODE === "real") {
     try {
@@ -119,7 +148,7 @@ export async function POST(req: Request) {
     ok,
     task,
     wallet: shown,
-    budgetUsd: budgetUsd ?? 0.1,
+    budgetUsd,
     budgetRemainingUsd: remaining,
     totalCostUsd,
     steps,
