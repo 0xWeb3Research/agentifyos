@@ -1,0 +1,10 @@
+{
+  "tags": [
+    "node"
+  ],
+  "sentinels": [
+    "package.json"
+  ],
+  "detectedAt": "2026-07-20T11:59:58.542Z",
+  "rootPath": "/Users/sidharthp/Documents/Projects/x402-research/agentifyos"
+}
