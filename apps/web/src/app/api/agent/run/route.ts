@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   // Client budget is a request, not an entitlement; it is clamped to the server cap.
   const budgetUsd = resolveSpendBudget(body.budgetUsd);
 
-  // An anonymous caller only reaches here when ALLOW_UNAUTH_SPEND is on — the
+  // An anonymous caller only reaches here when ALLOW_UNAUTH_SPEND is on: the
   // open public demo. Per-IP rate limiting caps how FAST one client spends but
   // not how much the wallet can lose in a day, so charge the run's maximum
   // against a global daily allowance before doing any work. Signed-in callers
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: "demo_budget_exhausted",
-          reason: `today's public demo budget of $${demo.capUsd.toFixed(2)} is spent. Sign in with Casper to run it with your own session, or try again tomorrow.`,
+          reason: `today's public demo budget of $${demo.capUsd < 0.01 ? demo.capUsd : demo.capUsd.toFixed(2)} is spent. Sign in with Casper to run it with your own session, or try again tomorrow.`,
         },
         { status: 429 },
       );
