@@ -181,9 +181,20 @@ export function verifyPayment(payload: ExactCasperPayload, req: CasperPaymentReq
   const payer = a.from;
   if (a.to !== req.payTo) return { valid: false, payer, reason: "pay_to_mismatch" };
   if (a.value !== req.amount) return { valid: false, payer, reason: "amount_mismatch" };
-  const now = Math.floor(Date.now() / 1000);
-  if (Number(a.validAfter) > now) return { valid: false, payer, reason: "not_yet_valid" };
-  if (now > Number(a.validBefore) - 6) return { valid: false, payer, reason: "expired" };
+  // value/validAfter/validBefore are fed to BigInt() inside digestFor. A field
+  // like validAfter:"abc" is a string (so it passes the typeof check above) but
+  // makes BigInt() throw a SyntaxError there — which is outside the try/catch
+  // below and escaped as an unauthenticated 500. Require decimal digits up
+  // front, and compare the time window with BigInt: Number("abc") is NaN, and
+  // every NaN comparison is false, so the Number-based window checks silently
+  // passed malformed input straight through to the throw.
+  const DIGITS = /^\d+$/;
+  if (!DIGITS.test(a.value) || !DIGITS.test(a.validAfter) || !DIGITS.test(a.validBefore)) {
+    return { valid: false, payer, reason: "malformed_payload" };
+  }
+  const now = BigInt(Math.floor(Date.now() / 1000));
+  if (BigInt(a.validAfter) > now) return { valid: false, payer, reason: "not_yet_valid" };
+  if (now > BigInt(a.validBefore) - 6n) return { valid: false, payer, reason: "expired" };
   // public key must parse and derive to the payer account hash
   let pub: any;
   try {
@@ -192,7 +203,12 @@ export function verifyPayment(payload: ExactCasperPayload, req: CasperPaymentReq
     return { valid: false, payer, reason: "bad_public_key" };
   }
   if (pub.accountHash().toHex() !== payer.slice(2)) return { valid: false, payer, reason: "public_key_mismatch" };
-  const digest = digestFor(a, req);
+  let digest: Uint8Array;
+  try {
+    digest = digestFor(a, req);
+  } catch {
+    return { valid: false, payer, reason: "malformed_payload" };
+  }
   const sig = Buffer.from(payload.signature, "hex");
   try {
     if (pub.verifySignature(digest, sig) !== true) return { valid: false, payer, reason: "invalid_signature" };
@@ -282,6 +298,13 @@ export function buildSettleTx(
 
 export interface SettleResult {
   success: boolean;
+  // "settled": confirmed on-chain. "pending": accepted by the node but our poll
+  // window elapsed before confirmation — the transfer MAY still execute and move
+  // the payer's WCSPR, so callers must record it (with the deployHash) and must
+  // NOT re-charge or re-submit. "failed": rejected before or during submission,
+  // no funds moved. `success` stays false for both pending and failed so old
+  // call sites fail closed; new call sites branch on `status`.
+  status: "settled" | "pending" | "failed";
   deployHash: string;
   explorerUrl: string;
   network: string;
@@ -298,7 +321,7 @@ export async function settleOnChain(
 ): Promise<SettleResult> {
   const pre = verifyPayment(payload, req);
   const payer = payload.authorization.from;
-  if (!pre.valid) return { success: false, deployHash: "", explorerUrl: "", network: req.network, payer, reason: pre.reason };
+  if (!pre.valid) return { success: false, status: "failed", deployHash: "", explorerUrl: "", network: req.network, payer, reason: pre.reason };
 
   // The facilitator pays gas. An unfunded account has no on-chain entity, so the
   // node rejects its transactions with a generic -32016; check first and say why.
@@ -306,6 +329,7 @@ export async function settleOnChain(
   if (gasBalance < BigInt(paymentMotes)) {
     return {
       success: false,
+      status: "failed",
       deployHash: "",
       explorerUrl: "",
       network: req.network,
@@ -330,6 +354,7 @@ export async function settleOnChain(
     const unfunded = /insufficient|balance|purse|funds/i.test(msg);
     return {
       success: false,
+      status: "failed",
       deployHash: "",
       explorerUrl: "",
       network: req.network,
@@ -352,6 +377,7 @@ export async function settleOnChain(
     const timedOut = /timed out waiting/i.test(msg);
     return {
       success: false,
+      status: timedOut ? "pending" : "failed",
       deployHash,
       explorerUrl,
       network: req.network,
@@ -363,6 +389,7 @@ export async function settleOnChain(
   }
   return {
     success: true,
+    status: "settled",
     deployHash,
     explorerUrl: `${TESTNET.explorerBase}/deploy/${deployHash}`,
     network: req.network,

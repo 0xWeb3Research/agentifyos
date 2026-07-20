@@ -1,4 +1,4 @@
-import { PLATFORM_FEE } from "./config";
+import { MODE, PLATFORM_FEE } from "./config";
 import { appendSettlement, readRealSettlements, readSettlements } from "./store/ledger";
 import { publishers, settlementBacklog, stats, tools } from "./seed";
 import type { Publisher, Settlement, ToolStats, ToolWithStats } from "./types";
@@ -83,15 +83,18 @@ export function getSeededSettlements(limit = 24): Settlement[] {
 }
 
 /**
- * The public activity feed. Serves the durable ledger when it has entries and
- * falls back to the seeded demo backlog only so a fresh install isn't a blank
- * page. Anything presenting settlements as genuine must NOT use this. Go
- * through `getRealSettlements` (or `ledger.readRealSettlements` directly),
- * which never mixes in fixtures.
+ * The public activity feed. Serves the durable ledger when it has entries.
+ *
+ * In MOCK mode it falls back to the seeded demo backlog so a fresh install isn't
+ * a blank page — those fixtures are explicitly `mode: "mock"` demo exhaust. In
+ * REAL mode it does NOT: an empty ledger returns empty, because substituting
+ * pseudo-hash fixtures would present fabricated, cspr.live-linked settlements as
+ * genuine on-chain activity. For guaranteed-genuine data use `getRealSettlements`.
  */
 export async function getSettlements(limit = 24): Promise<Settlement[]> {
-  const real = await readSettlements(limit);
-  return real.length ? real : liveSettlements.slice(0, limit);
+  const recorded = await readSettlements(limit);
+  if (recorded.length) return recorded;
+  return MODE === "real" ? [] : liveSettlements.slice(0, limit);
 }
 
 /**

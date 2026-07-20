@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { MODE, explorerTx } from "@/lib/config";
+import { MODE } from "@/lib/config";
 import { toAtomic } from "@/lib/format";
 import { getToolBySlug, recordSettlement } from "@/lib/data";
 import { getHandler } from "@/lib/tools/handlers";
@@ -117,6 +117,42 @@ export async function GET(
 
     const facilitator = casper.loadRoleWallet("facilitator");
     const settle = await casper.settleOnChain(facilitator, payload, requirements);
+
+    // Confirmation timed out: the node accepted the transfer and it MAY still
+    // execute on-chain, moving the payer's WCSPR. Reporting a plain failure here
+    // would invite the client to retry into a second charge, and would leave a
+    // real payment with no ledger entry. Record a pending row keyed on the
+    // deploy hash (reconcilable from chain state) and answer 202, not 402.
+    if (settle.status === "pending") {
+      const payer = payload.authorization.from;
+      const pending: Settlement = {
+        id: "stl_" + settle.deployHash.slice(0, 16),
+        toolId: tool.id,
+        toolSlug: tool.slug,
+        toolName: tool.name,
+        eventName: event.name,
+        payer,
+        payerLabel: payerLabel(payer),
+        amountUsd: event.usd,
+        amountAtomic: requirements.amount,
+        deployHash: settle.deployHash,
+        network: settle.network,
+        status: "pending",
+        latencyMs: 0,
+        mode: "real",
+        createdAt: new Date().toISOString(),
+      };
+      await recordSettlement(pending);
+      return NextResponse.json(
+        {
+          status: "pending",
+          reason: settle.reason,
+          deployHash: settle.deployHash,
+          explorerUrl: settle.explorerUrl,
+        },
+        { status: 202, headers: NO_STORE },
+      );
+    }
     if (!settle.success) {
       return NextResponse.json(
         { error: settle.reason, deployHash: settle.deployHash || undefined },
@@ -155,6 +191,7 @@ export async function GET(
       deployHash: settle.deployHash,
       resultHash: hashResult(result),
       network: settle.network,
+      mode: "real",
       explorerUrl: settle.explorerUrl,
       budgetRemainingUsd: null,
       createdAt: settlement.createdAt,
@@ -230,7 +267,10 @@ export async function GET(
     deployHash: settle.deployHash,
     resultHash: hashResult(result),
     network: settle.network,
-    explorerUrl: explorerTx(settle.deployHash),
+    // Mock settlement: the deploy hash is a deterministic pseudo-hash, not a
+    // real transaction, so DON'T hand back a testnet.cspr.live link that 404s.
+    mode: "mock",
+    explorerUrl: null,
     budgetRemainingUsd: null,
     createdAt: settlement.createdAt,
   };

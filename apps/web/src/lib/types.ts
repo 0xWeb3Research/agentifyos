@@ -3,7 +3,7 @@
 
 export type Capability = "x402" | "mcp" | "rest" | "streaming" | "free-trial";
 export type ToolStatus = "draft" | "unverified" | "verified";
-export type SettlementStatus = "verified" | "settled" | "failed";
+export type SettlementStatus = "verified" | "settled" | "pending" | "failed";
 export type Mode = "mock" | "real";
 
 export interface Publisher {
@@ -90,7 +90,12 @@ export interface Receipt {
   deployHash: string;
   resultHash: string;
   network: string;
-  explorerUrl: string;
+  // "real" when the deploy hash is a genuine on-chain transaction (explorerUrl
+  // resolves on testnet.cspr.live); "mock" when it settled in-process. Mock
+  // receipts carry a null explorerUrl so a fabricated hash is never presented
+  // as a verifiable on-chain link.
+  mode: Mode;
+  explorerUrl: string | null;
   budgetRemainingUsd: number | null;
   createdAt: string;
 }

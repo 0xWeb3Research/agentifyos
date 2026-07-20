@@ -65,8 +65,11 @@ export class MockFacilitator implements FacilitatorClient {
     }
     const payer = authorization.from;
 
-    // 1. real Ed25519 signature check against the payer's public key.
-    if (!verifySignature(authorization, signature, publicKey)) {
+    // 1. real Ed25519 signature check against the payer's public key. Passing
+    //    `req` binds the check to this deployment's EIP-712 domain (network,
+    //    asset, name, version), so a signature minted for another network or a
+    //    different asset can't be replayed here.
+    if (!verifySignature(authorization, signature, publicKey, req)) {
       return { isValid: false, payer, invalidReason: "invalid_signature" };
     }
     // 2. the payment must actually go to the required recipient.

@@ -109,6 +109,32 @@ export async function executeRealPaidCall(opts: {
     settle.success,
     settle,
   );
+  // Accepted by the node but confirmation timed out: the transfer MAY still
+  // execute and move the agent's WCSPR. Record a pending row keyed on the deploy
+  // hash so a possibly-executed payment isn't lost from the ledger, and stop the
+  // run without claiming success or re-charging.
+  if (settle.status === "pending") {
+    const pending: Settlement = {
+      id: "stl_" + settle.deployHash.slice(0, 16),
+      toolId: tool.id,
+      toolSlug: tool.slug,
+      toolName: tool.name,
+      eventName: event.name,
+      payer: agentW.address,
+      payerLabel: agentW.accountHash.slice(0, 8),
+      amountUsd: event.usd,
+      amountAtomic: req.amount,
+      deployHash: settle.deployHash,
+      network: settle.network,
+      status: "pending",
+      latencyMs: Date.now() - start,
+      mode: "real",
+      createdAt: new Date().toISOString(),
+    };
+    await recordSettlement(pending);
+    step("error", `settlement pending: ${settle.reason}`, false);
+    return { ...base, error: settle.reason };
+  }
   if (!settle.success) {
     step("error", `settlement failed: ${settle.reason}`, false);
     return { ...base, error: settle.reason };
@@ -145,6 +171,7 @@ export async function executeRealPaidCall(opts: {
     deployHash: settle.deployHash,
     resultHash: hashResult(result),
     network: settle.network,
+    mode: "real",
     explorerUrl: explorerTx(settle.deployHash),
     budgetRemainingUsd:
       typeof opts.budgetRemainingUsd === "number"

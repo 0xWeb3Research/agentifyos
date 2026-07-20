@@ -13,6 +13,7 @@ import {
   issueSession,
   nonceOf,
   readSession,
+  revokeSessions,
   verifySignedMessage,
 } from "../src/lib/auth/siwx";
 
@@ -42,7 +43,7 @@ const pub = priv.publicKey;
 const publicKeyHex = pub.toHex();
 
 // 1. issue a challenge
-const challenge = createChallenge({
+const challenge = await createChallenge({
   domain: "localhost:8402",
   uri: "http://localhost:8402",
   accountHash: "00" + pub.accountHash().toHex(),
@@ -79,8 +80,20 @@ check(
 
 // 7. nonce is single-use (replay protection)
 const n = nonceOf(challenge.message)!;
-check("nonce burns on first use", consumeNonce(n));
-check("replaying the same nonce fails", !consumeNonce(n));
+check("nonce burns on first use", await consumeNonce(n, challenge.message));
+check("replaying the same nonce fails", !(await consumeNonce(n, challenge.message)));
+
+// 7b. the signed body is bound to the exact issued message: a recomposed body
+// carrying a valid nonce is rejected, and the genuine challenge stays live.
+const bound = await createChallenge({
+  domain: "localhost:8402",
+  uri: "http://localhost:8402",
+  accountHash: "00" + pub.accountHash().toHex(),
+});
+const boundNonce = nonceOf(bound.message)!;
+const forgedBody = bound.message + "\nEXTRA: attacker-appended line";
+check("recomposed message with a valid nonce is rejected", !(await consumeNonce(boundNonce, forgedBody)));
+check("the genuine challenge is still live after a rejected recomposition", await consumeNonce(boundNonce, bound.message));
 
 // 8. session round-trip + tamper resistance
 const token = issueSession({
@@ -90,6 +103,19 @@ const token = issueSession({
 });
 check("session token round-trips", readSession(token)?.accountHash === good.accountHash);
 check("forged session token is rejected", readSession(token.split(".")[0] + ".forged") === null);
+
+// 9. sign-out revokes outstanding tokens, not just the cookie
+revokeSessions(good.accountHash!);
+check("a token issued before sign-out stops verifying", readSession(token) === null);
+// The revocation epoch is `<=`, so a token minted in the same millisecond as
+// sign-out also dies; wait a tick so a genuinely-later token has iat > cutoff.
+await new Promise((r) => setTimeout(r, 5));
+const fresh = issueSession({
+  publicKey: publicKeyHex,
+  accountHash: good.accountHash!,
+  address: good.address!,
+});
+check("a token issued after sign-out still verifies", readSession(fresh)?.accountHash === good.accountHash);
 
 console.log(`\n${pass}/${pass + fail} passed\n`);
 process.exit(fail ? 1 : 0);

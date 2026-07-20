@@ -17,6 +17,7 @@ import {
 } from "../src/lib/x402/payment";
 import { executePaidCall } from "../src/lib/x402/loop";
 import { __resetNonces, getFacilitator } from "../src/lib/x402/facilitator";
+import { resolveSpendBudget } from "../src/lib/security/spend";
 import { getToolsWithStats } from "../src/lib/data";
 import type { ToolWithStats } from "../src/lib/types";
 
@@ -79,6 +80,7 @@ async function main(): Promise<void> {
         payload.payload.authorization,
         payload.payload.signature,
         payload.payload.publicKey,
+        req,
       ) === true
     );
   });
@@ -101,6 +103,7 @@ async function main(): Promise<void> {
         payload.payload.authorization,
         payload.payload.signature,
         payload.payload.publicKey,
+        req,
       ) === false
     );
   });
@@ -164,6 +167,73 @@ async function main(): Promise<void> {
     const fac = getFacilitator();
     const v = await fac.verify(payload, otherReq);
     return v.isValid === false;
+  });
+
+  // 7. Domain separation: a signature is bound to this deployment's EIP-712
+  //    domain (network + asset), so it can't be replayed against another network.
+  await runCase("domain separation: cross-network signature rejected", () => {
+    const tool = firstHandlerTool();
+    const event = tool.priceEvents[0];
+    const wallet = makeWallet("agent-domain", "agent-domain");
+    const req = buildRequirements(tool, event, "http://x/api/t/" + tool.slug, tool.publisher.payTo);
+    const payload = buildPayload(wallet, req);
+    const otherNetwork = { ...req, network: req.network + "-evil" };
+    const validHere = verifySignature(
+      payload.payload.authorization,
+      payload.payload.signature,
+      payload.payload.publicKey,
+      req,
+    );
+    const invalidThere = verifySignature(
+      payload.payload.authorization,
+      payload.payload.signature,
+      payload.payload.publicKey,
+      otherNetwork,
+    );
+    return validHere === true && invalidThere === false;
+  });
+
+  // 8. verifyPayment (real path) must reject a non-numeric numeric field with a
+  //    clean malformed_payload, never throw a SyntaxError out of BigID().
+  await runCase("verifyPayment rejects malformed numerics without throwing", async () => {
+    const { verifyPayment } = await import("../src/lib/x402/casper");
+    const req = {
+      scheme: "exact" as const,
+      network: "casper:casper-test",
+      amount: "1000",
+      asset: "3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e",
+      payTo: "00" + "aa".repeat(32),
+      maxTimeoutSeconds: 120,
+      extra: { name: "Wrapped CSPR", version: "1", symbol: "WCSPR", decimals: "9" },
+    };
+    const malformed = {
+      signature: "00",
+      publicKey: "01" + "bb".repeat(32),
+      authorization: {
+        from: "00" + "cc".repeat(32),
+        to: req.payTo,
+        value: "1000",
+        validAfter: "abc", // non-numeric: used to reach BigInt() and 500
+        validBefore: "123",
+        nonce: "dd".repeat(32),
+      },
+    };
+    const r = verifyPayment(malformed as never, req);
+    return r.valid === false && r.reason === "malformed_payload";
+  });
+
+  // 9. Client spend budget can only ever LOWER the server cap, never raise it;
+  //    a missing budget defaults to the cap, a bad one collapses to zero.
+  await runCase("spend budget clamps to the server cap", () => {
+    const cap = resolveSpendBudget(undefined);
+    return (
+      cap > 0 &&
+      resolveSpendBudget(1e9) === cap &&
+      resolveSpendBudget(null) === cap &&
+      resolveSpendBudget(-5) === 0 &&
+      resolveSpendBudget("nonsense") === 0 &&
+      resolveSpendBudget(cap / 2) === cap / 2
+    );
   });
 
   // ── summary ─────────────────────────────────────────────────────────────

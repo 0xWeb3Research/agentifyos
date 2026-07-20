@@ -152,7 +152,11 @@ export async function executePaidCall(opts: {
     deployHash: settle.deployHash,
     resultHash,
     network: settle.network,
-    explorerUrl: explorerTx(settle.deployHash),
+    // This path only runs in mock mode (real is delegated to executeRealPaidCall
+    // above), so the deploy hash is a pseudo-hash: mark it mock and emit no
+    // explorer link rather than a testnet.cspr.live URL that resolves to nothing.
+    mode: settlement.mode,
+    explorerUrl: null,
     budgetRemainingUsd:
       typeof opts.budgetRemainingUsd === "number"
         ? +(opts.budgetRemainingUsd - event.usd).toFixed(4)

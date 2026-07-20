@@ -128,7 +128,11 @@ function pubFromRawHex(publicKeyHex: string): KeyObject {
 }
 
 export interface AgentWallet {
-  seedHex: string; // demo only; a real agent holds this in a PEM/KMS
+  // The private key is held as a non-serializable KeyObject, never as a hex seed
+  // on a plain object, so it can't slip into a JSON response or a log line. This
+  // is demo-only material regardless (mock payer identities and receive-only
+  // payTo accounts); a real agent holds its key in a PEM/KMS via loadRoleWallet.
+  priv: KeyObject;
   publicKey: string; // "01" + raw ed25519 hex (Casper convention)
   accountHash: string; // "00" + blake-style hash (mock uses sha256)
   label: string;
@@ -140,31 +144,51 @@ export function makeWallet(seed: string, label: string): AgentWallet {
   const rawPub = createPublicKey(priv).export({ format: "der", type: "spki" }).subarray(-32);
   const publicKey = "01" + Buffer.from(rawPub).toString("hex");
   const accountHash = "00" + createHash("sha256").update(publicKey).digest("hex");
-  return { seedHex: seed32.toString("hex"), publicKey, accountHash, label };
+  return { priv, publicKey, accountHash, label };
 }
 
-export function signAuthorization(auth: Authorization, wallet: AgentWallet): string {
-  const priv = privFromSeed(Buffer.from(wallet.seedHex, "hex"));
-  return edSign(null, Buffer.from(canonical(auth)), priv).toString("hex");
+// The exact bytes the mock scheme signs and verifies. When `req` is supplied we
+// bind the same EIP-712 domain the real path commits to in casper.ts digestFor
+// (name/version/network/asset). Without that binding a mock signature is valid
+// across any deployment/network and across any tool sharing the same payTo and
+// price. `req` is optional only for backward compatibility; the payment loop
+// always passes it.
+function signingPreimage(auth: Authorization, req?: PaymentRequirements): Buffer {
+  if (!req) return Buffer.from(canonical(auth));
+  const domain = {
+    name: req.extra.name,
+    version: req.extra.version,
+    network: req.network,
+    asset: req.asset,
+  };
+  return Buffer.from(canonical({ authorization: auth, domain }));
+}
+
+export function signAuthorization(
+  auth: Authorization,
+  wallet: AgentWallet,
+  req?: PaymentRequirements,
+): string {
+  return edSign(null, signingPreimage(auth, req), wallet.priv).toString("hex");
 }
 
 // Ed25519 over arbitrary bytes, for non-payment signing (attestations). Keeps
 // those signatures domain-separated from the Authorization struct above, so an
 // attestation can never double as a transfer authorization.
 export function signBytes(bytes: Buffer, wallet: AgentWallet): string {
-  const priv = privFromSeed(Buffer.from(wallet.seedHex, "hex"));
-  return edSign(null, bytes, priv).toString("hex");
+  return edSign(null, bytes, wallet.priv).toString("hex");
 }
 
 export function verifySignature(
   auth: Authorization,
   signatureHex: string,
   publicKeyHex: string,
+  req?: PaymentRequirements,
 ): boolean {
   try {
     return edVerify(
       null,
-      Buffer.from(canonical(auth)),
+      signingPreimage(auth, req),
       pubFromRawHex(publicKeyHex),
       Buffer.from(signatureHex, "hex"),
     );
@@ -194,7 +218,7 @@ export function buildPayload(
     scheme: "exact",
     network: req.network,
     payload: {
-      signature: signAuthorization(authorization, wallet),
+      signature: signAuthorization(authorization, wallet, req),
       publicKey: wallet.publicKey,
       authorization,
     },

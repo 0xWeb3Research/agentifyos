@@ -11,6 +11,7 @@
 // This is what makes the dashboard honest: it reads only from here, so the
 // numbers on screen are payments that genuinely settled on Casper.
 import type { Settlement } from "../types";
+import { getRedis } from "./redis";
 
 const KEYS = {
   real: "agentifyos:settlements:real",
@@ -31,40 +32,14 @@ function laneOf(s: Settlement): Lane {
 // hot-reload boundary.
 const g = globalThis as unknown as {
   __agentifyLedgerV2?: Record<Lane, Settlement[]>;
-  __agentifyRedis?: Promise<RedisLike | null>;
-};
-
-type RedisLike = {
-  lPush(key: string, value: string): Promise<number>;
-  lTrim(key: string, start: number, stop: number): Promise<unknown>;
-  lRange(key: string, start: number, stop: number): Promise<string[]>;
-  del(key: string): Promise<number>;
 };
 
 const memory = (g.__agentifyLedgerV2 ??= { real: [], mock: [] });
 
-async function redis(): Promise<RedisLike | null> {
-  if (!process.env.REDIS_URL) return null;
-  g.__agentifyRedis ??= (async () => {
-    try {
-      const { createClient } = await import("redis");
-      const client = createClient({ url: process.env.REDIS_URL });
-      // Never let a Redis hiccup take down a payment path.
-      client.on("error", (e: unknown) =>
-        console.error("[ledger] redis error:", e instanceof Error ? e.message : e),
-      );
-      await client.connect();
-      return client as unknown as RedisLike;
-    } catch (e) {
-      console.warn(
-        "[ledger] WARN: redis unavailable; ledger degraded to per-process memory:",
-        e instanceof Error ? e.message : e,
-      );
-      return null;
-    }
-  })();
-  return g.__agentifyRedis;
-}
+// Shared connection (src/lib/store/redis.ts): degrades to null when Redis is
+// unavailable and retries on a later call, so a transient outage no longer pins
+// the ledger to per-process memory permanently.
+const redis = getRedis;
 
 // Guard against caller-supplied limits inverting or exploding the LRANGE
 // window (negative Redis indices count from the end of the list).

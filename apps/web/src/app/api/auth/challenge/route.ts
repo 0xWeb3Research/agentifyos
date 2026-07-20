@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   // exact value /api/auth/verify checks against. Reading X-Forwarded-Host here
   // would let a client mint challenges naming any site it likes.
   const { host, origin } = authOrigin(req);
-  const challenge = createChallenge({
+  const challenge = await createChallenge({
     domain: host,
     uri: origin,
     accountHash: accountHash && ACCOUNT_RE.test(accountHash) ? accountHash : undefined,

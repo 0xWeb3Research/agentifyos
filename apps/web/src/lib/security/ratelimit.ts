@@ -13,11 +13,38 @@ const g = globalThis as unknown as {
 };
 const buckets = (g.__rlBuckets ??= new Map());
 
-/** Best-effort client identifier from the standard proxy headers. */
+// Number of trusted reverse proxies between the client and this app. Each one
+// APPENDS the peer address it saw to X-Forwarded-For (rightmost-last), so the
+// genuine client IP is `hops` entries from the right; anything further left is
+// client-supplied and spoofable. Railway/Vercel/most PaaS put exactly one edge
+// proxy in front, so default to 1. Set TRUSTED_PROXY_HOPS to match your chain
+// (0 = trust no XFF hop; fall back to x-real-ip / leftmost as a last resort).
+const TRUSTED_PROXY_HOPS = (() => {
+  const n = Number(process.env.TRUSTED_PROXY_HOPS);
+  return Number.isInteger(n) && n >= 0 ? n : 1;
+})();
+
+/**
+ * Best-effort client identifier. Reading the LEFTMOST X-Forwarded-For token (the
+ * old behaviour) trusts a value the client fully controls, so an attacker just
+ * rotates it to dodge every per-IP limit. Instead we pick the entry the trusted
+ * edge proxy actually observed. Still a speed bump, not an authz boundary — but
+ * no longer trivially spoofable behind the configured proxy count.
+ */
 export function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");
+  if (xff && TRUSTED_PROXY_HOPS > 0) {
+    const parts = xff.split(",").map((s) => s.trim()).filter(Boolean);
+    if (parts.length) {
+      const idx = parts.length - TRUSTED_PROXY_HOPS;
+      return (idx >= 0 && idx < parts.length ? parts[idx] : parts[0]) || "unknown";
+    }
+  }
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp.trim() || "unknown";
+  // hops=0 or no x-real-ip: leftmost XFF is the least-bad remaining signal.
   if (xff) return xff.split(",")[0]!.trim() || "unknown";
-  return req.headers.get("x-real-ip") ?? "unknown";
+  return "unknown";
 }
 
 export interface RateLimitResult {

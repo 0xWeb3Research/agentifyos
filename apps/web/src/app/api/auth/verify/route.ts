@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   // byte-for-byte, so none of the terms the user saw (account, URI, chain,
   // expiry) can have been rewritten around a valid nonce.
   const nonce = nonceOf(message);
-  if (!nonce || !consumeNonce(nonce, message)) {
+  if (!nonce || !(await consumeNonce(nonce, message))) {
     return NextResponse.json({ error: "unknown_or_expired_challenge" }, { status: 401 });
   }
 

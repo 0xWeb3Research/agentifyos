@@ -1,4 +1,5 @@
 import { AGENT_MAX_SPEND_USD } from "../config";
+import { getRedis } from "../store/redis";
 
 // Resolve a client-supplied spend budget into a value that can never exceed the
 // server cap. This is the single choke point every server-initiated paid loop
@@ -36,28 +37,10 @@ const DEMO_DAILY_USD_CAP = (() => {
   return Number.isFinite(n) && n > 0 ? n : 2;
 })();
 
-type Counter = { incrByFloat(k: string, v: number): Promise<string>; expire(k: string, s: number): Promise<unknown> };
 const g = globalThis as unknown as {
   __agentifyDemoSpend?: Map<string, number>;
-  __agentifyDemoRedis?: Promise<Counter | null>;
 };
 const local = (g.__agentifyDemoSpend ??= new Map());
-
-async function counter(): Promise<Counter | null> {
-  if (!process.env.REDIS_URL) return null;
-  g.__agentifyDemoRedis ??= (async () => {
-    try {
-      const { createClient } = await import("redis");
-      const c = createClient({ url: process.env.REDIS_URL });
-      c.on("error", () => {});
-      await c.connect();
-      return c as unknown as Counter;
-    } catch {
-      return null; // fall back to per-process accounting
-    }
-  })();
-  return g.__agentifyDemoRedis;
-}
 
 export interface DemoBudget {
   ok: boolean;
@@ -76,7 +59,7 @@ export async function reserveDemoSpend(usd: number): Promise<DemoBudget> {
   const key = `agentifyos:demo-spend:${day}`;
   const cap = DEMO_DAILY_USD_CAP;
 
-  const c = await counter();
+  const c = await getRedis();
   if (c) {
     try {
       const total = Number(await c.incrByFloat(key, usd));

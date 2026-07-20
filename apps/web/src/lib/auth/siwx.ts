@@ -15,6 +15,7 @@ import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypt
 import * as CasperNS from "casper-js-sdk";
 import { MODE } from "../config";
 import { SITE_URL } from "../site";
+import { getRedis } from "../store/redis";
 
 const C: any = (CasperNS as any).default ?? CasperNS;
 const { PublicKey } = C;
@@ -64,20 +65,26 @@ export function authOrigin(req: Request): { host: string; origin: string } {
 }
 
 // ── challenges ──────────────────────────────────────────────────────────────
-// Single-use and short-lived. Kept in-process: a challenge is only valid for a
-// few minutes, so surviving a restart doesn't matter. Each nonce keeps a hash
-// of the exact message we composed so verify can insist the wallet signed OUR
-// challenge, not a recomposed body that merely embeds a valid nonce.
+// Single-use and short-lived (a few minutes). Backed by Redis when REDIS_URL is
+// set, so a challenge minted by one instance is visible to every instance and
+// single-use is enforced atomically across them — without it, sign-in breaks
+// the moment the service runs more than one replica. Falls back to an in-process
+// map for zero-infra local dev and tests. Each nonce stores a hash of the exact
+// message we composed so verify can insist the wallet signed OUR challenge, not
+// a recomposed body that merely embeds a valid nonce.
 interface IssuedChallenge {
   exp: number;
   messageHash: string;
 }
 const g = globalThis as unknown as { __siwxChallenges?: Map<string, IssuedChallenge> };
 const issued: Map<string, IssuedChallenge> = (g.__siwxChallenges ??= new Map());
+const rkey = (nonce: string) => `agentifyos:siwx:challenge:${nonce}`;
 
-// Minting is unauthenticated, so the map needs a hard cap on top of expiry
-// sweeping or it becomes a memory-exhaustion lever. All entries share one TTL,
-// so insertion order is expiry order and evicting from the front drops oldest.
+// Minting is unauthenticated, so the in-process map needs a hard cap on top of
+// expiry sweeping or it becomes a memory-exhaustion lever. All entries share one
+// TTL, so insertion order is expiry order and evicting from the front drops
+// oldest. (Redis handles its own expiry via PX, so this only bounds the
+// fallback path.)
 const MAX_ISSUED = 10_000;
 
 function sweep() {
@@ -94,17 +101,12 @@ export interface Challenge {
   expiresAt: string;
 }
 
-export function createChallenge(opts: {
+export async function createChallenge(opts: {
   domain: string;
   uri: string;
   accountHash?: string;
   chainId?: string;
-}): Challenge {
-  sweep();
-  for (const oldest of issued.keys()) {
-    if (issued.size < MAX_ISSUED) break;
-    issued.delete(oldest);
-  }
+}): Promise<Challenge> {
   const nonce = randomBytes(16).toString("hex");
   const now = new Date();
   const exp = new Date(now.getTime() + CHALLENGE_TTL_MS);
@@ -123,17 +125,63 @@ export function createChallenge(opts: {
     `Issued At: ${now.toISOString()}`,
     `Expiration Time: ${exp.toISOString()}`,
   ].join("\n");
+  const entry: IssuedChallenge = { exp: exp.getTime(), messageHash: hashMessage(message) };
+  const challenge = { message, nonce, expiresAt: exp.toISOString() };
 
-  issued.set(nonce, { exp: exp.getTime(), messageHash: hashMessage(message) });
-  return { message, nonce, expiresAt: exp.toISOString() };
+  const r = await getRedis();
+  if (r) {
+    try {
+      await r.set(rkey(nonce), JSON.stringify(entry), { PX: CHALLENGE_TTL_MS });
+      return challenge;
+    } catch (e) {
+      console.warn(
+        "[siwx] WARN: redis challenge write failed; using process memory:",
+        e instanceof Error ? e.message : e,
+      );
+      // fall through to the in-process store
+    }
+  }
+  sweep();
+  for (const oldest of issued.keys()) {
+    if (issued.size < MAX_ISSUED) break;
+    issued.delete(oldest);
+  }
+  issued.set(nonce, entry);
+  return challenge;
 }
 
 /**
  * Burn a nonce. Returns false if unknown, already used, or expired, and also
  * when `message` is given and it isn't byte-for-byte the challenge issued
  * under that nonce (the real challenge stays live in that case).
+ *
+ * With Redis, single-use is atomic across instances: the entry is claimed by a
+ * DEL whose return count decides the winner, so two concurrent verifies of the
+ * same nonce can't both succeed. On a message-hash mismatch the entry is left in
+ * place so the genuine challenge survives an attacker's recomposed body.
  */
-export function consumeNonce(nonce: string, message?: string): boolean {
+export async function consumeNonce(nonce: string, message?: string): Promise<boolean> {
+  const r = await getRedis();
+  if (r) {
+    try {
+      const raw = await r.get(rkey(nonce));
+      if (!raw) return false; // unknown, expired (PX), or already claimed
+      const c = JSON.parse(raw) as IssuedChallenge;
+      if (c.exp < Date.now()) {
+        await r.del(rkey(nonce)).catch(() => {});
+        return false;
+      }
+      if (message !== undefined && hashMessage(message) !== c.messageHash) return false;
+      const removed = await r.del(rkey(nonce));
+      return removed > 0;
+    } catch (e) {
+      console.warn(
+        "[siwx] WARN: redis nonce consume failed; using process memory:",
+        e instanceof Error ? e.message : e,
+      );
+      // fall through to the in-process store
+    }
+  }
   sweep();
   const c = issued.get(nonce);
   if (c === undefined || c.exp < Date.now()) return false;

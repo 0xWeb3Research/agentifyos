@@ -1,7 +1,17 @@
 // Runtime configuration. The app defaults to mock mode with zero infra.
 export type Mode = "mock" | "real";
 
-export const MODE: Mode = process.env.MODE === "real" ? "real" : "mock";
+// Unset/empty defaults to mock (zero-config local dev). A *set* value that is
+// neither "real" nor "mock" (e.g. "Real", "production", "prod") is almost
+// certainly a misconfiguration: silently collapsing it to mock would settle
+// nothing on-chain while the operator believes real payments are flowing. Fail
+// closed on that case rather than guess. Unset stays permitted so `next build`
+// with no env still works.
+const RAW_MODE = process.env.MODE;
+if (RAW_MODE !== undefined && RAW_MODE !== "" && RAW_MODE !== "real" && RAW_MODE !== "mock") {
+  throw new Error(`MODE="${RAW_MODE}" is invalid; set MODE=real or MODE=mock`);
+}
+export const MODE: Mode = RAW_MODE === "real" ? "real" : "mock";
 export const USE_DB = process.env.USE_DB === "1";
 
 // ── spend safety ─────────────────────────────────────────────────────────────
