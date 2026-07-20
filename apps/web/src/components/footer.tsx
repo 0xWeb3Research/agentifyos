@@ -20,6 +20,7 @@ export function Footer() {
           <Link href="/publish" className="hover:text-fg">Publish</Link>
           <Link href="/dashboard" className="hover:text-fg">Dashboard</Link>
           <Link href="/roadmap" className="hover:text-fg">Roadmap</Link>
+          <a href="/whitepaper.pdf" className="hover:text-fg">Whitepaper</a>
           <a href="/llms.txt" className="hover:text-fg">llms.txt</a>
         </nav>
         <p className="label">first tool market on casper x402</p>

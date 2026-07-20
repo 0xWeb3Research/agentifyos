@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Turn one manifest into a catalog listing, a discovery record, and an MCP tool. Sign in with Casper Wallet so the account you prove becomes your payout address.",
   alternates: { canonical: "/publish" },
-  // An authenticated action surface, not a page worth ranking — but its links
+  // An authenticated action surface (not a page worth ranking), but its links
   // into the catalog are still worth following.
   robots: { index: false, follow: true },
 };

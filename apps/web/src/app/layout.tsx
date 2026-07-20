@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
     // Without max-image-preview:large, Google renders a thumbnail instead of the
-    // full OG card — the single highest-leverage robots directive for previews.
+    // full OG card. It is the single highest-leverage robots directive for previews.
     googleBot: {
       index: true,
       follow: true,

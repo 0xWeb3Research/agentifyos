@@ -1,7 +1,7 @@
 import { LogoTile } from "./ui";
 import type { ToolWithStats } from "@/lib/types";
 
-// Auto-scrolling wall of tool tiles — instant "this market has inventory".
+// Auto-scrolling wall of tool tiles: instant "this market has inventory".
 // CSS-only (translateX -50% over a doubled track), pauses on hover.
 export function Marquee({ tools }: { tools: ToolWithStats[] }) {
   const track = [...tools, ...tools];

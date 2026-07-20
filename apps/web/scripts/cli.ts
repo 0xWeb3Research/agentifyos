@@ -1,5 +1,5 @@
 #!/usr/bin/env -S npx tsx
-// agentify — the AgentifyOS CLI. A real x402 client: it holds its own Casper key,
+// agentify · the AgentifyOS CLI. A real x402 client: it holds its own Casper key,
 // hits the marketplace's paid endpoints over HTTP, gets a 402, signs, retries,
 // and settles on Casper testnet.
 //
@@ -28,6 +28,11 @@ const c = {
   yellow: (s: string) => `\x1b[33m${s}\x1b[0m`,
 };
 
+// Server responses are untrusted: strip ANSI escapes / control chars so a
+// crafted tool name or description can't redraw the terminal (e.g. overwrite
+// the price column). Apply BEFORE any truncation.
+const safe = (s: unknown) => String(s ?? "").replace(/[\u0000-\u001f\u007f-\u009f]/g, "");
+
 const argv = process.argv.slice(2);
 const cmd = argv[0] ?? "help";
 const rest = argv.slice(1);
@@ -52,11 +57,11 @@ async function main() {
         const price = (t.price as { usd?: number } | undefined)?.usd ?? 0;
         const stats = (t.stats as { calls?: number; successRate?: number } | undefined) ?? {};
         console.log(
-          `  ${c.bold(String(t.name).padEnd(22))} ${c.green(usd(price).padStart(8))}/call  ` +
+          `  ${c.bold(safe(t.name).padEnd(22))} ${c.green(usd(price).padStart(8))}/call  ` +
             c.dim(`${stats.calls ?? 0} calls · ${((stats.successRate ?? 0) * 100).toFixed(1)}%`),
         );
-        console.log(`  ${c.dim(String(t.description ?? "").slice(0, 88))}`);
-        console.log(`  ${c.blue(String(t.resource))}\n`);
+        console.log(`  ${c.dim(safe(t.description).slice(0, 88))}`);
+        console.log(`  ${c.blue(safe(t.resource))}\n`);
       }
       break;
     }
@@ -76,37 +81,47 @@ async function main() {
       const wallet = loadWalletFromFile(join(KEYS, `${keyName}.pem`));
       const url = `${BASE}/api/t/${slug}${params.toString() ? `?${params}` : ""}`;
 
+      // --max is a safety cap: Number("abc") is NaN, which passes every
+      // comparison and silently disables the cap. Fail closed instead.
+      const maxUsd = Number(flag("max", "1"));
+      if (!Number.isFinite(maxUsd) || maxUsd <= 0) {
+        console.log(c.red(`  --max must be a positive number, got: ${flag("max")}`));
+        process.exit(1);
+      }
+
       console.log(c.bold(`\n  paying for ${slug}`));
       console.log(c.dim(`  wallet ${wallet.publicKeyHex.slice(0, 20)}…  (holds WCSPR, no CSPR needed)\n`));
 
       const out = await fetchWithPayment(url, wallet, {
-        maxUsd: Number(flag("max", "1")),
+        maxUsd,
         onStep: (s) => {
           const tag =
             s.kind === "402" ? c.yellow("402") :
             s.kind === "sign" ? c.blue("SIG") :
             s.kind === "paid" ? c.green("PAID") :
             s.kind === "error" ? c.red("ERR") : c.dim("REQ");
-          console.log(`  ${tag.padEnd(14)} ${s.label}  ${c.dim(`+${s.atMs}ms`)}`);
+          console.log(`  ${tag.padEnd(14)} ${safe(s.label)}  ${c.dim(`+${s.atMs}ms`)}`);
         },
       });
 
       if (!out.ok) {
-        console.log(c.red(`\n  failed: ${out.error}\n`));
+        console.log(c.red(`\n  failed: ${safe(out.error)}\n`));
         process.exit(1);
       }
       console.log(c.bold("\n  result"));
       console.log(
+        // JSON.stringify escapes C0 controls; safe() per line strips any raw
+        // C1/DEL bytes without touching the formatter's own newlines.
         JSON.stringify(out.result, null, 2)
           .split("\n")
-          .map((l) => "    " + l)
+          .map((l) => "    " + safe(l))
           .join("\n"),
       );
       if (out.receipt) {
         console.log(c.bold("\n  receipt"));
         console.log(`    cost      ${c.green(usd(out.receipt.costUsd))}`);
-        console.log(`    deploy    ${out.receipt.deployHash}`);
-        console.log(`    explorer  ${c.blue(out.receipt.explorerUrl)}`);
+        console.log(`    deploy    ${safe(out.receipt.deployHash)}`);
+        console.log(`    explorer  ${c.blue(safe(out.receipt.explorerUrl))}`);
       }
       console.log();
       break;
@@ -126,7 +141,7 @@ async function main() {
               `${(Number(wcspr) / 1e9).toFixed(4).padStart(12)} WCSPR`,
           );
         } catch {
-          console.log(`  ${role.padEnd(12)} ${c.dim("(no key — run pnpm casper:keygen)")}`);
+          console.log(`  ${role.padEnd(12)} ${c.dim("(no key: run pnpm casper:keygen)")}`);
         }
       }
       console.log();
@@ -139,8 +154,8 @@ async function main() {
       console.log(c.bold(`\n  ${settlements.length} recent settlements\n`));
       for (const s of settlements) {
         console.log(
-          `  ${c.dim(String(s.payerLabel).padEnd(10))} ${String(s.toolName).padEnd(20)} ` +
-            `${c.green(usd(Number(s.amountUsd)).padStart(8))}  ${c.dim(String(s.deployHash).slice(0, 16) + "…")}`,
+          `  ${c.dim(safe(s.payerLabel).padEnd(10))} ${safe(s.toolName).padEnd(20)} ` +
+            `${c.green(usd(Number(s.amountUsd)).padStart(8))}  ${c.dim(safe(s.deployHash).slice(0, 16) + "…")}`,
         );
       }
       console.log();
@@ -149,7 +164,7 @@ async function main() {
 
     default:
       console.log(`
-  ${c.bold("agentify")} — pay for tools with x402 on Casper
+  ${c.bold("agentify")} · pay for tools with x402 on Casper
 
     ${c.bold("tools")}                      list the catalog
     ${c.bold("search")} <query>             search for a tool

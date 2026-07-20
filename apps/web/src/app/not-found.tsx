@@ -37,7 +37,7 @@ export default function NotFound() {
           </div>
         </div>
 
-        {/* A wire-log that goes nowhere — the motif from the rest of the site,
+        {/* A wire-log that goes nowhere: the motif from the rest of the site,
             deliberately missing the price line that would make it payable. */}
         <div
           className="animate-fade-up overflow-hidden rounded-[var(--radius-md)] border border-border bg-surface"

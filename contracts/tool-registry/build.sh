@@ -3,10 +3,10 @@
 #
 # Two non-obvious steps, both learned by paying for failed installs:
 #
-#  1. build-std — the precompiled core/alloc for wasm32-unknown-unknown are
+#  1. build-std: the precompiled core/alloc for wasm32-unknown-unknown are
 #     built with bulk-memory, so disabling the target feature for our crate
 #     alone changes nothing.
-#  2. wasm-opt lowering — even then LLVM emits memory.copy/memory.fill. Casper
+#  2. wasm-opt lowering: even then LLVM emits memory.copy/memory.fill. Casper
 #     rejects the module at preprocessing with "Bulk memory operations are not
 #     supported", AFTER charging the full declared gas.
 #
@@ -30,7 +30,7 @@ wasm-opt "$RAW" -o "$OUT" \
 left=$(wasm-opt "$OUT" --print -o /dev/null 2>/dev/null \
   | grep -cE 'memory\.copy|memory\.fill|memory\.init|data\.drop' || true)
 if [ "$left" != "0" ]; then
-  echo "✗ $left bulk-memory ops remain — the node will reject this and keep the gas." >&2
+  echo "✗ $left bulk-memory ops remain; the node will reject this and keep the gas." >&2
   exit 1
 fi
 echo "✓ $OUT  ($(wc -c < "$OUT" | tr -d ' ') bytes, MVP-clean)"

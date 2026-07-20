@@ -203,7 +203,7 @@ export const stats: ToolStats[] = tools.map((t) => {
 // ── settlement backlog (drives the live feed) ──────────────────────────────────
 const AGENT_LABELS = ["agent-01f3", "rag-bot-9c", "trader-Δ", "scout-7b", "orin-2a", "kya-pilot", "atlas-6", "nomad-e4"];
 function pseudoHash(seed: string): string {
-  // FNV-1a — order-sensitive so "…:12" and "…:21" don't collide.
+  // FNV-1a: order-sensitive so "…:12" and "…:21" don't collide.
   let s = 0x811c9dc5;
   for (let i = 0; i < seed.length; i++) {
     s ^= seed.charCodeAt(i);

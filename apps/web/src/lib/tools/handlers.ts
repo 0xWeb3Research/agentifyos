@@ -1,6 +1,6 @@
-import { createHash } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { CSPR_PRICE_USD } from "../config";
-import { makeWallet, signAuthorization, type Authorization } from "../x402/payment";
+import { makeWallet, signBytes } from "../x402/payment";
 
 // First-party tool handlers. Deterministic (no live network) so the demo runs
 // reliably offline. A published third-party tool would instead proxy to its
@@ -65,23 +65,28 @@ const csprMarketData: ToolHandler = async () => {
   };
 };
 
-const notary = makeWallet("agentifyos-rwa-notary", "AgentifyOS Notary");
+// Notary key: seeded from NOTARY_SEED so anyone holding the secret can rotate
+// or reproduce it. A hardcoded seed would let anyone recover the key from
+// source and forge attestations; the random fallback keeps a NOTARY_SEED-less
+// deploy unforgeable too, at the cost that attestations only verify against the
+// notary key of the process that issued them (set NOTARY_SEED for stability).
+const notary = makeWallet(
+  process.env.NOTARY_SEED || randomBytes(32).toString("hex"),
+  "AgentifyOS Notary",
+);
 const rwaAttestor: ToolHandler = async (input) => {
   const documentHash = String(input.documentHash ?? createHash("sha256").update("doc").digest("hex"));
   const attestedAt = new Date().toISOString();
-  const auth: Authorization = {
-    from: notary.accountHash,
-    to: notary.accountHash,
-    value: "0",
-    validAfter: Math.floor(Date.now() / 1000),
-    validBefore: Math.floor(Date.now() / 1000) + 31_536_000,
-    nonce: documentHash,
-  };
+  // Domain-separated preimage: deliberately NOT the payment Authorization
+  // struct, so an attestation signature can never pass as a transfer.
+  const preimage = createHash("sha256")
+    .update(`AgentifyOS-Attestation-v1:${documentHash}:${attestedAt}`)
+    .digest();
   return {
     attestationId: "att_" + createHash("sha256").update(documentHash + attestedAt).digest("hex").slice(0, 24),
     documentHash,
     notary: notary.publicKey,
-    signature: signAuthorization(auth, notary),
+    signature: signBytes(preimage, notary),
     standard: "AgentifyOS-Attestation-v1",
     attestedAt,
   };

@@ -1,4 +1,4 @@
-// Real Casper testnet integration — no mocks. Signs the x402 EIP-712 payment
+// Real Casper testnet integration, no mocks. Signs the x402 EIP-712 payment
 // authorization, verifies it, and settles it on-chain by calling the WCSPR
 // contract's `transfer_with_authorization` entry point. Server-only.
 //
@@ -10,7 +10,7 @@ import { webcrypto } from "node:crypto";
 import * as CasperNS from "casper-js-sdk";
 import * as Eip712NS from "@casper-ecosystem/casper-eip-712";
 
-// casper-js-sdk 5.x ships CJS — unwrap the interop default in both tsx and Next.
+// casper-js-sdk 5.x ships CJS; unwrap the interop default in both tsx and Next.
 const C: any = (CasperNS as any).default ?? CasperNS;
 const eip: any = (Eip712NS as any).default ?? Eip712NS;
 const {
@@ -166,15 +166,31 @@ export interface VerifyResult {
 
 // Facilitator side (off-chain checks): mirrors the reference facilitator's verify.
 export function verifyPayment(payload: ExactCasperPayload, req: CasperPaymentRequirements): VerifyResult {
-  const a = payload.authorization;
+  // The payload arrives base64-decoded from an unauthenticated header. Validate
+  // the shape before touching it so garbage can't throw (and 500) downstream.
+  const a = payload?.authorization;
+  if (
+    !payload || typeof payload !== "object" ||
+    typeof payload.signature !== "string" ||
+    typeof payload.publicKey !== "string" ||
+    !a || typeof a !== "object" ||
+    [a.from, a.to, a.value, a.validAfter, a.validBefore, a.nonce].some((v) => typeof v !== "string")
+  ) {
+    return { valid: false, payer: "", reason: "malformed_payload" };
+  }
   const payer = a.from;
   if (a.to !== req.payTo) return { valid: false, payer, reason: "pay_to_mismatch" };
   if (a.value !== req.amount) return { valid: false, payer, reason: "amount_mismatch" };
   const now = Math.floor(Date.now() / 1000);
   if (Number(a.validAfter) > now) return { valid: false, payer, reason: "not_yet_valid" };
   if (now > Number(a.validBefore) - 6) return { valid: false, payer, reason: "expired" };
-  // public key must derive to the payer account hash
-  const pub = PublicKey.fromHex(payload.publicKey);
+  // public key must parse and derive to the payer account hash
+  let pub: any;
+  try {
+    pub = PublicKey.fromHex(payload.publicKey);
+  } catch {
+    return { valid: false, payer, reason: "bad_public_key" };
+  }
   if (pub.accountHash().toHex() !== payer.slice(2)) return { valid: false, payer, reason: "public_key_mismatch" };
   const digest = digestFor(a, req);
   const sig = Buffer.from(payload.signature, "hex");
@@ -188,8 +204,8 @@ export function verifyPayment(payload: ExactCasperPayload, req: CasperPaymentReq
 
 // ── on-chain settlement ──────────────────────────────────────────────────────
 // Measured on testnet: transfer_with_authorization consumes ~2.71 CSPR. The
-// reference facilitator declares 7, but overpayment burns 25% of the remainder —
-// and 4 CSPR also keeps us in the cheaper "wasm small" lane (5 CSPR cap, 40 txs
+// reference facilitator declares 7, but overpayment burns 25% of the remainder;
+// 4 CSPR also keeps us in the cheaper "wasm small" lane (5 CSPR cap, 40 txs
 // per block vs 2). Override with FACILITATOR_GAS_MOTES.
 const DEFAULT_PAYMENT_MOTES = Number(process.env.FACILITATOR_GAS_MOTES || 4_000_000_000);
 
@@ -236,7 +252,7 @@ function twAuthArgs(p: ExactCasperPayload) {
     to: CLValue.newCLKey(Key.newKey("account-hash-" + p.authorization.to.slice(2))),
     // WCSPR v8 renamed this arg from `amount` to `value`, matching EIP-3009's
     // canonical struct. v7 is disabled on testnet, so `amount` now reverts with
-    // "User error: 64658". The signed digest is unaffected — the typed-data
+    // "User error: 64658". The signed digest is unaffected: the typed-data
     // field was already `value`.
     value: CLValue.newCLUInt256(p.authorization.value),
     valid_after: CLValue.newCLUint64(parseInt(p.authorization.validAfter, 10)),
@@ -285,7 +301,7 @@ export async function settleOnChain(
   if (!pre.valid) return { success: false, deployHash: "", explorerUrl: "", network: req.network, payer, reason: pre.reason };
 
   // The facilitator pays gas. An unfunded account has no on-chain entity, so the
-  // node rejects its transactions with a generic -32016 — check first and say why.
+  // node rejects its transactions with a generic -32016; check first and say why.
   const gasBalance = BigInt(await getCsprBalance(facilitator.publicKeyHex));
   if (gasBalance < BigInt(paymentMotes)) {
     return {
@@ -304,7 +320,7 @@ export async function settleOnChain(
   const tx = buildSettleTx(facilitator, payload, req, paymentMotes);
   tx.sign(facilitator.privateKey);
 
-  // Submission fails if the facilitator has no CSPR for gas — report it cleanly
+  // Submission fails if the facilitator has no CSPR for gas; report it cleanly
   // rather than throwing, so callers can surface "fund the facilitator".
   let deployHash: string;
   try {
@@ -327,13 +343,22 @@ export async function settleOnChain(
   try {
     await waitForTransactionRaw(deployHash, 90_000);
   } catch (e) {
+    const msg = (e as Error).message;
+    const explorerUrl = `${TESTNET.explorerBase}/deploy/${deployHash}`;
+    // A timeout is NOT a clean failure: the tx was accepted by the node and may
+    // still execute after our polling window, moving the payer's WCSPR. Report
+    // it as pending (never success) with the hash so callers surface "pending ·
+    // verify on the explorer" instead of "failed", and don't re-charge.
+    const timedOut = /timed out waiting/i.test(msg);
     return {
       success: false,
       deployHash,
-      explorerUrl: `${TESTNET.explorerBase}/deploy/${deployHash}`,
+      explorerUrl,
       network: req.network,
       payer,
-      reason: (e as Error).message,
+      reason: timedOut
+        ? `pending_onchain: tx may still settle, verify at ${explorerUrl}`
+        : msg,
     };
   }
   return {
@@ -404,7 +429,7 @@ export function buildWrapTx(
     .wasm(proxyWasm)
     .runtimeArgs(sessionArgs)
     .chainName(TESTNET.chainName)
-    .payment(gasMotes) // GAS — separate from the wrapped amount
+    .payment(gasMotes) // GAS: separate from the wrapped amount
     .build();
 }
 
@@ -449,7 +474,7 @@ export function wcsprDictItemKey(accountHash: string): string {
 }
 
 // Returns atomic WCSPR (9 decimals). Unfunded/never-held accounts are absent from
-// the dictionary (-32003) — that means 0, not an error.
+// the dictionary (-32003); that means 0, not an error.
 export async function getWcsprBalance(accountHash: string, rpcUrl = TESTNET.rpcUrl): Promise<string> {
   const root = await jsonRpc("chain_get_state_root_hash", {}, rpcUrl);
   const stateRootHash = root?.result?.state_root_hash;
@@ -475,7 +500,7 @@ export async function getWcsprBalance(accountHash: string, rpcUrl = TESTNET.rpcU
 }
 
 // Native CSPR balance (motes) for a public key. An unfunded account has no purse
-// yet — the node returns error -32026 ("Purse not found"), which we report as 0.
+// yet; the node returns error -32026 ("Purse not found"), which we report as 0.
 export async function getCsprBalance(publicKeyHex: string, rpcUrl = TESTNET.rpcUrl): Promise<string> {
   const accountHash = PublicKey.fromHex(publicKeyHex).accountHash().toHex();
   const out = await jsonRpc(

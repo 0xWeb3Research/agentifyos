@@ -93,7 +93,7 @@ function NoteNodeImpl({ data }: NodeProps<NoteNode>) {
   );
 }
 
-// Module scope — a fresh object each render would re-register node types.
+// Module scope: a fresh object each render would re-register node types.
 const nodeTypes: NodeTypes = {
   step: memo(StepNodeImpl),
   note: memo(NoteNodeImpl),
@@ -115,7 +115,7 @@ export function Diagram({
   className?: string;
 }) {
   // Without intrinsic sizes the first (server) pass measures nodes as zero and
-  // fitView frames the wrong box — which clips nodes at the edges.
+  // fitView frames the wrong box, which clips nodes at the edges.
   const prepared = useMemo(
     () => nodes.map((n) => ({ initialWidth: 240, initialHeight: 104, ...n })),
     [nodes],

@@ -1,4 +1,4 @@
-//! AgentifyOS ToolRegistry — anchors a marketplace listing to Casper.
+//! AgentifyOS ToolRegistry: anchors a marketplace listing to Casper.
 //!
 //! A catalog entry lives in our database, which means a listing's price, payout
 //! address, or schema could change after an agent decided to trust it. This
@@ -6,7 +6,7 @@
 //! on-chain, and anyone can recompute the hash of what the marketplace is
 //! currently serving and compare. A silent edit stops being silent.
 //!
-//! Deliberately small. It stores a commitment, not the manifest — putting tool
+//! Deliberately small. It stores a commitment, not the manifest: putting tool
 //! schemas on-chain would cost real money per listing and buy nothing, since the
 //! hash already proves tampering.
 //!

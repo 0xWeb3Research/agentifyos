@@ -13,7 +13,7 @@ console.log(`CSPR balances (testnet · ${TESTNET.rpcUrl})\n`);
 for (const role of which) {
   const pem = join(here, "..", "..", "keys", `${role}.pem`);
   if (!existsSync(pem)) {
-    console.log(`  ${role.padEnd(12)} (no key — run casper:keygen)`);
+    console.log(`  ${role.padEnd(12)} (no key: run casper:keygen)`);
     continue;
   }
   const w = loadWalletFromFile(pem);

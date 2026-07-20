@@ -7,7 +7,7 @@ import { Button, Chip } from "./ui";
 // ── Casper Wallet browser extension ─────────────────────────────────────────
 // The extension exposes a provider factory on window. We only need three calls:
 // connect, read the active key, and sign a message. The extension prefixes the
-// message with "Casper Message:\n" before signing — the server verifies against
+// message with "Casper Message:\n" before signing; the server verifies against
 // exactly that preimage.
 type Provider = {
   requestConnection(): Promise<boolean>;
@@ -23,6 +23,26 @@ function getProvider(): Provider | null {
   };
   if (typeof w.CasperWalletProvider === "function") return w.CasperWalletProvider();
   return w.casperWallet ?? null;
+}
+
+// The SIWX challenge names the account being signed in, and the session the
+// server issues is keyed by ACCOUNT HASH (derived server-side from the public
+// key). Derive the same hash here so the wallet's signing prompt shows the
+// identifier the session is actually issued for, not the raw public key.
+// casper-js-sdk ships as CJS (unwrap `.default`) and is heavy, so it loads
+// lazily on connect rather than in the page bundle.
+type CasperSdk = {
+  PublicKey: { fromHex(hex: string): { accountHash(): { toHex(): string } } };
+};
+
+async function deriveAccountHash(publicKeyHex: string): Promise<string | null> {
+  try {
+    const mod = (await import("casper-js-sdk")) as unknown as CasperSdk & { default?: CasperSdk };
+    const sdk = mod.default ?? mod;
+    return sdk.PublicKey.fromHex(publicKeyHex).accountHash().toHex();
+  } catch {
+    return null; // fall back to the server's "(your account)" placeholder
+  }
 }
 
 export interface SessionInfo {
@@ -63,20 +83,22 @@ export function WalletConnect({
     setError(null);
     const provider = getProvider();
     if (!provider) {
-      setError("Casper Wallet not found — install the extension, then reload.");
+      setError("Casper Wallet not found. Install the extension, then reload.");
       return;
     }
     setBusy(true);
     try {
       await provider.requestConnection();
       const publicKey = await provider.getActivePublicKey();
+      const accountHash = await deriveAccountHash(publicKey);
 
-      // 1. ask the server for a one-time challenge
+      // 1. ask the server for a one-time challenge; it interpolates the
+      //    account hash into the message the wallet displays before signing
       const challenge = (await (
         await fetch("/api/auth/challenge", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ accountHash: publicKey }),
+          body: JSON.stringify(accountHash ? { accountHash } : {}),
         })
       ).json()) as { message: string };
 

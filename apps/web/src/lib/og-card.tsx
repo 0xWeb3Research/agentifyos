@@ -5,8 +5,8 @@ import { BRAND_COLOR, SITE_TAGLINE } from "@/lib/site";
 
 // The shared link-preview card, used by the Open Graph, Twitter, and per-tool
 // routes. It lives outside app/ because Next requires each route file to declare
-// its own `runtime` literally — those exports cannot be re-exported from a sibling.
-export const OG_ALT = "AgentifyOS — the marketplace where AI agents shop for tools";
+// its own `runtime` literally; those exports cannot be re-exported from a sibling.
+export const OG_ALT = "AgentifyOS · the marketplace where AI agents shop for tools";
 export const OG_SIZE = { width: 1200, height: 630 };
 
 const geist = (weight: "Regular" | "Medium") =>
@@ -30,7 +30,7 @@ export interface OgCardOptions {
 export async function renderOgCard(opts: OgCardOptions = {}) {
   const {
     title = SITE_TAGLINE,
-    subtitle = "Publish a paid tool in 60 seconds. Agents discover it and pay per call with x402 — no API keys, no accounts.",
+    subtitle = "Publish a paid tool in 60 seconds. Agents discover it and pay per call with x402. No API keys, no accounts.",
     badge = "x402 on Casper",
     footnote = "agentifyos.xyz",
   } = opts;

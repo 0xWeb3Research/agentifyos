@@ -68,12 +68,12 @@ test.describe("agent", () => {
 
     // The button can paint before React hydrates, so a single click may land on
     // an inert element. Retry until the run actually starts (skip re-clicking
-    // once it's underway — the button disables itself while running).
+    // once it's underway: the button disables itself while running).
     const runBtn = page.getByRole("button", { name: /run agent|running/i }).first();
     const signed = page.getByText(/signed EIP-712|PAYMENT-SIGNATURE/i).first();
     await expect(async () => {
       if (await runBtn.isEnabled()) await runBtn.click();
-      // The agent must actually sign and get the payment verified — this is the
+      // The agent must actually sign and get the payment verified. This is the
       // real Ed25519 / EIP-712 path, not a simulation.
       await expect(signed).toBeVisible({ timeout: 7000 });
     }).toPass({ timeout: 90000 });

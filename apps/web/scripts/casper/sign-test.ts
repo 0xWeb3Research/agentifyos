@@ -1,4 +1,4 @@
-// Offline proof of the REAL x402 payment signature — the exact EIP-712 typed-data
+// Offline proof of the REAL x402 payment signature, the exact EIP-712 typed-data
 // flow the on-chain CEP-18 `transfer_with_authorization` contract verifies.
 // No chain, no funds: sign a TransferWithAuthorization digest with a real Casper
 // key and verify it locally. Run: pnpm exec tsx scripts/casper/sign-test.ts
@@ -85,7 +85,8 @@ const tdigest = (() => {
   }
 })();
 // casper-js-sdk's verifySignature THROWS on an invalid signature (rather than
-// returning false) — the real facilitator/verify path must treat a throw as invalid.
+// returning false), so the real facilitator/verify path must treat a throw as
+// invalid.
 let tamperRejected = false;
 try {
   tamperRejected = pub.verifySignature(tdigest, sig) !== true;
@@ -95,8 +96,15 @@ try {
 if (!tamperRejected) fail("tampered amount still verified");
 console.log("  ✓ tampered amount is rejected (verify throws on bad sig)");
 
-// Account-hash derivation matches what the contract re-derives.
-if (pub.accountHash().toHex() !== accountAddress.slice(2)) fail("account hash mismatch");
-console.log("  ✓ public key → account hash derivation matches");
+// Account-hash derivation matches what the contract re-derives. Checked against
+// an INDEPENDENT known-answer vector (blake2b-256("ed25519" ‖ 0x00 ‖ pubkey),
+// cross-verified with Python's hashlib.blake2b); comparing the live key's hash
+// to a value derived the same way would be a tautology that can never fail.
+const KAT_PUBKEY = "01562b28bb82c225501c66905cbaa067f624baa127392088f640dfbdc5021e3c1f";
+const KAT_ACCOUNT_HASH = "0fe6a395bdbe905f3647a2c9b6594562187901314c0e46bb2196f2ef451313d6";
+const katDerived = Casper.PublicKey.fromHex(KAT_PUBKEY).accountHash().toHex();
+if (katDerived !== KAT_ACCOUNT_HASH) fail(`account hash derivation mismatch: got ${katDerived}, want ${KAT_ACCOUNT_HASH}`);
+if (accountAddress.length !== 66 || !accountAddress.startsWith("00")) fail(`malformed x402 address: ${accountAddress}`);
+console.log("  ✓ public key → account hash derivation matches known-answer vector");
 
-console.log("\nREAL x402 signature path verified offline — no mock, no chain. ✅");
+console.log("\nREAL x402 signature path verified offline: no mock, no chain. ✅");

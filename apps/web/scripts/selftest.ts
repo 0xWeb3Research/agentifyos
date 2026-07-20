@@ -1,12 +1,12 @@
 /**
  * Offline crypto self-test for the AgentifyOS x402 payment loop.
  *
- * No network, no dev server — this exercises the real Ed25519 signing/verify
+ * No network, no dev server: this exercises the real Ed25519 signing/verify
  * path, the mock facilitator's replay guard, and the full paid-call handshake
  * entirely in-process. Run with:  pnpm exec tsx scripts/selftest.ts
  *
  * MODE defaults to "mock" (see ../src/lib/config), which is what these cases
- * assume — the mock facilitator settles in-process with a deterministic
+ * assume: the mock facilitator settles in-process with a deterministic
  * pseudo deploy hash.
  */
 import {
@@ -38,7 +38,7 @@ async function runCase(
       console.log(`  ✗ FAIL  ${name}`);
     }
   } catch (err) {
-    console.log(`  ✗ FAIL  ${name} — threw: ${(err as Error).message}`);
+    console.log(`  ✗ FAIL  ${name} · threw: ${(err as Error).message}`);
   }
 }
 

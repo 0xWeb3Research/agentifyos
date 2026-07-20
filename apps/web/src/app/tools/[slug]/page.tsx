@@ -12,10 +12,10 @@ import {
   StatusPill,
 } from "@/components/ui";
 import { ToolCard, isLive } from "@/components/tool-card";
-import { CodeBlock, CopyInline } from "@/components/copy";
+import { CodeBlock, CopyRow } from "@/components/copy";
 import { JsonLd } from "@/components/json-ld";
 import { getToolBySlug, getToolsWithStats } from "@/lib/data";
-import { compact, pct, shortHash, usd } from "@/lib/format";
+import { compact, pct, usd } from "@/lib/format";
 import { SITE_URL, abs } from "@/lib/site";
 import type { SchemaField, ToolWithStats } from "@/lib/types";
 
@@ -69,7 +69,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const tool = getToolBySlug(slug);
   if (!tool) return { title: "Tool not found", robots: { index: false, follow: false } };
-  const title = `${tool.name} — ${usd(tool.primaryPrice)} per call`;
+  const title = `${tool.name} · ${usd(tool.primaryPrice)} per call`;
   return {
     title: tool.name,
     description: tool.tagline,
@@ -173,7 +173,7 @@ export default async function ToolDetailPage({
         <div
           className="mt-10 grid min-w-0 gap-8 border-t border-border pt-10 lg:grid-cols-[minmax(0,1fr)_360px]"
         >
-          {/* left — main */}
+          {/* left: main */}
           <div className="min-w-0 space-y-10">
             <section>
               <Eyebrow>input</Eyebrow>
@@ -200,7 +200,7 @@ export default async function ToolDetailPage({
             </section>
           </div>
 
-          {/* right — sticky sidebar */}
+          {/* right: sticky sidebar */}
           <aside className="flex min-w-0 flex-col gap-5 lg:sticky lg:top-20 lg:self-start">
             {/* pricing card */}
             <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5">
@@ -235,9 +235,11 @@ export default async function ToolDetailPage({
                   <p className="truncate text-[13px] text-muted">{publisher.handle}</p>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
-                <span className="label">pay to</span>
-                <CopyInline text={shortHash(publisher.payTo)} />
+              {/* CopyRow copies the FULL payTo hash and truncates only visually.
+                  Piping shortHash() into a copy affordance would put an unusable,
+                  ellipsized value on the clipboard. */}
+              <div className="mt-3 border-t border-border pt-0.5">
+                <CopyRow label="pay to" value={publisher.payTo} />
               </div>
             </div>
 

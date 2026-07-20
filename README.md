@@ -166,7 +166,7 @@ docs/                  the six documents above
 | State | Zustand |
 | Payments | `@casper-ecosystem/casper-eip-712` · `casper-js-sdk` |
 | Settlement | WCSPR CEP-18 on Casper testnet, `transfer_with_authorization` |
-| Our contract | `ToolRegistry` in Rust — anchors listing manifests on-chain ([`9c1b0ac3…`](https://testnet.cspr.live/contract-package/9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18)) |
+| Our contract | `ToolRegistry` in Rust: anchors listing manifests on-chain ([`9c1b0ac3…`](https://testnet.cspr.live/contract-package/9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18)) |
 | Storage | Redis: the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
 | Testing | Playwright · custom self-test and SEO audit scripts |
 

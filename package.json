@@ -2,7 +2,7 @@
   "name": "agentifyos",
   "private": true,
   "version": "0.1.0",
-  "description": "AgentifyOS — Apify for AI agents, settled with x402 on Casper. The marketplace where autonomous agents discover, pay for, and use tools.",
+  "description": "AgentifyOS: Apify for AI agents, settled with x402 on Casper. The marketplace where autonomous agents discover, pay for, and use tools.",
   "packageManager": "pnpm@10.24.0",
   "scripts": {
     "dev": "pnpm --filter @agentifyos/web dev",

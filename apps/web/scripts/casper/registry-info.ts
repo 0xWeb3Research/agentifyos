@@ -33,7 +33,7 @@ async function main() {
 
   console.log("AgentifyOS ToolRegistry · Casper testnet\n");
   console.log(`  owner account   ${treasury.publicKeyHex}`);
-  console.log(`  package         ${pkg ?? "(not found — is it installed?)"}`);
+  console.log(`  package         ${pkg ?? "(not found; is it installed?)"}`);
   console.log(`  contract        ${contract ?? "(not found)"}`);
 
   if (pkg) {

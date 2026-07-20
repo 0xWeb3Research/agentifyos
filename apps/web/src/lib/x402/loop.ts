@@ -173,17 +173,37 @@ export interface PlanStep {
   reason: string;
 }
 
+const DEFAULT_URL = "https://casper.network/blog/agentic-commerce";
+
+// The regex below can match a malformed URL (e.g. bare "http://"); a raw
+// `new URL(u).host` on task text would throw and 500 /api/agent/run.
+function safeHost(u: string): string {
+  try {
+    return new URL(u).host || "the target page";
+  } catch {
+    return "the target page";
+  }
+}
+
 export function planTask(task: string, tools: ToolWithStats[]): PlanStep[] {
   const t = task.toLowerCase();
   const has = (slug: string) => tools.some((x) => x.slug === slug);
   const plan: PlanStep[] = [];
   const urlMatch = task.match(/https?:\/\/[^\s"']+/);
-  const url = urlMatch?.[0] ?? "https://casper.network/blog/agentic-commerce";
+  let url = DEFAULT_URL;
+  if (urlMatch) {
+    try {
+      new URL(urlMatch[0]);
+      url = urlMatch[0];
+    } catch {
+      /* matched string isn't a parseable URL: keep the default */
+    }
+  }
 
   if ((/price|market|cspr|quote|trade/.test(t)) && has("cspr-market-data"))
     plan.push({ slug: "cspr-market-data", input: {}, reason: "task needs a live CSPR price to reason about" });
   if ((/scrape|fetch|read|article|blog|page|url/.test(t) || urlMatch) && has("page-scraper"))
-    plan.push({ slug: "page-scraper", input: { url }, reason: `fetch readable content from ${new URL(url).host}` });
+    plan.push({ slug: "page-scraper", input: { url }, reason: `fetch readable content from ${safeHost(url)}` });
   if (/summar|tl;dr|digest|condense/.test(t) && has("text-summarizer"))
     plan.push({ slug: "text-summarizer", input: { text: "" }, reason: "summarize the fetched content" });
   if (/attest|notari|proof|verify|rwa|sign/.test(t) && has("rwa-attestor"))
@@ -192,7 +212,7 @@ export function planTask(task: string, tools: ToolWithStats[]): PlanStep[] {
   // Default demo plan when nothing matched.
   if (plan.length === 0) {
     if (has("cspr-market-data")) plan.push({ slug: "cspr-market-data", input: {}, reason: "get a live CSPR price" });
-    if (has("page-scraper")) plan.push({ slug: "page-scraper", input: { url }, reason: `scrape ${new URL(url).host}` });
+    if (has("page-scraper")) plan.push({ slug: "page-scraper", input: { url }, reason: `scrape ${safeHost(url)}` });
     if (has("text-summarizer")) plan.push({ slug: "text-summarizer", input: { text: "" }, reason: "summarize it" });
     if (has("rwa-attestor")) plan.push({ slug: "rwa-attestor", input: {}, reason: "attest the summary" });
   }

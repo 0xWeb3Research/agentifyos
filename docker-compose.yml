@@ -1,4 +1,4 @@
-# AgentifyOS — real-mode infra. The app runs mock-first with in-memory seed data
+# AgentifyOS: real-mode infra. The app runs mock-first with in-memory seed data
 # and does NOT require this to be up. Bring it up only for the DB-backed "real" path:
 #   pnpm db:up && pnpm db:push && pnpm db:seed
 # Weird ports chosen to avoid collision with sibling projects

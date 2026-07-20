@@ -1,6 +1,6 @@
 # build-std needs nightly + rust-src: the precompiled core/alloc for
 # wasm32-unknown-unknown are built WITH bulk-memory, so disabling the target
-# feature for our crate alone is not enough — the node still rejects the module.
+# feature for our crate alone is not enough: the node still rejects the module.
 [toolchain]
 channel = "nightly-2025-07-01"
 targets = ["wasm32-unknown-unknown"]

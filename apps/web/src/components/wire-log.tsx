@@ -23,7 +23,7 @@ const KIND_LABEL: Record<StepKind, string> = {
   error: "ERR",
 };
 
-// The protocol wire-log — raw 402 → signature → verify → settle → receipt.
+// The protocol wire-log: raw 402 → signature → verify → settle → receipt.
 // The protocol IS the hero visual, so we show the actual JSON on the wire.
 export function WireLog({
   steps,

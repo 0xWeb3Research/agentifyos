@@ -1,4 +1,4 @@
-// REAL end-to-end x402 settlement on Casper testnet — no mock, no simulation.
+// REAL end-to-end x402 settlement on Casper testnet: no mock, no simulation.
 // The agent signs an EIP-712 payment authorization; the facilitator submits
 // `transfer_with_authorization` on-chain and pays gas. Prints the real deploy
 // hash + testnet.cspr.live link.
@@ -26,22 +26,37 @@ function arg(name: string, def: string): string {
   return i >= 0 ? (process.argv[i + 1] ?? def) : def;
 }
 
+// The payee ends up inside the signed EIP-712 digest AND the on-chain `to` arg,
+// so refuse anything that isn't a well-formed account hash before signing.
+// Accepts "00"+64-hex (x402 wire form), bare 64-hex, or "account-hash-…", and
+// normalizes to the "00"-prefixed wire form, the same "00" x402 prefix
+// convention transfer.ts/transferWcspr strip before building the CLKey.
+function normalizePayee(raw: string): string {
+  const s = raw.trim().toLowerCase().replace(/^account-hash-/, "");
+  const bare = s.length === 66 && s.startsWith("00") ? s.slice(2) : s;
+  if (!/^[0-9a-f]{64}$/.test(bare)) {
+    console.log(`  ✗ --to must be a 64-hex account hash (optionally "00"-prefixed or "account-hash-…"), got: ${JSON.stringify(raw)}`);
+    process.exit(1);
+  }
+  return "00" + bare;
+}
+
 const facilitator = loadWalletFromFile(keys("facilitator"));
 const agent = loadWalletFromFile(keys("agent"));
 const treasury = loadWalletFromFile(keys("treasury"));
 
 const amount = arg("amount", "8658008"); // ~$0.002 worth of WCSPR (9 decimals)
-const payTo = arg("to", treasury.address);
+const payTo = normalizePayee(arg("to", treasury.address));
 
 console.log("REAL x402 settlement · Casper testnet\n");
 console.log(`  facilitator  ${facilitator.publicKeyHex.slice(0, 16)}…  (submits + pays gas)`);
 console.log(`  agent        ${agent.publicKeyHex.slice(0, 16)}…  (signs the payment)`);
-console.log(`  payTo        ${payTo.slice(0, 16)}…`);
+console.log(`  payTo        ${payTo}`);
 console.log(`  amount       ${amount} WCSPR-atomic\n`);
 
 const facGas = Number(await getCsprBalance(facilitator.publicKeyHex)) / 1e9;
 if (facGas < 5) {
-  console.log(`  ⚠ facilitator has ${facGas.toFixed(2)} CSPR — needs ~7+ for gas. Fund it:`);
+  console.log(`  ⚠ facilitator has ${facGas.toFixed(2)} CSPR, needs ~7+ for gas. Fund it:`);
   console.log(`     https://testnet.cspr.live/tools/faucet  →  ${facilitator.publicKeyHex}`);
   process.exit(1);
 }

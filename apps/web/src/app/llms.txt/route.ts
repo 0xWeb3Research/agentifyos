@@ -3,7 +3,7 @@ import { listDocs } from "@/lib/docs";
 import { usd } from "@/lib/format";
 import { abs } from "@/lib/site";
 
-// llms.txt — the front door for AI agents. Points crawlers at the discovery API
+// llms.txt: the front door for AI agents. Points crawlers at the discovery API
 // and MCP endpoint, then lists every paid tool with its price and 402 resource,
 // plus the prose pages an agent needs to explain the protocol to a human.
 export const dynamic = "force-dynamic";
@@ -45,6 +45,11 @@ const PAGES: { path: string; title: string; purpose: string }[] = [
     path: "/roadmap",
     title: "Roadmap",
     purpose: "What is shipped, what is next, and what is out of scope.",
+  },
+  {
+    path: "/whitepaper.pdf",
+    title: "Whitepaper",
+    purpose: "The full paper: market thesis, architecture, economics, and the long-term launch plan.",
   },
 ];
 

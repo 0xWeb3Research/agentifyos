@@ -31,7 +31,7 @@ const GAS_MOTES = arg("gas", "120000000000")!; // 120 CSPR
 
 const WASM = path.resolve(
   process.cwd(),
-  // The lowered artifact from contracts/tool-registry/build.sh — the raw
+  // The lowered artifact from contracts/tool-registry/build.sh; the raw
   // cargo output contains bulk-memory ops the node rejects.
   "../../contracts/tool-registry/target/tool_registry.mvp.wasm",
 );

@@ -39,7 +39,7 @@ const PHASES: Phase[] = [
       },
       {
         title: "Casper testnet settlements",
-        desc: "The mock facilitator settles WCSPR deterministically; each receipt carries a deploy hash to testnet.cspr.live.",
+        desc: "The facilitator settles real WCSPR on-chain via transfer_with_authorization; each receipt carries a deploy hash to testnet.cspr.live.",
       },
       {
         title: "MCP + llms.txt discovery",
@@ -56,7 +56,7 @@ const PHASES: Phase[] = [
     items: [
       {
         title: "Self-hosted facilitator",
-        desc: "Swap the mock for a real Casper facilitator (make-software/casper-x402) that verifies signatures and broadcasts live deploys.",
+        desc: "Promote the in-process facilitator to a standalone service other builders can point their own 402 endpoints at.",
       },
       {
         title: "Casper mainnet",
@@ -107,10 +107,17 @@ export default function RoadmapPage() {
             machine economy
           </h1>
           <p className="mt-5 max-w-[54ch] text-[15px] leading-relaxed text-fg-secondary">
-            AgentifyOS runs the full x402 loop today, settling on Casper testnet
-            in mock mode. From here the path is a self-hosted facilitator,
-            mainnet, and an on-chain registry the whole ecosystem can build on.
+            AgentifyOS runs the full x402 loop today, settling real WCSPR on
+            Casper testnet. From here the path is mainnet, third-party
+            suppliers, and an on-chain registry the whole ecosystem can build
+            on.
           </p>
+          <a
+            href="/whitepaper.pdf"
+            className="mt-4 inline-block text-[13px] font-medium text-accent hover:underline"
+          >
+            Read the whitepaper (PDF) →
+          </a>
         </div>
 
         <div className="mt-14 flex flex-col gap-10 sm:gap-12">

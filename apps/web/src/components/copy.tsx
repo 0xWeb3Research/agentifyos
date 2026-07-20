@@ -68,7 +68,7 @@ export function CopyRow({
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <button
           type="button"
-          title={`${value} — click to copy`}
+          title={`${value} · click to copy`}
           onClick={async () => {
             try {
               await navigator.clipboard.writeText(value);

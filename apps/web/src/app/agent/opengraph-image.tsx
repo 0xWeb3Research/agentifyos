@@ -1,6 +1,6 @@
 import { OG_SIZE, renderOgCard } from "@/lib/og-card";
 
-export const alt = "Watch an agent pay for itself. — AgentifyOS";
+export const alt = "Watch an agent pay for itself. · AgentifyOS";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 export const runtime = "nodejs";

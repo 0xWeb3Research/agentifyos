@@ -20,6 +20,8 @@ function keyPath(envVal: string | undefined, fallback: string): string {
     : path.join(process.cwd(), "keys", fallback);
 }
 
+// Authz, rate limiting, and the spend cap are enforced at the route boundary
+// (api/agent/run, api/mcp); this is server-only and only reached through them.
 export async function executeRealPaidCall(opts: {
   tool: ToolWithStats;
   input: Record<string, unknown>;
@@ -81,8 +83,14 @@ export async function executeRealPaidCall(opts: {
   });
 
   const payload = casper.signPayment(agentW, req);
+  // The trace goes back to the client. Redact the live signature, or anyone
+  // reading the wire log could replay/settle the real authorization themselves.
   step("sign", "agent signed EIP-712 authorization (real Ed25519)", true, {
-    "PAYMENT-SIGNATURE": payload,
+    "PAYMENT-SIGNATURE": {
+      publicKey: payload.publicKey,
+      authorization: payload.authorization,
+      signature: payload.signature.slice(0, 16) + "…",
+    },
   });
 
   const v = casper.verifyPayment(payload, req);

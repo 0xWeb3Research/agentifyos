@@ -85,7 +85,7 @@ export default async function DocPage({
       <JsonLd data={docGraph(doc.meta)} />
       <Container className="pb-16 pt-12">
         <div className="flex min-w-0 flex-col gap-10 lg:flex-row lg:gap-12">
-          {/* contents rail — becomes a plain list above lg */}
+          {/* contents rail: becomes a plain list above lg */}
           <aside className="min-w-0 shrink-0 lg:w-[210px]">
             <div className="lg:sticky lg:top-20">
               <Link

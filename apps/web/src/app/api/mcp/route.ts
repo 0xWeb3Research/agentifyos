@@ -3,10 +3,13 @@ import { getToolBySlug, searchTools } from "@/lib/data";
 import { executePaidCall } from "@/lib/x402/loop";
 import { makeWallet } from "@/lib/x402/payment";
 import { SITE_URL } from "@/lib/site";
+import { authorizeSpend } from "@/lib/security/authz";
+import { resolveSpendBudget } from "@/lib/security/spend";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
 
 // A pragmatic MCP-style endpoint so an agent host (Claude, Cursor, …) can list
 // AgentifyOS tools, read a manifest, and actually pay-and-call one over the full
-// x402 loop — all in-process, no keys.
+// x402 loop, all in-process, no keys.
 export const dynamic = "force-dynamic";
 
 const TOOL_DEFS = [
@@ -60,10 +63,16 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const body = (await req.json()) as {
-    method?: string;
-    params?: Record<string, unknown>;
-  };
+  // Light limit across all methods; the spending branch gets its own below.
+  const rl = rateLimit(`mcp:${clientIp(req)}`, 60, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
+  let body: { method?: string; params?: Record<string, unknown> };
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "invalid_json" }, { status: 400 });
+  }
   const method = body.method;
   const params = body.params ?? {};
 
@@ -93,6 +102,14 @@ export async function POST(req: Request) {
   }
 
   if (method === "call_tool") {
+    // The only branch that spends money: gate it, and rate-limit it harder.
+    const auth = authorizeSpend(req);
+    if (!auth.allowed) {
+      return NextResponse.json({ error: "unauthorized", reason: auth.reason }, { status: 401 });
+    }
+    const callRl = rateLimit(`mcp-call:${clientIp(req)}`, 10, 60_000);
+    if (!callRl.ok) return tooManyRequests(callRl.retryAfterSec);
+
     const slug = String(params.slug ?? "");
     const tool = getToolBySlug(slug);
     if (!tool) return NextResponse.json({ error: "not_found" });
@@ -102,8 +119,8 @@ export async function POST(req: Request) {
       tool,
       wallet,
       input: (params.input as Record<string, unknown>) ?? {},
-      budgetRemainingUsd:
-        typeof params.budgetUsd === "number" ? params.budgetUsd : null,
+      // Clamped to the server cap; omitting budgetUsd no longer disables it.
+      budgetRemainingUsd: resolveSpendBudget(params.budgetUsd),
       baseUrl: new URL(req.url).origin,
     });
     return NextResponse.json({

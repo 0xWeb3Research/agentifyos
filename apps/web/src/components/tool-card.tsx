@@ -12,7 +12,7 @@ export function isLive(tool: Pick<ToolWithStats, "handler">): boolean {
 export function ToolCard({
   tool,
   index = 0,
-  /** Render as a plain card (no navigation) — used by the publish preview. */
+  /** Render as a plain card (no navigation). Used by the publish preview. */
   preview = false,
 }: {
   tool: ToolWithStats;

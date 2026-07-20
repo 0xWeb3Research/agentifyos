@@ -5,7 +5,7 @@ import { clsx } from "clsx";
 import { ToolCard, isLive } from "@/components/tool-card";
 import type { ToolWithStats } from "@/lib/types";
 
-// Price ceilings for the quick filter — strict "less than" thresholds.
+// Price ceilings for the quick filter: strict "less than" thresholds.
 const PRICE_FILTERS: { label: string; max: number | null }[] = [
   { label: "Any price", max: null },
   { label: "< $0.005", max: 0.005 },
@@ -36,7 +36,7 @@ export function Catalog({
     });
   }, [tools, query, category, priceMax]);
 
-  // Callable tools first — "coming soon" listings sink to the bottom.
+  // Callable tools first; "coming soon" listings sink to the bottom.
   const ordered = useMemo(
     () => [...filtered].sort((a, b) => Number(isLive(b)) - Number(isLive(a))),
     [filtered],

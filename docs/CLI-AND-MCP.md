@@ -1,8 +1,8 @@
-# CLI & MCP — using the marketplace as a machine
+# CLI & MCP · using the marketplace as a machine
 
 Two ways to buy tools without opening a browser. Both are **real x402 clients**:
 they hold their own Casper key, get an HTTP 402, sign it, retry, and settle
-on-chain. Nothing is short-circuited internally — this is the same path any
+on-chain. Nothing is short-circuited internally; this is the same path any
 third-party agent would take.
 
 ---
@@ -34,9 +34,9 @@ $ pnpm agentify call cspr-market-data
   wallet 01e565e859f9bab3f7cb…  (holds WCSPR, no CSPR needed)
 
   REQ    GET https://agentifyos.xyz/api/t/cspr-market-data   +0ms
-  402    payment required — 86580087 atomic WCSPR (~$0.0020) +50ms
+  402    payment required: 86580087 atomic WCSPR (~$0.0020)  +50ms
   SIG    signed EIP-712 authorization as 0041611f2c09…       +58ms
-  PAID   settled — e50c18e49e666b66…                     +11823ms
+  PAID   settled: e50c18e49e666b66…                      +11823ms
 
   result
     { "symbol": "CSPR", "priceUsd": 0.0244, … }
@@ -47,7 +47,7 @@ $ pnpm agentify call cspr-market-data
     explorer  https://testnet.cspr.live/deploy/e50c18e4…
 ```
 
-Pass tool inputs as flags — they become query parameters:
+Pass tool inputs as flags; they become query parameters:
 
 ```bash
 pnpm agentify call page-scraper --url=https://casper.network/blog
@@ -75,7 +75,7 @@ pnpm mcp        # stdio server; logs to stderr
 | `list_settlements` | no | recent marketplace payments |
 
 The read-only tools are annotated `readOnlyHint`, so hosts can auto-approve
-them. **`call_tool` is deliberately not** — it's marked destructive so the client
+them. **`call_tool` is deliberately not**: it's marked destructive so the client
 asks before spending. Wiring that distinction in is the point: the model can
 browse freely and must ask to buy.
 
@@ -96,7 +96,7 @@ claude mcp add-json agentifyos '{
 }' --scope user
 ```
 
-**Claude Desktop** — `~/Library/Application Support/Claude/claude_desktop_config.json`:
+**Claude Desktop**, in `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -112,17 +112,17 @@ claude mcp add-json agentifyos '{
 ```
 
 > Use an **absolute path** for `command`. A GUI-launched app inherits a minimal
-> `PATH` and won't find a version-managed `node` — run `which node` and paste
+> `PATH` and won't find a version-managed `node`. Run `which node` and paste
 > that. Then fully quit and reopen Claude Desktop; closing the window isn't enough.
 > Server logs land in `~/Library/Logs/Claude/mcp-server-agentifyos.log`.
 
-**Cursor** — same `mcpServers` block in `~/.cursor/mcp.json`.
+**Cursor**: same `mcpServers` block in `~/.cursor/mcp.json`.
 
 ### Configuration
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AGENTIFYOS_URL` | `https://agentifyos.xyz` | marketplace base URL — set to `http://localhost:8402` to run against a local dev server |
+| `AGENTIFYOS_URL` | `https://agentifyos.xyz` | marketplace base URL; set to `http://localhost:8402` to run against a local dev server |
 | `AGENTIFYOS_KEY` | `agent` | which key in `keys/` signs payments |
 | `AGENTIFYOS_MAX_USD` | `0.10` | hard spend cap per call |
 
@@ -142,7 +142,7 @@ Or drive it with raw JSON-RPC:
   sleep 40; } | pnpm mcp
 ```
 
-Verified response — a real settlement, triggered over MCP:
+Verified response (a real settlement, triggered over MCP):
 
 ```json
 {
@@ -161,12 +161,12 @@ Verified response — a real settlement, triggered over MCP:
 ## Prerequisites
 
 Both need a funded agent key. If `pnpm agentify balance` shows `0.0000 WCSPR`,
-follow [TESTNET.md](./TESTNET.md) — you need a key (`pnpm casper:keygen`), some
+follow [TESTNET.md](./TESTNET.md): you need a key (`pnpm casper:keygen`), some
 wrapped WCSPR, and the marketplace running (`pnpm dev`).
 
 ## Why this matters
 
 Everything here goes through the **same public HTTP endpoint** the website uses.
-There's no privileged internal path — which means the marketplace genuinely works
+There's no privileged internal path, which means the marketplace genuinely works
 for third parties, and an AI assistant can buy data on a public blockchain
 without a human, an account, or an API key anywhere in the loop.

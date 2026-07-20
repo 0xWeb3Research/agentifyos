@@ -4,6 +4,24 @@ export type Mode = "mock" | "real";
 export const MODE: Mode = process.env.MODE === "real" ? "real" : "mock";
 export const USE_DB = process.env.USE_DB === "1";
 
+// ── spend safety ─────────────────────────────────────────────────────────────
+// Server-side hard cap on how much a single server-initiated agent run or MCP
+// `call_tool` may spend, no matter what budget the client asks for. A client
+// budget can only ever lower this, never raise it, so an unauthenticated caller
+// can't drain the funded wallet by passing a huge (or omitted) budget.
+export const AGENT_MAX_SPEND_USD = (() => {
+  const n = Number(process.env.AGENT_MAX_SPEND_USD);
+  return Number.isFinite(n) && n > 0 ? n : 0.1;
+})();
+
+// Whether unauthenticated callers may trigger spending from the server's OWN
+// Casper wallet keys (the agent runner and MCP `call_tool`). Off by default: in
+// real mode an anonymous POST would otherwise sign and settle real payments with
+// keys/agent.pem and drain the facilitator's gas. Set ALLOW_UNAUTH_SPEND=1 only
+// for a public, funded demo whose cost you accept. In mock mode nothing settles
+// on-chain, so this only gates real mode.
+export const ALLOW_UNAUTH_SPEND = process.env.ALLOW_UNAUTH_SPEND === "1";
+
 // Casper testnet constants (make-software/casper-x402 reference values).
 export const CSPR = {
   network: process.env.CSPR_NETWORK || "casper:casper-test",
@@ -33,7 +51,7 @@ export function explorerContractPackage(packageHash: string): string {
 }
 
 // ── the three demo accounts ──────────────────────────────────────────────────
-// Public keys only — the matching PEMs stay in apps/web/keys/ and are gitignored.
+// Public keys only; the matching PEMs stay in apps/web/keys/ and are gitignored.
 // Read from env so a deployed instance advertises its own accounts rather than
 // the values that happened to be baked in at build time.
 export type RoleKey = "facilitator" | "treasury" | "agent";

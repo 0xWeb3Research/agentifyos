@@ -16,7 +16,7 @@ const inputCls =
   "placeholder:text-muted transition-colors hover:border-border-hover focus:border-accent";
 const selectCls = clsx(inputCls, "cursor-pointer appearance-none");
 
-// A demo publisher — the "you" of the flow. No persistence: this page is a
+// A demo publisher, the "you" of the flow. No persistence: this page is a
 // pure client sandbox where the listing takes shape as you type.
 const DEMO_PUBLISHER = {
   id: "pub_you",
@@ -185,7 +185,7 @@ export default function PublishPage() {
               ) : (
                 <>
                   No email, no password. Sign a one-time message with your Casper Wallet to
-                  prove the account is yours — it becomes your payout address. Signing moves
+                  prove the account is yours. It becomes your payout address. Signing moves
                   no funds and costs no gas.
                 </>
               )}

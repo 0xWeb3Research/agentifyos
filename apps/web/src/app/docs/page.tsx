@@ -73,7 +73,7 @@ export default async function DocsIndexPage() {
           <Link href="/llms.txt" className="text-accent hover:underline">
             llms.txt
           </Link>{" "}
-          instead — same content, no markup. The{" "}
+          instead (same content, no markup). The{" "}
           <Link href="/developers" className="text-accent hover:underline">
             developer page
           </Link>{" "}

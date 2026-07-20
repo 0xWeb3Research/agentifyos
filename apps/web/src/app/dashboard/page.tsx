@@ -27,7 +27,7 @@ export default async function DashboardPage({
   const { sim } = await searchParams;
   const simulation = sim === "1";
 
-  // Real mode reads only the durable ledger — payments that actually settled.
+  // Real mode reads only the durable ledger: payments that actually settled.
   const real = await readRealSettlements(200);
   const settlements = simulation ? getSeededSettlements(30) : real;
   const totals = totalsOf(settlements);
@@ -45,7 +45,7 @@ export default async function DashboardPage({
             </h1>
             <p className="mt-2 max-w-[62ch] text-[14px] leading-relaxed text-fg-secondary">
               {simulation
-                ? "Seeded demo data — invented numbers showing what a busy marketplace would look like. None of this settled on-chain."
+                ? "Seeded demo data: invented numbers showing what a busy marketplace would look like. None of this settled on-chain."
                 : "Every figure below comes from a payment that actually settled on Casper testnet. Nothing here is simulated."}
             </p>
           </div>
@@ -62,7 +62,7 @@ export default async function DashboardPage({
             </h2>
             <p className="max-w-[52ch] text-[14px] leading-relaxed text-fg-secondary">
               This dashboard only shows real on-chain payments, so it stays empty until an
-              agent actually buys something. Run the demo and it fills up — every row
+              agent actually buys something. Run the demo and it fills up, every row
               linking to a transaction on the block explorer.
             </p>
             <div className="mt-1 flex flex-wrap justify-center gap-3">

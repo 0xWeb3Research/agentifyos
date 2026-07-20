@@ -2,7 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 
 // The docs rendered on /docs are the same markdown files that live in the repo
-// at docs/ — there is no second copy to keep in sync. Reading them at request
+// at docs/; there is no second copy to keep in sync. Reading them at request
 // time means a doc edit shows up on the site without touching a component.
 
 export interface DocMeta {

@@ -56,7 +56,7 @@ for (const route of ROUTES) {
   if (!canonical) problems.push("no canonical");
   else {
     // A canonical pointing at the wrong page de-indexes it as a duplicate, which
-    // is strictly worse than having none — so compare the path, not just the origin.
+    // is strictly worse than having none, so compare the path, not just the origin.
     const norm = (p) => p.replace(/\/+$/, "") || "/";
     const path = norm(new URL(canonical).pathname);
     if (path !== norm(route)) problems.push(`canonical -> ${path}, expected ${route}`);
@@ -93,7 +93,7 @@ for (const path of [
   console.log(`${ok ? "✓" : "✗"} ${path.padEnd(42)} ${r.status} ${r.headers.get("content-type")}`);
 }
 
-// Every sitemap URL must resolve — a 404 in the sitemap is a crawl-budget leak.
+// Every sitemap URL must resolve: a 404 in the sitemap is a crawl-budget leak.
 const xml = await (await fetch(`${BASE}/sitemap.xml`)).text();
 const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 console.log(`\nsitemap: ${locs.length} urls`);

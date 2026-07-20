@@ -2,7 +2,7 @@
 //
 // A Casper Wallet signs `"Casper Message:\n" + message`. We reproduce exactly
 // that with a local PEM key, so this test exercises the same verification path a
-// real wallet signature takes — no extension needed.
+// real wallet signature takes. No extension needed.
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import CasperMod from "casper-js-sdk";
@@ -32,7 +32,7 @@ const check = (name: string, ok: boolean, extra = "") => {
   }
 };
 
-console.log("\nSign-In With Casper — offline verification\n");
+console.log("\nSign-In With Casper · offline verification\n");
 
 const priv = PrivateKey.fromPem(
   (await import("node:fs")).readFileSync(join(here, "..", "keys", "agent.pem"), "utf8"),

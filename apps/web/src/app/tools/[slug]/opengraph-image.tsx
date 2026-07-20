@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { OG_SIZE, renderOgCard } from "@/lib/og-card";
 import { getToolBySlug, getToolsWithStats } from "@/lib/data";
 import { usd } from "@/lib/format";
@@ -12,7 +13,7 @@ export function generateStaticParams() {
 }
 
 // A shared tool link should preview the tool and its price, not the generic
-// homepage card — the price is the whole proposition.
+// homepage card: the price is the whole proposition.
 export default async function ToolOpengraphImage({
   params,
 }: {
@@ -20,7 +21,10 @@ export default async function ToolOpengraphImage({
 }) {
   const { slug } = await params;
   const tool = getToolBySlug(slug);
-  if (!tool) return renderOgCard();
+  // Unknown slugs 404 like the sibling page route. Rendering a card here would
+  // let arbitrary slugs trigger an uncached satori+resvg pass (and a fresh cache
+  // entry) per URL: cheap requests amplified into unbounded server CPU.
+  if (!tool) notFound();
   return renderOgCard({
     title: tool.name,
     subtitle: tool.tagline,

@@ -87,7 +87,7 @@ export function make402(
   };
 }
 
-// Deterministic, stable JSON — the exact bytes that get signed and verified.
+// Deterministic, stable JSON: the exact bytes that get signed and verified.
 export function canonical(obj: unknown): string {
   if (obj === null || typeof obj !== "object") return JSON.stringify(obj);
   if (Array.isArray(obj)) return `[${obj.map(canonical).join(",")}]`;
@@ -104,7 +104,7 @@ export function newNonce(): string {
 // ── real Ed25519 (same curve Casper uses), deterministic from a seed ─────────
 // Mock mode uses these directly; real mode swaps in casper-eip-712 typed-data
 // signing over a TransferAuthorization struct + a funded PEM key. The verify
-// path only ever needs the public key — no secret leaves the wallet.
+// path only ever needs the public key; no secret leaves the wallet.
 
 const PKCS8_ED25519_PREFIX = Buffer.from("302e020100300506032b657004220420", "hex");
 const SPKI_ED25519_PREFIX = Buffer.from("302a300506032b6570032100", "hex");
@@ -128,7 +128,7 @@ function pubFromRawHex(publicKeyHex: string): KeyObject {
 }
 
 export interface AgentWallet {
-  seedHex: string; // demo only — a real agent holds this in a PEM/KMS
+  seedHex: string; // demo only; a real agent holds this in a PEM/KMS
   publicKey: string; // "01" + raw ed25519 hex (Casper convention)
   accountHash: string; // "00" + blake-style hash (mock uses sha256)
   label: string;
@@ -146,6 +146,14 @@ export function makeWallet(seed: string, label: string): AgentWallet {
 export function signAuthorization(auth: Authorization, wallet: AgentWallet): string {
   const priv = privFromSeed(Buffer.from(wallet.seedHex, "hex"));
   return edSign(null, Buffer.from(canonical(auth)), priv).toString("hex");
+}
+
+// Ed25519 over arbitrary bytes, for non-payment signing (attestations). Keeps
+// those signatures domain-separated from the Authorization struct above, so an
+// attestation can never double as a transfer authorization.
+export function signBytes(bytes: Buffer, wallet: AgentWallet): string {
+  const priv = privFromSeed(Buffer.from(wallet.seedHex, "hex"));
+  return edSign(null, bytes, priv).toString("hex");
 }
 
 export function verifySignature(
@@ -175,7 +183,7 @@ export function buildPayload(
     to: req.payTo,
     value: req.amount,
     // Casper can execute a transaction in a block whose timestamp precedes
-    // submission time — a tight validAfter makes the contract see the
+    // submission time; a tight validAfter makes the contract see the
     // authorization as not-yet-valid. Backdate like the server-side signer.
     validAfter: nowSec - 600,
     validBefore: nowSec + req.maxTimeoutSeconds,
@@ -193,7 +201,7 @@ export function buildPayload(
   };
 }
 
-// A stable result hash for receipts — proves what was delivered.
+// A stable result hash for receipts. Proves what was delivered.
 export function hashResult(result: unknown): string {
   return createHash("sha256").update(canonical(result)).digest("hex");
 }

@@ -10,7 +10,7 @@ import { compact, pct, usd } from "@/lib/format";
 import type { WireStep } from "@/lib/x402/loop";
 
 // Title and description come from the layout defaults, which are written for
-// this page — only the canonical is page-specific.
+// this page; only the canonical is page-specific.
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
@@ -95,6 +95,33 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </Container>
+
+        {/* ── the demo film ────────────────────────────────────────────── */}
+        <Container className="py-8">
+          <div className="flex items-end justify-between">
+            <div>
+              <Eyebrow>watch it happen</Eyebrow>
+              <h2 className="mt-3 text-[26px] font-medium tracking-[-0.03em]">
+                One agent. Four tools. Zero API keys.
+              </h2>
+            </div>
+            <span className="stat hidden text-muted sm:block">02:44</span>
+          </div>
+          <div className="mt-6 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-[var(--shadow-card)]">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              poster="/demo-poster.jpg"
+              src="/api/demo-video"
+              className="block aspect-video w-full bg-surface"
+            />
+          </div>
+          <p className="stat mt-3 text-muted">
+            real settlements on casper-test · every hash in the film resolves on
+            testnet.cspr.live
+          </p>
         </Container>
 
         {/* ── featured tools ───────────────────────────────────────────── */}

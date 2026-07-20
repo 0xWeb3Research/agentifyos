@@ -34,7 +34,7 @@ export interface Tool {
   id: string;
   slug: string;
   name: string;
-  tagline: string; // ≤ 500 chars — the machine-readable description
+  tagline: string; // ≤ 500 chars; the machine-readable description
   category: string;
   tags: string[];
   capabilities: Capability[];
@@ -95,7 +95,7 @@ export interface Receipt {
   createdAt: string;
 }
 
-// A tool joined with its computed reputation — the shape most UI consumes.
+// A tool joined with its computed reputation: the shape most UI consumes.
 export interface ToolWithStats extends Tool {
   publisher: Publisher;
   stats: ToolStats;

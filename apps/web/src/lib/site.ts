@@ -1,6 +1,6 @@
 // One source of truth for the public origin. Absolute URLs appear in the
 // sitemap, robots.txt, canonicals, and JSON-LD, and a wrong origin in any of
-// them is worse than none at all — so derive it rather than hardcoding.
+// them is worse than none at all, so derive it rather than hardcoding.
 //
 // Railway injects RAILWAY_PUBLIC_DOMAIN at runtime, which lets a preview
 // deployment advertise itself instead of claiming to be the production domain.

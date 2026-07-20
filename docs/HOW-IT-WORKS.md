@@ -21,7 +21,7 @@ used) running on **Casper**.
 
 **The settlement smart contract is a CEP-18 token** (Casper's fungible-token
 standard, the equivalent of ERC-20) that has been extended with a
-**`transfer_with_authorization`** entry point — Casper's analog of Ethereum's
+**`transfer_with_authorization`** entry point, Casper's analog of Ethereum's
 EIP-3009 "gasless transfer". That entry point is the whole trick:
 
 - The **agent signs** an authorization off-chain: _"move N WCSPR from me to the
@@ -38,12 +38,12 @@ micropayments practical.
 
 ### Which contract, exactly?
 
-The token is **"Wrapped CSPR" (WCSPR)** — an x402-enabled CEP-18. Two options,
+The token is **"Wrapped CSPR" (WCSPR)**, an x402-enabled CEP-18. Two options,
 both documented in [TESTNET.md](./TESTNET.md):
 
 | Option | What it is | Why |
 |---|---|---|
-| **Use the existing testnet WCSPR** | Casper's reference x402 token, already deployed at package `3d80df21…4847c1e` | fastest — nothing to deploy |
+| **Use the existing testnet WCSPR** | Casper's reference x402 token, already deployed at package `3d80df21…4847c1e` | fastest: nothing to deploy |
 | **Deploy our own CEP-18** | `agentifyos` runs the reference `Cep18X402.wasm` under our own account | gives us a **contract package hash to show judges** (hackathon criterion: "working deployed contracts on Casper testnet") |
 
 > **We also wrote and deployed our own contract:** the `ToolRegistry` at package
@@ -57,7 +57,7 @@ both documented in [TESTNET.md](./TESTNET.md):
 The **real Casper integration is built and verified**: real Ed25519 keys, real
 EIP-712 payment signing, on-chain settlement via `transfer_with_authorization`,
 CSPR→WCSPR wrapping through Odra's proxy-caller session wasm, and live balance
-reads — all checked against the public testnet node. The contract's
+reads, all checked against the public testnet node. The contract's
 `transfer_with_authorization` entry point was confirmed on-chain (arg names and
 types match our implementation exactly) and shows live `AuthorizationUsed`
 events, so this exact flow works on testnet today.
@@ -67,7 +67,7 @@ faucet requires a Casper Wallet sign-in, so the facilitator and treasury account
 need CSPR before the first payment clears. See [TESTNET.md](./TESTNET.md).
 
 There's also an offline harness (`pnpm selftest`, `pnpm casper:signtest`) that
-proves the cryptography without spending anything. That's a *test* tool — the
+proves the cryptography without spending anything. That's a *test* tool; the
 product path is real on-chain settlement, not simulation.
 
 ---
@@ -99,11 +99,11 @@ product path is real on-chain settlement, not simulation.
 
 The exact wire format (the `402` body, the `PAYMENT-SIGNATURE` payload, `/verify`
 and `/settle` responses) is what the **wire-log panel** on the `/agent` page
-renders live — the protocol is the hero visual.
+renders live; the protocol is the hero visual.
 
 ---
 
-## 4. Wallets & identity — what you actually need
+## 4. Wallets & identity · what you actually need
 
 There are **two very different "wallets"** here; don't conflate them:
 
@@ -113,7 +113,7 @@ There are **two very different "wallets"** here; don't conflate them:
 | **The facilitator** | a funded Ed25519 keypair (`.pem`) | No | submitting settle deploys and paying gas |
 | **You, the human** | **Casper Wallet** browser extension | Yes | using the testnet **faucet** to get free CSPR, then funding the keys above |
 
-So: **agents never use a browser wallet** — that's the whole point of x402. You
+So: **agents never use a browser wallet**. That's the whole point of x402. You
 only need **Casper Wallet** once, to pull testnet CSPR from the faucet. Everything
 after that is headless keypairs. Full setup is in [TESTNET.md](./TESTNET.md).
 
@@ -126,7 +126,7 @@ signatures are verified with `PublicKey.verifySignature(...)`.
 ## 5. The facilitator (and the mock/real seam)
 
 The **facilitator** is the party that verifies a payment and submits it on-chain.
-It's the only component that needs funds, because **it pays the gas** — which is
+It's the only component that needs funds, because **it pays the gas**, which is
 precisely why the paying agent doesn't need any CSPR at all.
 
 We **self-host** it (`src/lib/x402/casper.ts` + our facilitator key + the public
@@ -136,17 +136,17 @@ cheaper and unmetered.
 
 Verification is real: the facilitator recomputes the EIP-712 digest, checks the
 signature against the payer's public key, confirms the payee, amount, and validity
-window, and confirms the public key derives to the payer's account hash — then
+window, and confirms the public key derives to the payer's account hash. Then it
 submits `transfer_with_authorization` and waits for finality. The contract
 re-verifies the signature on-chain before moving any tokens, so the facilitator
 is never trusted with funds; it can only relay a payment the agent already signed.
 
 ---
 
-## 6. Reputation — "the payment is the review"
+## 6. Reputation · "the payment is the review"
 
-There are no star ratings to game. Every listing's reputation — total calls,
-distinct paying wallets, success rate, revenue — is **derived from settled
+There are no star ratings to game. Every listing's reputation (total calls,
+distinct paying wallets, success rate, revenue) is **derived from settled
 payments**. A tool flips to **verified** only after its first real settlement
 clears the facilitator. The payment record *is* the usage record, so the market's
 trust signal is unforgeable ledger data, not prose reviews.
@@ -158,14 +158,14 @@ trust signal is unforgeable ledger data, not prose reviews.
 ```
 apps/web
   src/app
-    api/t/[slug]        the paid endpoint — returns 402, then verifies+settles
+    api/t/[slug]        the paid endpoint: returns 402, then verifies+settles
     api/agent/run       drives an agent through discover → pay → complete
     api/discovery/*     machine-readable catalog + search (for agents)
     api/mcp             MCP server: search_tools / get_tool / call_tool
     llms.txt            agent-discovery manifest
     (pages)             landing, /tools, /tools/[slug], /agent, /publish, /dashboard, /roadmap
   src/lib/x402
-    casper.ts           REAL Casper engine — EIP-712 signing, verification,
+    casper.ts           REAL Casper engine: EIP-712 signing, verification,
                         on-chain transfer_with_authorization settlement,
                         CSPR→WCSPR wrapping, CEP-18 transfer, balance reads
     payment.ts          x402 wire types + Ed25519 signing primitives

@@ -2,7 +2,7 @@
 // sign a payment authorization with your OWN Casper key, retry with the
 // PAYMENT-SIGNATURE header, receive the result + an on-chain receipt.
 //
-// This is what an external agent does — our CLI and MCP server both use it, so
+// This is what an external agent does: our CLI and MCP server both use it, so
 // the 402 handshake is exercised over the wire rather than short-circuited
 // in-process. Server-only (needs the Casper key material).
 import {

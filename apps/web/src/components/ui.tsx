@@ -4,7 +4,7 @@ import type { Capability, ToolStatus } from "@/lib/types";
 
 // ── logo tile ─────────────────────────────────────────────────────────────
 // Uniform rounded square that normalizes heterogeneous marks into one calm
-// texture — the single highest-leverage move borrowed from designsystems.surf.
+// texture, the single highest-leverage move borrowed from designsystems.surf.
 export function LogoTile({
   monogram,
   color,

@@ -9,28 +9,41 @@ const KEEP = 12;
 
 // The settlement ledger, live. Seeds from a server snapshot so the first paint
 // is never empty, then polls the (uncached) API every 2s. New deploy hashes at
-// the top mount fresh DOM nodes, which animate in — settled DOM stays put.
+// the top mount fresh DOM nodes, which animate in; settled DOM stays put.
 export function LiveFeed({ initial }: { initial: Settlement[] }) {
   const [rows, setRows] = useState<Settlement[]>(() => initial.slice(0, KEEP));
 
   useEffect(() => {
-    let alive = true;
+    let cancelled = false;
+    // Polls can overlap (a slow fetch outliving the 2s interval) and resolve out
+    // of order. Each tick takes a monotonically increasing ticket and aborts the
+    // previous request; only the newest ticket may apply, so a stale response can
+    // never overwrite a fresher ledger.
+    let seq = 0;
+    let ctrl: AbortController | null = null;
     const tick = async () => {
+      ctrl?.abort();
+      ctrl = new AbortController();
+      const mine = ++seq;
       try {
-        const res = await fetch("/api/settlements?limit=12", { cache: "no-store" });
+        const res = await fetch("/api/settlements?limit=12", {
+          cache: "no-store",
+          signal: ctrl.signal,
+        });
         if (!res.ok) return;
         const data = (await res.json()) as { settlements?: Settlement[] };
-        if (alive && Array.isArray(data.settlements)) {
+        if (!cancelled && mine === seq && Array.isArray(data.settlements)) {
           setRows(data.settlements.slice(0, KEEP));
         }
       } catch {
-        /* transient poll failure — keep the last good ledger on screen */
+        /* transient poll failure or superseded request: keep the last good ledger */
       }
     };
     const id = setInterval(tick, 2000);
     return () => {
-      alive = false;
+      cancelled = true;
       clearInterval(id);
+      ctrl?.abort();
     };
   }, []);
 

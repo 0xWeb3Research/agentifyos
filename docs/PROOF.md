@@ -1,4 +1,4 @@
-# On-chain proof — real settlements on Casper testnet
+# On-chain proof · real settlements on Casper testnet
 
 Every hash below is a **real transaction on Casper testnet**, executed
 2026-07-19. Click any of them; they resolve on the public explorer. Nothing here
@@ -47,7 +47,7 @@ Measured before and after the first settlement:
 
 > **That third row is the whole thesis.** The agent moved money while holding
 > zero native currency. It signed an authorization; the facilitator paid the
-> transaction fee. This is what makes pay-per-call viable for software — an
+> transaction fee. This is what makes pay-per-call viable for software: an
 > agent never has to be topped up with a blockchain's native token.
 
 ---
@@ -62,7 +62,7 @@ From the on-chain execution results (`consumed` vs `cost`):
 | **4 CSPR (ours, after measuring)** | 2.708 CSPR | **4.000** |
 
 Casper debits the **full declared amount** and refunds only 75% of the unused
-remainder — the rest is burned. So over-declaring destroys funds. Measuring real
+remainder; the rest is burned. So over-declaring destroys funds. Measuring real
 consumption and tightening the budget cut the charge **43%** and moved the
 transaction into the cheaper `wasm small` lane (5 CSPR cap, 40 txs per block
 instead of 2).

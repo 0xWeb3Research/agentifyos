@@ -1,5 +1,5 @@
 import { PLATFORM_FEE } from "./config";
-import { appendSettlement, readSettlements } from "./store/ledger";
+import { appendSettlement, readRealSettlements, readSettlements } from "./store/ledger";
 import { publishers, settlementBacklog, stats, tools } from "./seed";
 import type { Publisher, Settlement, ToolStats, ToolWithStats } from "./types";
 
@@ -82,10 +82,24 @@ export function getSeededSettlements(limit = 24): Settlement[] {
   return liveSettlements.slice(0, limit);
 }
 
-/** The durable ledger — what actually settled. */
+/**
+ * The public activity feed. Serves the durable ledger when it has entries and
+ * falls back to the seeded demo backlog only so a fresh install isn't a blank
+ * page. Anything presenting settlements as genuine must NOT use this. Go
+ * through `getRealSettlements` (or `ledger.readRealSettlements` directly),
+ * which never mixes in fixtures.
+ */
 export async function getSettlements(limit = 24): Promise<Settlement[]> {
   const real = await readSettlements(limit);
   return real.length ? real : liveSettlements.slice(0, limit);
+}
+
+/**
+ * Genuine on-chain settlements only, straight from the ledger's real lane.
+ * Returns real data or empty; seeded demo fixtures can never leak in here.
+ */
+export async function getRealSettlements(limit = 200): Promise<Settlement[]> {
+  return readRealSettlements(limit);
 }
 
 export async function recordSettlement(s: Settlement): Promise<void> {

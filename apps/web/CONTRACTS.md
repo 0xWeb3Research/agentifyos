@@ -1,4 +1,4 @@
-# AgentifyOS — build contracts (read before writing any file)
+# AgentifyOS · build contracts (read before writing any file)
 
 You are building ONE slice of a Next.js 16 (App Router) + React 19 + Tailwind v4 +
 TypeScript marketplace where AI agents discover and pay for tools via x402 on Casper.
@@ -11,22 +11,22 @@ Repo: `/Users/sidharthp/Documents/Projects/x402-research/agentifyos`, web app in
   that you were not explicitly told to create.
 - Only CREATE the files in your task. Nothing else.
 - `<Nav/>` and `<Footer/>` are already in the root layout. Your pages return a
-  `<main>` with `<Container>` sections — never add Nav/Footer.
+  `<main>` with `<Container>` sections. Never add Nav/Footer.
 - Anything importing `node:crypto`, `@/lib/x402/*`, `@/lib/data`, `@/lib/seed`, or
-  `@/lib/tools/*` is **server-only**. A `"use client"` file must NOT import them —
+  `@/lib/tools/*` is **server-only**. A `"use client"` file must NOT import them:
   fetch from an API route or take data as props from a server component. Importing
   **types** with `import type` from any module is always fine (types are erased).
 - Self-check when done: from `apps/web`, run
-  `pnpm exec tsc --noEmit 2>&1 | grep <your-file-path>` — ignore errors in files a
+  `pnpm exec tsc --noEmit 2>&1 | grep <your-file-path>`. Ignore errors in files a
   sibling agent is still writing; fix all errors in YOUR files.
 
-## Read these first (style + API exemplars — do not modify)
-`src/app/globals.css` · `src/app/page.tsx` (THE style exemplar — match it) ·
+## Read these first (style + API exemplars, do not modify)
+`src/app/globals.css` · `src/app/page.tsx` (THE style exemplar, match it) ·
 `src/components/ui.tsx` · `src/components/tool-card.tsx` · `src/components/wire-log.tsx` ·
 `src/components/copy.tsx` · `src/lib/types.ts` · `src/lib/data.ts` ·
 `src/lib/format.ts` · `src/lib/config.ts` · `src/lib/x402/loop.ts`
 
-## Design law (judges score UX/Design — treat as required)
+## Design law (judges score UX/Design, treat as required)
 - Refined-light only. Utilities: `bg-bg` (#FAFAFA page), `bg-surface` (white cards),
   `text-fg` (#0A0A0A), `text-fg-secondary` (#666), `text-muted` (#999),
   `border-border` (8% black; hover `border-border-hover`), `bg-tint` (3% black),
@@ -43,7 +43,7 @@ Repo: `/Users/sidharthp/Documents/Projects/x402-research/agentifyos`, web app in
   160–240ms with `ease-[var(--ease-out)]`; entrance via `animate-fade-up` with a
   small staggered `animationDelay`. Never `transition: all`, never `scale(0)`.
   `prefers-reduced-motion` is already handled globally.
-- Reuse primitives — do NOT recreate: from `@/components/ui` →
+- Reuse primitives; do NOT recreate: from `@/components/ui` →
   `Container, Button, Chip, CapabilityChip, StatusPill, LogoTile, Arrow, Eyebrow`;
   `ToolCard` from `@/components/tool-card`; `WireLog` from `@/components/wire-log`;
   `CodeBlock, CopyInline` from `@/components/copy`.

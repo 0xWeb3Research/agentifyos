@@ -92,7 +92,7 @@ export default function ExplainPage() {
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           None of the above is hypothetical. These are the live Casper testnet
-          accounts and the contract this instance settles through — click any value
+          accounts and the contract this instance settles through. Click any value
           to copy it, or open the arrow to see it on the block explorer.
         </p>
         <div className="mt-6 max-w-[760px]">

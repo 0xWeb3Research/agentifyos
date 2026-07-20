@@ -1,4 +1,4 @@
-// Sign-In With Casper — wallet-based auth, no passwords and no accounts.
+// Sign-In With Casper: wallet-based auth, no passwords and no accounts.
 //
 // You prove you control a Casper account by signing a one-time challenge. The
 // account you sign with becomes your publisher identity AND your payout address,
@@ -9,10 +9,12 @@
 // and Ledger firmware (which hard-rejects payloads without it).
 //
 // Verification note: casper-js-sdk v5's `verifySignature` branches on curve
-// internally — secp256k1 applies sha256 itself. Pass the UNHASHED preimage for
+// internally: secp256k1 applies sha256 itself. Pass the UNHASHED preimage for
 // both curves; hashing it here would double-hash and silently fail.
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import * as CasperNS from "casper-js-sdk";
+import { MODE } from "../config";
+import { SITE_URL } from "../site";
 
 const C: any = (CasperNS as any).default ?? CasperNS;
 const { PublicKey } = C;
@@ -25,10 +27,13 @@ export const SESSION_COOKIE = "agentifyos_session";
 // Session tokens are HMAC'd with this. A deployment that fell back to the
 // development default would let anyone who knows the string forge a session for
 // any wallet, so refuse to run rather than silently accept it in production.
+// NODE_ENV is an operational hint, not a security boundary: a container
+// started without it would fail open, so also refuse in real mode, where a
+// forgeable session gates spending from the funded wallets.
 const secret = () => {
   const s = process.env.AUTH_SECRET;
   if (s) return s;
-  if (process.env.NODE_ENV === "production") {
+  if (process.env.NODE_ENV === "production" || MODE === "real") {
     throw new Error(
       "AUTH_SECRET is not set. Refusing to sign sessions with the development default.",
     );
@@ -36,16 +41,52 @@ const secret = () => {
   return "dev-only-insecure-secret-set-AUTH_SECRET-in-production";
 };
 
+// ── origin binding ──────────────────────────────────────────────────────────
+// The domain in the SIWX message is the whole point of the scheme: it binds a
+// signature to this site. Minting (challenge) and checking (verify) must both
+// derive it from the SAME server-trusted place, never from X-Forwarded-Host,
+// which any client can set, turning the challenge endpoint into a signing
+// oracle for arbitrary domains. Only genuine `next dev`, or a deployment with
+// no origin configured at all (SITE_URL still the hardcoded default), falls
+// back to the request's host so localhost sign-in keeps working.
+export function authOrigin(req: Request): { host: string; origin: string } {
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SITE_URL || process.env.RAILWAY_PUBLIC_DOMAIN,
+  );
+  if (configured && process.env.NODE_ENV !== "development") {
+    const u = new URL(SITE_URL);
+    return { host: u.host, origin: u.origin };
+  }
+  const url = new URL(req.url);
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? url.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  return { host, origin: `${proto}://${host}` };
+}
+
 // ── challenges ──────────────────────────────────────────────────────────────
 // Single-use and short-lived. Kept in-process: a challenge is only valid for a
-// few minutes, so surviving a restart doesn't matter.
-const g = globalThis as unknown as { __siwxNonces?: Map<string, number> };
-const issued: Map<string, number> = (g.__siwxNonces ??= new Map());
+// few minutes, so surviving a restart doesn't matter. Each nonce keeps a hash
+// of the exact message we composed so verify can insist the wallet signed OUR
+// challenge, not a recomposed body that merely embeds a valid nonce.
+interface IssuedChallenge {
+  exp: number;
+  messageHash: string;
+}
+const g = globalThis as unknown as { __siwxChallenges?: Map<string, IssuedChallenge> };
+const issued: Map<string, IssuedChallenge> = (g.__siwxChallenges ??= new Map());
+
+// Minting is unauthenticated, so the map needs a hard cap on top of expiry
+// sweeping or it becomes a memory-exhaustion lever. All entries share one TTL,
+// so insertion order is expiry order and evicting from the front drops oldest.
+const MAX_ISSUED = 10_000;
 
 function sweep() {
   const now = Date.now();
-  for (const [nonce, exp] of issued) if (exp < now) issued.delete(nonce);
+  for (const [nonce, c] of issued) if (c.exp < now) issued.delete(nonce);
 }
+
+const hashMessage = (message: string) =>
+  createHash("sha256").update(message, "utf8").digest("hex");
 
 export interface Challenge {
   message: string;
@@ -60,10 +101,13 @@ export function createChallenge(opts: {
   chainId?: string;
 }): Challenge {
   sweep();
+  for (const oldest of issued.keys()) {
+    if (issued.size < MAX_ISSUED) break;
+    issued.delete(oldest);
+  }
   const nonce = randomBytes(16).toString("hex");
   const now = new Date();
   const exp = new Date(now.getTime() + CHALLENGE_TTL_MS);
-  issued.set(nonce, exp.getTime());
 
   const message = [
     `${opts.domain} wants you to sign in with your Casper account:`,
@@ -80,14 +124,20 @@ export function createChallenge(opts: {
     `Expiration Time: ${exp.toISOString()}`,
   ].join("\n");
 
+  issued.set(nonce, { exp: exp.getTime(), messageHash: hashMessage(message) });
   return { message, nonce, expiresAt: exp.toISOString() };
 }
 
-/** Burn a nonce. Returns false if unknown, already used, or expired. */
-export function consumeNonce(nonce: string): boolean {
+/**
+ * Burn a nonce. Returns false if unknown, already used, or expired, and also
+ * when `message` is given and it isn't byte-for-byte the challenge issued
+ * under that nonce (the real challenge stays live in that case).
+ */
+export function consumeNonce(nonce: string, message?: string): boolean {
   sweep();
-  const exp = issued.get(nonce);
-  if (exp === undefined || exp < Date.now()) return false;
+  const c = issued.get(nonce);
+  if (c === undefined || c.exp < Date.now()) return false;
+  if (message !== undefined && hashMessage(message) !== c.messageHash) return false;
   issued.delete(nonce);
   return true;
 }
@@ -125,7 +175,7 @@ export function verifySignedMessage(
   }
 
   try {
-    // v5 returns true or THROWS — it never returns false.
+    // v5 returns true or THROWS; it never returns false.
     if (pub.verifySignature(preimage, sig) !== true) {
       return { ok: false, reason: "invalid_signature" };
     }
@@ -147,15 +197,31 @@ export interface Session {
   publicKey: string;
   accountHash: string;
   address: string;
+  iat: number;
   exp: number;
+}
+
+// Sessions are stateless HMAC tokens, so deleting the cookie alone would leave
+// any copied token valid until `exp`. Sign-out therefore records a per-account
+// epoch, and readSession refuses tokens issued before it. In-process like the
+// challenge store: a restart forgets epochs (an old token works again until it
+// expires). Move this next to the ledger's Redis if that trade-off stops
+// being acceptable.
+const r = globalThis as unknown as { __siwxRevokedAt?: Map<string, number> };
+const revokedAt: Map<string, number> = (r.__siwxRevokedAt ??= new Map());
+
+/** Invalidate every session issued for this account before now. */
+export function revokeSessions(accountHash: string): void {
+  revokedAt.set(accountHash, Date.now());
 }
 
 function sign(payload: string): string {
   return createHmac("sha256", secret()).update(payload).digest("base64url");
 }
 
-export function issueSession(s: Omit<Session, "exp">): string {
-  const session: Session = { ...s, exp: Date.now() + SESSION_TTL_MS };
+export function issueSession(s: Omit<Session, "iat" | "exp">): string {
+  const now = Date.now();
+  const session: Session = { ...s, iat: now, exp: now + SESSION_TTL_MS };
   const body = Buffer.from(JSON.stringify(session)).toString("base64url");
   return `${body}.${sign(body)}`;
 }
@@ -171,7 +237,13 @@ export function readSession(token: string | undefined): Session | null {
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
   try {
     const s = JSON.parse(Buffer.from(body, "base64url").toString()) as Session;
-    return s.exp > Date.now() ? s : null;
+    if (s.exp <= Date.now()) return null;
+    // Signed out since this token was issued? `<=` so a token minted in the
+    // same millisecond as the sign-out dies too; tokens minted before `iat`
+    // existed carry none and count as 0, so they fail closed as well.
+    const cutoff = revokedAt.get(s.accountHash);
+    if (cutoff !== undefined && (s.iat ?? 0) <= cutoff) return null;
+    return s;
   } catch {
     return null;
   }

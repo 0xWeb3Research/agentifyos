@@ -28,7 +28,7 @@ export function resolveSpendBudget(clientBudgetUsd: unknown): number {
 // that actually protects the funded wallet.
 //
 // Reserves the run's MAXIMUM possible spend before the run starts. A run that
-// ends up spending less does not get the difference back — deliberately
+// ends up spending less does not get the difference back. This is deliberately
 // conservative, because the alternative is discovering the wallet is empty
 // during a demo.
 const DEMO_DAILY_USD_CAP = (() => {

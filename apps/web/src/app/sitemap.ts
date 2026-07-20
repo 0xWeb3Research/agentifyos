@@ -13,6 +13,7 @@ const STATIC: { path: string; priority: number; freq: MetadataRoute.Sitemap[numb
   { path: "/developers", priority: 0.7, freq: "monthly" },
   { path: "/agent", priority: 0.6, freq: "monthly" },
   { path: "/roadmap", priority: 0.4, freq: "monthly" },
+  { path: "/whitepaper.pdf", priority: 0.4, freq: "monthly" },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

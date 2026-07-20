@@ -27,7 +27,7 @@ function Panel({
   );
 }
 
-// Everything AgentifyOS touches on-chain, straight from runtime config — so what
+// Everything AgentifyOS touches on-chain, straight from runtime config, so what
 // this page shows is what the running instance actually signs and settles with.
 export function AddressBook() {
   return (
@@ -60,7 +60,7 @@ export function AddressBook() {
         <CopyRow label="entry point" value="transfer_with_authorization" />
       </Panel>
 
-      <Panel title="Network" note="testnet only — nothing here touches mainnet">
+      <Panel title="Network" note="testnet only · nothing here touches mainnet">
         <CopyRow label="chain name" value={CSPR.chainName} />
         <CopyRow label="caip-2 id" value={CSPR.network} />
         <CopyRow label="json-rpc" value={CSPR.rpc} />

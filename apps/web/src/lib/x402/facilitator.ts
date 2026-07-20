@@ -32,11 +32,18 @@ export interface FacilitatorClient {
   settle(payload: ExactPayload, req: PaymentRequirements): Promise<SettleResult>;
 }
 
-// Replay guard: a payment nonce may settle at most once per resource. Mirrors
-// the arXiv 2605.11781 mitigation — bind (nonce, resource) before serving.
-const usedNonces = new Set<string>();
-function claimKey(payload: ExactPayload, req: PaymentRequirements): string {
-  return `${payload.payload.authorization.nonce}:${req.resource}`;
+// Replay guard: a payment nonce may settle at most once. The nonce is 32 random
+// bytes, globally unique per authorization, so keying on it alone is safe.
+// Keying on (nonce, resource) let an attacker replay one signature against
+// `?_=1`, `?_=2`, … since the signature never committed to the resource.
+// Entries carry an expiry (the authorization's own deadline) and are swept on
+// each claim so the map can't grow unbounded.
+const usedNonces = new Map<string, number>(); // nonce → expiry (epoch ms)
+function claimKey(payload: ExactPayload): string {
+  return payload.payload.authorization.nonce;
+}
+function sweepNonces(now: number): void {
+  for (const [k, exp] of usedNonces) if (exp <= now) usedNonces.delete(k);
 }
 
 export class MockFacilitator implements FacilitatorClient {
@@ -49,48 +56,77 @@ export class MockFacilitator implements FacilitatorClient {
     };
   }
 
-  async verify(payload: ExactPayload, req: PaymentRequirements): Promise<VerifyResult> {
-    const { authorization, signature, publicKey } = payload.payload;
+  // All checks except nonce freshness, shared by verify() and settle(), which
+  // must claim the nonce itself (see settle).
+  private checks(payload: ExactPayload, req: PaymentRequirements): VerifyResult {
+    const { authorization, signature, publicKey } = payload?.payload ?? {};
+    if (!authorization || typeof signature !== "string" || typeof publicKey !== "string") {
+      return { isValid: false, payer: "", invalidReason: "malformed_payload" };
+    }
     const payer = authorization.from;
 
     // 1. real Ed25519 signature check against the payer's public key.
     if (!verifySignature(authorization, signature, publicKey)) {
       return { isValid: false, payer, invalidReason: "invalid_signature" };
     }
-    // 2. amount must match the requirement exactly.
+    // 2. the payment must actually go to the required recipient.
+    if (authorization.to !== req.payTo) {
+      return { isValid: false, payer, invalidReason: "recipient_mismatch" };
+    }
+    // 3. amount must match the requirement exactly.
     if (authorization.value !== req.amount) {
       return { isValid: false, payer, invalidReason: "amount_mismatch" };
     }
-    // 3. time window must be open.
+    // 4. time window must be open.
     const now = Math.floor(Date.now() / 1000);
     if (now < authorization.validAfter || now > authorization.validBefore) {
       return { isValid: false, payer, invalidReason: "authorization_expired" };
     }
-    // 4. nonce must be fresh for this resource (replay guard).
-    if (usedNonces.has(claimKey(payload, req))) {
-      return { isValid: false, payer, invalidReason: "nonce_replayed" };
-    }
     return { isValid: true, payer };
+  }
+
+  async verify(payload: ExactPayload, req: PaymentRequirements): Promise<VerifyResult> {
+    const r = this.checks(payload, req);
+    if (!r.isValid) return r;
+    // nonce must be fresh (replay guard).
+    if (usedNonces.has(claimKey(payload))) {
+      return { isValid: false, payer: r.payer, invalidReason: "nonce_replayed" };
+    }
+    return r;
   }
 
   async settle(payload: ExactPayload, req: PaymentRequirements): Promise<SettleResult> {
     const started = Date.now();
-    const v = await this.verify(payload, req);
-    const payer = payload.payload.authorization.from;
+    const auth = payload?.payload?.authorization;
+    const payer = auth?.from ?? "";
+    const fail = (reason?: string): SettleResult => ({
+      success: false,
+      payer,
+      deployHash: "",
+      network: req.network,
+      latencyMs: Date.now() - started,
+      errorReason: reason,
+    });
+    if (!auth) return fail("malformed_payload");
+
+    // Claim the nonce FIRST via a synchronous test-and-set: no await between
+    // the check and the set. Awaiting verify() before claiming left a TOCTOU
+    // window where two concurrent settles both saw a fresh nonce and both
+    // settled. If the remaining checks then fail, the provisional claim is
+    // released.
+    const key = claimKey(payload);
+    sweepNonces(started);
+    if (usedNonces.has(key)) return fail("nonce_replayed");
+    usedNonces.set(key, auth.validBefore * 1000 || started + 600_000);
+
+    const v = this.checks(payload, req);
     if (!v.isValid) {
-      return {
-        success: false,
-        payer,
-        deployHash: "",
-        network: req.network,
-        latencyMs: Date.now() - started,
-        errorReason: v.invalidReason,
-      };
+      usedNonces.delete(key);
+      return fail(v.invalidReason);
     }
-    // Claim atomically, then "broadcast".
-    usedNonces.add(claimKey(payload, req));
+    // Claimed and verified → "broadcast".
     // Simulate Casper block/finality time deterministically (~1.1–1.6s band).
-    const jitter = canonical(payload.payload.authorization).length % 500;
+    const jitter = canonical(auth).length % 500;
     const latencyMs = 1100 + jitter;
     return {
       success: true,

@@ -13,8 +13,9 @@ import {
 import type { Receipt, Settlement } from "@/lib/types";
 // type-only: erased at runtime, so the Casper SDK is still lazily loaded below
 import type { ExactCasperPayload } from "@/lib/x402/casper";
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
 
-// The genuine HTTP 402 paid endpoint — the surface external agents (our CLI, the
+// The genuine HTTP 402 paid endpoint: the surface external agents (our CLI, the
 // MCP server, anyone) actually use. GET it with no payment header and you get a
 // 402 plus machine-readable PaymentRequirements; sign an authorization, retry
 // with `PAYMENT-SIGNATURE`, and once it settles on Casper you get the tool result
@@ -36,10 +37,20 @@ const NO_STORE = {
   "Access-Control-Expose-Headers": "PAYMENT-REQUIRED, PAYMENT-RESPONSE",
 };
 
+// Settlements label the payer by the first 8 hex chars of the account hash,
+// with or without the "00" x402 address prefix.
+function payerLabel(payer: string): string {
+  return payer.replace(/^00/, "").slice(0, 8);
+}
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> },
 ) {
+  // Payment is the auth on this endpoint; the limit just blunts free 402 spam.
+  const rl = rateLimit(`paid:${clientIp(req)}`, 30, 60_000);
+  if (!rl.ok) return tooManyRequests(rl.retryAfterSec);
+
   const { slug } = await params;
   const tool = getToolBySlug(slug);
   if (!tool) {
@@ -52,7 +63,7 @@ export async function GET(
   const header = req.headers.get("payment-signature");
   const input = Object.fromEntries(new URL(req.url).searchParams.entries());
 
-  // ══ REAL MODE — settle on Casper testnet ══════════════════════════════════
+  // ══ REAL MODE: settle on Casper testnet ═══════════════════════════════════
   if (MODE === "real") {
     const casper = await import("@/lib/x402/casper");
 
@@ -90,6 +101,20 @@ export async function GET(
       return NextResponse.json({ error: v.reason, payer: v.payer }, { status: 402, headers: NO_STORE });
     }
 
+    // A transfer from a payer without the funds reverts on-chain but still burns
+    // the facilitator's gas, so check the balance before submitting anything.
+    try {
+      const balance = await casper.getWcsprBalance(payload.authorization.from);
+      if (BigInt(balance) < BigInt(requirements.amount)) {
+        return NextResponse.json(
+          { error: "insufficient_payer_balance", payer: v.payer },
+          { status: 402, headers: NO_STORE },
+        );
+      }
+    } catch {
+      /* balance read failed: fall through, settleOnChain reports its own errors */
+    }
+
     const facilitator = casper.loadRoleWallet("facilitator");
     const settle = await casper.settleOnChain(facilitator, payload, requirements);
     if (!settle.success) {
@@ -109,7 +134,7 @@ export async function GET(
       toolName: tool.name,
       eventName: event.name,
       payer,
-      payerLabel: payer.slice(2, 10),
+      payerLabel: payerLabel(payer),
       amountUsd: event.usd,
       amountAtomic: requirements.amount,
       deployHash: settle.deployHash,
@@ -147,7 +172,7 @@ export async function GET(
     );
   }
 
-  // ══ OFFLINE MODE — in-process facilitator (tests / no funds) ══════════════
+  // ══ OFFLINE MODE: in-process facilitator (tests / no funds) ═══════════════
   if (!header) {
     return NextResponse.json(make402(tool, event, resource, payTo), {
       status: 402,
@@ -155,7 +180,12 @@ export async function GET(
     });
   }
 
-  const payload = JSON.parse(Buffer.from(header, "base64").toString()) as ExactPayload;
+  let payload: ExactPayload;
+  try {
+    payload = JSON.parse(Buffer.from(header, "base64").toString());
+  } catch {
+    return NextResponse.json({ error: "malformed_payment_signature" }, { status: 400, headers: NO_STORE });
+  }
   const req2 = buildRequirements(tool, event, resource, payTo);
   const fac = getFacilitator();
 
@@ -179,7 +209,7 @@ export async function GET(
     toolName: tool.name,
     eventName: event.name,
     payer,
-    payerLabel: payer.slice(0, 10),
+    payerLabel: payerLabel(payer),
     amountUsd: event.usd,
     amountAtomic: req2.amount,
     deployHash: settle.deployHash,
