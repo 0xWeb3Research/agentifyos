@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "How it works",
   description:
     "AgentifyOS explained in three diagrams: how an agent pays for a tool, where the money comes from, and what talks to what.",
+  alternates: { canonical: "/explain" },
 };
 
 export default function ExplainPage() {

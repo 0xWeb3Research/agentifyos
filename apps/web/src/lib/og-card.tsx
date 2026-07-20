@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { BRAND_COLOR, SITE_TAGLINE } from "@/lib/site";
 
-// The shared link-preview card, used by both the Open Graph and Twitter routes.
-// It lives outside app/ because Next requires each route file to declare its own
-// `runtime` literally — those exports cannot be re-exported from a sibling.
+// The shared link-preview card, used by the Open Graph, Twitter, and per-tool
+// routes. It lives outside app/ because Next requires each route file to declare
+// its own `runtime` literally — those exports cannot be re-exported from a sibling.
 export const OG_ALT = "AgentifyOS — the marketplace where AI agents shop for tools";
 export const OG_SIZE = { width: 1200, height: 630 };
 
@@ -15,13 +16,35 @@ const geist = (weight: "Regular" | "Medium") =>
     `Geist-${weight}.ttf`,
   );
 
-export async function renderOgCard() {
+export interface OgCardOptions {
+  /** Headline. Defaults to the site tagline. */
+  title?: string;
+  /** Supporting line under the headline. */
+  subtitle?: string;
+  /** Pill in the bottom-left. */
+  badge?: string;
+  /** Small line to the right of the badge. Defaults to the domain. */
+  footnote?: string;
+}
+
+export async function renderOgCard(opts: OgCardOptions = {}) {
+  const {
+    title = SITE_TAGLINE,
+    subtitle = "Publish a paid tool in 60 seconds. Agents discover it and pay per call with x402 — no API keys, no accounts.",
+    badge = "x402 on Casper",
+    footnote = "agentifyos.xyz",
+  } = opts;
+
   const [logo, regular, medium] = await Promise.all([
     readFile(path.join(process.cwd(), "public/logo.png")),
     readFile(geist("Regular")),
     readFile(geist("Medium")),
   ]);
   const logoSrc = `data:image/png;base64,${logo.toString("base64")}`;
+
+  // Long tool names would otherwise overflow the card, so step the headline down
+  // rather than letting it clip.
+  const titleSize = title.length > 64 ? 52 : title.length > 40 ? 60 : 64;
 
   return new ImageResponse(
     (
@@ -50,19 +73,18 @@ export async function renderOgCard() {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <span
             style={{
-              fontSize: 64,
+              fontSize: titleSize,
               fontWeight: 500,
               lineHeight: 1.1,
               letterSpacing: "-0.035em",
               color: "#0a0a0a",
-              maxWidth: 900,
+              maxWidth: 940,
             }}
           >
-            The marketplace where AI agents shop for tools.
+            {title}
           </span>
-          <span style={{ fontSize: 28, lineHeight: 1.4, color: "#666666", maxWidth: 820 }}>
-            Publish a paid tool in 60 seconds. Agents discover it and pay per call
-            with x402 — no API keys, no accounts.
+          <span style={{ fontSize: 28, lineHeight: 1.4, color: "#666666", maxWidth: 860 }}>
+            {subtitle}
           </span>
         </div>
 
@@ -71,16 +93,16 @@ export async function renderOgCard() {
             style={{
               display: "flex",
               alignItems: "center",
-              background: "#f82636",
+              background: BRAND_COLOR,
               color: "#ffffff",
               borderRadius: 999,
               padding: "8px 20px",
               letterSpacing: "0.02em",
             }}
           >
-            x402 on Casper
+            {badge}
           </span>
-          <span style={{ color: "#999999" }}>agentifyos.xyz</span>
+          <span style={{ color: "#999999" }}>{footnote}</span>
         </div>
       </div>
     ),

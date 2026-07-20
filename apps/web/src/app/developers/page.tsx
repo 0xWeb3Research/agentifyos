@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Developers",
   description:
     "Everything a machine needs: an HTTP 402 endpoint, a discovery API, an MCP server, llms.txt, and a CLI.",
+  alternates: { canonical: "/developers" },
 };
 
 const MCP_TOOLS = [

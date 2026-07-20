@@ -8,7 +8,15 @@ import { compact, relTime, shortHash, usd } from "@/lib/format";
 import { getSeededSettlements, getToolsWithStats } from "@/lib/data";
 import { earningsByTool, readRealSettlements, totalsOf } from "@/lib/store/ledger";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description:
+    "Earnings from real x402 settlements on Casper testnet: totals, per-tool revenue after the platform fee, and a live feed of payments linking to the block explorer.",
+  alternates: { canonical: "/dashboard" },
+  // Publisher earnings, not a landing page: keep it out of the index but let
+  // crawlers follow the tool and explorer links it points at.
+  robots: { index: false, follow: true },
+};
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage({

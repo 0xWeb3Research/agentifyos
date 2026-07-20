@@ -2,11 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Eyebrow, Arrow, Chip } from "@/components/ui";
 import { listDocs } from "@/lib/docs";
+import { abs } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Docs",
   description:
     "Everything about AgentifyOS: how x402 payments work on Casper, the testnet runbook, the CLI and MCP server, and the on-chain addresses.",
+  alternates: { canonical: "/docs" },
+  openGraph: {
+    title: "Docs",
+    description:
+      "Six documents, in reading order: what an agent is, how the x402 handshake works, the testnet runbook, the CLI and MCP server, the addresses, and the proof.",
+    url: abs("/docs"),
+    type: "website",
+  },
 };
 
 export default async function DocsIndexPage() {

@@ -11,11 +11,55 @@ import {
   LogoTile,
   StatusPill,
 } from "@/components/ui";
-import { ToolCard } from "@/components/tool-card";
+import { ToolCard, isLive } from "@/components/tool-card";
 import { CodeBlock, CopyInline } from "@/components/copy";
+import { JsonLd } from "@/components/json-ld";
 import { getToolBySlug, getToolsWithStats } from "@/lib/data";
 import { compact, pct, shortHash, usd } from "@/lib/format";
-import type { SchemaField } from "@/lib/types";
+import { SITE_URL, abs } from "@/lib/site";
+import type { SchemaField, ToolWithStats } from "@/lib/types";
+
+// A listing is a product an agent can buy, so describe it as one. Deliberately
+// no aggregateRating: the seeded stats are generated per process, and emitting
+// them as review data would be publishing ratings that nobody gave.
+function toolGraph(tool: ToolWithStats) {
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "@id": `${abs(`/tools/${tool.slug}`)}#tool`,
+      name: tool.name,
+      description: tool.tagline,
+      url: abs(`/tools/${tool.slug}`),
+      applicationCategory: tool.category,
+      keywords: tool.tags.join(", "),
+      provider: { "@type": "Organization", name: tool.publisher.name },
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      offers: {
+        "@type": "Offer",
+        price: tool.primaryPrice,
+        priceCurrency: "USD",
+        // Priced in USD but settled in WCSPR; the page explains the conversion.
+        description: `${usd(tool.primaryPrice)} per call, settled with x402 on Casper`,
+        availability: isLive(tool)
+          ? "https://schema.org/InStock"
+          : "https://schema.org/PreOrder",
+      },
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Tools", item: abs("/tools") },
+        { "@type": "ListItem", position: 2, name: tool.name, item: abs(`/tools/${tool.slug}`) },
+      ],
+    },
+  ];
+}
+
+export function generateStaticParams() {
+  return getToolsWithStats().map((t) => ({ slug: t.slug }));
+}
 
 export async function generateMetadata({
   params,
@@ -24,8 +68,21 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const tool = getToolBySlug(slug);
-  if (!tool) return {};
-  return { title: tool.name, description: tool.tagline };
+  if (!tool) return { title: "Tool not found", robots: { index: false, follow: false } };
+  const title = `${tool.name} — ${usd(tool.primaryPrice)} per call`;
+  return {
+    title: tool.name,
+    description: tool.tagline,
+    keywords: [...tool.tags, tool.category, "x402", "pay per call"],
+    alternates: { canonical: `/tools/${tool.slug}` },
+    openGraph: {
+      title,
+      description: tool.tagline,
+      url: abs(`/tools/${tool.slug}`),
+      type: "website",
+    },
+    twitter: { card: "summary_large_image", title, description: tool.tagline },
+  };
 }
 
 export default async function ToolDetailPage({
@@ -52,6 +109,7 @@ export default async function ToolDetailPage({
 
   return (
     <main>
+      <JsonLd data={toolGraph(tool)} />
       <Container className="py-10">
         {/* ── back link ─────────────────────────────────────────────── */}
         <Link

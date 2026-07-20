@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Arrow, Button, Container, Eyebrow } from "@/components/ui";
+
+export const metadata: Metadata = {
+  title: "Not found",
+  robots: { index: false, follow: false },
+};
 
 const LINKS = [
   { href: "/tools", label: "Browse the catalog", hint: "14 tools an agent can buy" },

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Marquee } from "@/components/marquee";
 import { WireLog } from "@/components/wire-log";
@@ -7,6 +8,12 @@ import { getToolsWithStats } from "@/lib/data";
 import { publishers } from "@/lib/seed";
 import { compact, pct, usd } from "@/lib/format";
 import type { WireStep } from "@/lib/x402/loop";
+
+// Title and description come from the layout defaults, which are written for
+// this page — only the canonical is page-specific.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 // A representative wire trace for the hero (no side effects at render time).
 const HERO_TRACE: WireStep[] = [

@@ -4,7 +4,38 @@ import { notFound } from "next/navigation";
 import { clsx } from "clsx";
 import { Container, Eyebrow, Arrow } from "@/components/ui";
 import { Markdown } from "@/components/markdown";
+import { JsonLd } from "@/components/json-ld";
 import { getDoc, listDocs, DOC_SLUGS } from "@/lib/docs";
+import { SITE_URL, abs } from "@/lib/site";
+import type { DocMeta } from "@/lib/docs";
+
+// Docs are the reference material an AI crawler is most likely to cite, so
+// describe them as articles rather than leaving them as untyped pages.
+function docGraph(meta: DocMeta) {
+  const url = abs(`/docs/${meta.slug}`);
+  return [
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "@id": `${url}#article`,
+      headline: meta.title,
+      description: meta.summary,
+      url,
+      isPartOf: { "@id": `${SITE_URL}/#website` },
+      publisher: { "@id": `${SITE_URL}/#organization` },
+      inLanguage: "en",
+      timeRequired: `PT${meta.minutes}M`,
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Docs", item: abs("/docs") },
+        { "@type": "ListItem", position: 2, name: meta.title, item: url },
+      ],
+    },
+  ];
+}
 
 export function generateStaticParams() {
   return DOC_SLUGS.map((slug) => ({ slug }));
@@ -16,8 +47,23 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const doc = await getDoc((await params).slug);
-  if (!doc) return { title: "Not found" };
-  return { title: doc.meta.title, description: doc.meta.summary };
+  if (!doc) return { title: "Not found", robots: { index: false, follow: false } };
+  return {
+    title: doc.meta.title,
+    description: doc.meta.summary,
+    alternates: { canonical: `/docs/${doc.meta.slug}` },
+    openGraph: {
+      title: doc.meta.title,
+      description: doc.meta.summary,
+      url: abs(`/docs/${doc.meta.slug}`),
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: doc.meta.title,
+      description: doc.meta.summary,
+    },
+  };
 }
 
 export default async function DocPage({
@@ -36,6 +82,7 @@ export default async function DocPage({
 
   return (
     <main>
+      <JsonLd data={docGraph(doc.meta)} />
       <Container className="pb-16 pt-12">
         <div className="flex min-w-0 flex-col gap-10 lg:flex-row lg:gap-12">
           {/* contents rail — becomes a plain list above lg */}

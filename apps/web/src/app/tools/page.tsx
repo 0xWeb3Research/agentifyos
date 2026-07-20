@@ -1,7 +1,20 @@
+import type { Metadata } from "next";
 import { Catalog } from "@/components/catalog";
 import { Container, Eyebrow } from "@/components/ui";
 import { getCategories, getToolsWithStats } from "@/lib/data";
 import { compact } from "@/lib/format";
+
+export const metadata: Metadata = {
+  title: "Tools",
+  description:
+    "The catalog of tools an agent can buy. Search by name or tag, filter by category and price, and see which endpoints are callable today over x402 on Casper.",
+  alternates: { canonical: "/tools" },
+  openGraph: {
+    title: "Tools · AgentifyOS",
+    description:
+      "The catalog of tools an agent can buy, filtered by category and price. Every listing is a paid x402 endpoint.",
+  },
+};
 
 export default function ToolsPage() {
   const tools = getToolsWithStats();

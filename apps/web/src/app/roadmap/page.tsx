@@ -1,4 +1,17 @@
+import type { Metadata } from "next";
 import { Container, Eyebrow } from "@/components/ui";
+
+export const metadata: Metadata = {
+  title: "Roadmap",
+  description:
+    "What AgentifyOS ships today and what comes next: the full x402 loop on Casper testnet, then a self-hosted facilitator, mainnet, and an on-chain tool registry.",
+  alternates: { canonical: "/roadmap" },
+  openGraph: {
+    title: "Roadmap · AgentifyOS",
+    description:
+      "From the x402 loop running on Casper testnet today to a self-hosted facilitator, mainnet, and an on-chain tool registry.",
+  },
+};
 
 // Long-term launch plan. A calm mono timeline: what ships today, what's next,
 // and where the machine economy goes once the rails are real.
