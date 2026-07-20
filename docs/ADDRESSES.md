@@ -113,6 +113,45 @@ it's the stable address, and `version: null` routes to the newest enabled versio
 
 ---
 
+## 2b. Our own contract — the ToolRegistry
+
+Written by us and deployed to testnet. It anchors a hash of each listing's
+manifest on-chain so a later silent edit to a price or payout address is
+detectable.
+
+```
+package hash      9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18
+active version    1   →  contract-6cdc0ef319aedf391c6b5c34f1e0d8f106a3fa722ba5de84211f4fe657c63bb7
+owner             treasury (014ea619…9706ab)
+entry points      register_tool(slug: String, manifest_hash: String)
+                  get_manifest_hash(slug: String) -> String
+dictionaries      manifests (slug -> sha256), owners (slug -> Key)
+source            contracts/tool-registry/src/main.rs
+explorer          https://testnet.cspr.live/contract-package/9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18
+```
+
+First writer owns a slug; only that account can update it. Read it with
+`pnpm casper:registry-info`, anchor a listing with `pnpm casper:registry-register`.
+
+> **Deploying to Casper 2.0 — three things that each cost 100+ CSPR to learn.**
+> A failed install is charged the *full declared gas*, so get these right first:
+>
+> 1. The precompiled `core`/`alloc` for `wasm32-unknown-unknown` ship **with
+>    bulk-memory**. Disabling the target feature on your own crate does nothing;
+>    you need `-Z build-std=core,alloc,panic_abort`.
+> 2. Even then LLVM emits `memory.copy`/`memory.fill` and the node rejects the
+>    module at preprocessing — *"Bulk memory operations are not supported"*. Run
+>    `wasm-opt --llvm-memory-copy-fill-lowering --signext-lowering`. Verify with
+>    `wasm-opt out.wasm --print -o /dev/null | grep -c memory.copy` → must be `0`.
+> 3. An install must be flagged `.installOrUpgrade()` so it routes to Casper 2.0's
+>    install lane. A plain session transaction is refused with
+>    `ApiError::NotAllowedToAddContractVersion [48]`.
+>
+> `contracts/tool-registry/build.sh` encodes all three and fails loudly if the
+> output is not MVP-clean.
+
+---
+
 ## 3. Network
 
 ```

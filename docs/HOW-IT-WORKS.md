@@ -46,8 +46,10 @@ both documented in [TESTNET.md](./TESTNET.md):
 | **Use the existing testnet WCSPR** | Casper's reference x402 token, already deployed at package `3d80df21…4847c1e` | fastest — nothing to deploy |
 | **Deploy our own CEP-18** | `agentifyos` runs the reference `Cep18X402.wasm` under our own account | gives us a **contract package hash to show judges** (hackathon criterion: "working deployed contracts on Casper testnet") |
 
-> Optional future contract: an **Odra `ToolRegistry`** that anchors each tool's
-> manifest hash on-chain, making listings tamper-evident. That's on the roadmap,
+> **We also wrote and deployed our own contract:** the `ToolRegistry` at package
+> `9c1b0ac3…720a18`, which anchors each tool's manifest hash on-chain and makes
+> listings tamper-evident. Source in `contracts/tool-registry/`, addresses in
+> [ADDRESSES.md](./ADDRESSES.md) §2b. Wiring it into the publish flow is next,
 > not required for payments.
 
 ### What's live right now?

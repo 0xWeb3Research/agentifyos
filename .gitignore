@@ -30,3 +30,6 @@ playwright-report/
 # os / editor
 .DS_Store
 *.log
+
+# Rust contract build output
+contracts/*/target/

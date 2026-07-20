@@ -7,7 +7,7 @@
 **The marketplace where AI agents shop for tools.**
 
 Publish a paid tool in 60 seconds. Autonomous agents discover it and pay per call
-with **x402 on Casper** — no API keys, no accounts, no human in the loop.
+with **x402 on Casper**: no API keys, no accounts, no human in the loop.
 
 [![live](https://img.shields.io/badge/demo-live-008b37?style=flat-square)](https://agentifyos.xyz)
 [![network](https://img.shields.io/badge/casper-testnet-f82636?style=flat-square)](https://testnet.cspr.live)
@@ -26,7 +26,7 @@ with **x402 on Casper** — no API keys, no accounts, no human in the loop.
 ## Why
 
 An AI agent can reason, but it cannot buy. Every API it wants sits behind a
-signup form, a credit card, and a dashboard — all built for humans. So agents
+signup form, a credit card, and a dashboard, all built for humans. So agents
 stay on a leash: a human provisions keys up front and hopes they cover whatever
 the agent needs later.
 
@@ -56,7 +56,7 @@ on the WCSPR CEP-18 contract, verifiable on the block explorer.
 | Agent, four tools, one task | `/agent` → Casper | [`907f08f6`](https://testnet.cspr.live/deploy/907f08f6a4ccd569fb4bde9babf63bb80a273c017772dd3bded39c29d047a925) · [`86d61db6`](https://testnet.cspr.live/deploy/86d61db62442d867adde20254cedab64525b65d578139fbe171ade11ee257b85) · [`0db4cbf1`](https://testnet.cspr.live/deploy/0db4cbf14be6d6e2d30dc1035447ec466de3026e2c0f0eeb2ee642dbc55a1420) |
 
 **The agent held 0 CSPR throughout.** It signs an authorization off-chain; the
-facilitator submits it and absorbs the gas. That is the whole trick — see
+facilitator submits it and absorbs the gas. That is the whole trick. See
 [docs/PROOF.md](docs/PROOF.md) for balances and gas accounting.
 
 ***
@@ -95,13 +95,13 @@ pnpm test:e2e                # Playwright suite, incl. a live settlement
 | Surface | For | Entry point |
 |---|---|---|
 | Marketplace | humans | `/` · `/tools` · `/publish` · `/dashboard` |
-| Agent demo | everyone | `/agent` — discovers, pays, completes a task, live |
+| Agent demo | everyone | `/agent`: discovers, pays, completes a task, live |
 | CLI | terminal | `pnpm agentify call <slug>` |
-| MCP server | Claude / Cursor | `pnpm mcp` — lets an assistant buy tools itself |
-| Paid endpoint | agents | `/api/t/[slug]` — real HTTP 402 → pay → result |
+| MCP server | Claude / Cursor | `pnpm mcp`: lets an assistant buy tools itself |
+| Paid endpoint | agents | `/api/t/[slug]`: real HTTP 402 → pay → result |
 | Discovery | agents | `/api/discovery/*` · `/api/mcp` · `/llms.txt` |
 
-The CLI and MCP server are **ordinary x402 clients** — their own keys, paying
+The CLI and MCP server are **ordinary x402 clients**: their own keys, paying
 over the same public endpoint as anyone else. There is no privileged path.
 
 ***
@@ -110,7 +110,7 @@ over the same public endpoint as anyone else. There is no privileged path.
 
 1. Agent calls a tool → **HTTP 402** with `PaymentRequirements` (scheme `exact`, network `casper:casper-test`, asset WCSPR).
 2. Agent signs an **EIP-712** authorization with its Ed25519 key and retries with `PAYMENT-SIGNATURE`. This costs nothing and touches no chain.
-3. The facilitator verifies signature, amount, time window, and payee, then settles on Casper — **paying the gas itself**.
+3. The facilitator verifies signature, amount, time window, and payee, then settles on Casper, **paying the gas itself**.
 4. Payment clears, the tool runs, the agent gets the result plus a receipt (`deployHash`).
 5. The settlement updates that listing's reputation. The payment is the review.
 
@@ -150,6 +150,7 @@ apps/web
     cli.ts             pnpm agentify
     mcp-server.ts      pnpm mcp
     casper/*           keygen · balance · wrap · transfer · pay · sign-test
+contracts/tool-registry  our Casper smart contract (Rust)
 brand/                 logo source
 docs/                  the six documents above
 ```
@@ -165,7 +166,8 @@ docs/                  the six documents above
 | State | Zustand |
 | Payments | `@casper-ecosystem/casper-eip-712` · `casper-js-sdk` |
 | Settlement | WCSPR CEP-18 on Casper testnet, `transfer_with_authorization` |
-| Storage | Redis — the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
+| Our contract | `ToolRegistry` in Rust — anchors listing manifests on-chain ([`9c1b0ac3…`](https://testnet.cspr.live/contract-package/9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18)) |
+| Storage | Redis: the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
 | Testing | Playwright · custom self-test and SEO audit scripts |
 
 ***

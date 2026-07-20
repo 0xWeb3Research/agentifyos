@@ -1,0 +1,24 @@
+[package]
+name = "tool-registry"
+version = "0.1.0"
+edition = "2021"
+description = "On-chain registry anchoring AgentifyOS tool manifests to Casper"
+
+[dependencies]
+# no-std-helpers pulls in a panic handler that modern rustc rejects as an
+# internal language item, so we supply our own below and build on stable.
+casper-contract = { version = "5.1.1", default-features = false }
+casper-types = "6.0.1"
+
+[[bin]]
+name = "tool_registry"
+path = "src/main.rs"
+bench = false
+doctest = false
+test = false
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "z"
+panic = "abort"

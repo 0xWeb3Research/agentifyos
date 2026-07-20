@@ -20,7 +20,10 @@
     "test:e2e": "playwright test",
     "agentify": "tsx scripts/cli.ts",
     "mcp": "tsx scripts/mcp-server.ts",
-    "authtest": "tsx scripts/auth-test.ts"
+    "authtest": "tsx scripts/auth-test.ts",
+    "casper:deploy-registry": "tsx scripts/casper/deploy-registry.ts",
+    "casper:registry-info": "tsx scripts/casper/registry-info.ts",
+    "casper:registry-register": "tsx scripts/casper/registry-register.ts"
   },
   "dependencies": {
     "@casper-ecosystem/casper-eip-712": "1.2.1",

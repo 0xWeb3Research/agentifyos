@@ -1,0 +1,10 @@
+[build]
+target = "wasm32-unknown-unknown"
+
+# Casper's wasm interpreter accepts MVP WebAssembly only. Recent Rust enables
+# several post-MVP proposals for this target by default, and the node rejects
+# the module at preprocessing with "Bulk memory operations are not supported"
+# before it ever executes.
+rustflags = [
+  "-C", "target-feature=-bulk-memory,-sign-ext,-multivalue,-reference-types,-nontrapping-fptoint",
+]
