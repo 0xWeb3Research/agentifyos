@@ -101,11 +101,11 @@ export default async function ToolDetailPage({
     .slice(0, 3);
 
   const mcpConfig = JSON.stringify(
-    { mcpServers: { agentifyos: { type: "http", url: "http://localhost:8402/api/mcp" } } },
+    { mcpServers: { agentifyos: { type: "http", url: `${SITE_URL}/api/mcp` } } },
     null,
     2,
   );
-  const curlSnippet = `curl -s http://localhost:8402/api/t/${slug}   # → HTTP 402, then pay & retry`;
+  const curlSnippet = `curl -s ${SITE_URL}/api/t/${slug}   # → HTTP 402, then pay & retry`;
 
   return (
     <main>

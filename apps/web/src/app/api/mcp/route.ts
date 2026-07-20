@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getToolBySlug, searchTools } from "@/lib/data";
 import { executePaidCall } from "@/lib/x402/loop";
 import { makeWallet } from "@/lib/x402/payment";
+import { SITE_URL } from "@/lib/site";
 
 // A pragmatic MCP-style endpoint so an agent host (Claude, Cursor, …) can list
 // AgentifyOS tools, read a manifest, and actually pay-and-call one over the full
@@ -52,7 +53,7 @@ export async function GET() {
     tools: TOOL_DEFS,
     config: {
       mcpServers: {
-        agentifyos: { type: "http", url: "http://localhost:8402/api/mcp" },
+        agentifyos: { type: "http", url: `${SITE_URL}/api/mcp` },
       },
     },
   });

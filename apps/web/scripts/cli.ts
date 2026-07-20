@@ -15,7 +15,9 @@ import { fetchWithPayment, searchTools } from "../src/lib/x402/client";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const KEYS = join(here, "..", "keys");
-const BASE = process.env.AGENTIFYOS_URL || "http://localhost:8402";
+// Ships pointing at the hosted marketplace; set AGENTIFYOS_URL to
+// http://localhost:8402 to run against a local dev server.
+const BASE = process.env.AGENTIFYOS_URL || "https://agentifyos.xyz";
 
 const c = {
   dim: (s: string) => `\x1b[2m${s}\x1b[0m`,
@@ -160,7 +162,7 @@ async function main() {
     --max=<usd>    refuse to pay more than this (default: 1)
 
   env
-    AGENTIFYOS_URL   marketplace base URL (default http://localhost:8402)
+    AGENTIFYOS_URL   marketplace base URL (default https://agentifyos.xyz)
 `);
   }
 }

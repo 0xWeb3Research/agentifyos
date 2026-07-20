@@ -33,7 +33,7 @@ $ pnpm agentify call cspr-market-data
   paying for cspr-market-data
   wallet 01e565e859f9bab3f7cb…  (holds WCSPR, no CSPR needed)
 
-  REQ    GET http://localhost:8402/api/t/cspr-market-data   +0ms
+  REQ    GET https://agentifyos.xyz/api/t/cspr-market-data   +0ms
   402    payment required — 86580087 atomic WCSPR (~$0.0020) +50ms
   SIG    signed EIP-712 authorization as 0041611f2c09…       +58ms
   PAID   settled — e50c18e49e666b66…                     +11823ms
@@ -92,7 +92,7 @@ claude mcp add-json agentifyos '{
   "type": "stdio",
   "command": "pnpm",
   "args": ["--dir", "/ABSOLUTE/PATH/TO/agentifyos/apps/web", "mcp"],
-  "env": { "AGENTIFYOS_URL": "http://localhost:8402", "AGENTIFYOS_MAX_USD": "0.10" }
+  "env": { "AGENTIFYOS_MAX_USD": "0.10" }
 }' --scope user
 ```
 
@@ -105,7 +105,7 @@ claude mcp add-json agentifyos '{
       "command": "/absolute/path/to/node",
       "args": ["/ABSOLUTE/PATH/TO/agentifyos/apps/web/node_modules/.bin/tsx",
                "/ABSOLUTE/PATH/TO/agentifyos/apps/web/scripts/mcp-server.ts"],
-      "env": { "AGENTIFYOS_URL": "http://localhost:8402" }
+      "env": {}
     }
   }
 }
@@ -122,7 +122,7 @@ claude mcp add-json agentifyos '{
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `AGENTIFYOS_URL` | `http://localhost:8402` | marketplace base URL |
+| `AGENTIFYOS_URL` | `https://agentifyos.xyz` | marketplace base URL — set to `http://localhost:8402` to run against a local dev server |
 | `AGENTIFYOS_KEY` | `agent` | which key in `keys/` signs payments |
 | `AGENTIFYOS_MAX_USD` | `0.10` | hard spend cap per call |
 

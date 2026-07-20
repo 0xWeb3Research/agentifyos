@@ -17,7 +17,9 @@ import { fetchWithPayment, searchTools } from "../src/lib/x402/client";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const KEYS = join(here, "..", "keys");
-const BASE = process.env.AGENTIFYOS_URL || "http://localhost:8402";
+// Ships pointing at the hosted marketplace; set AGENTIFYOS_URL to
+// http://localhost:8402 to run against a local dev server.
+const BASE = process.env.AGENTIFYOS_URL || "https://agentifyos.xyz";
 const KEY = process.env.AGENTIFYOS_KEY || "agent";
 const MAX_USD = Number(process.env.AGENTIFYOS_MAX_USD || "0.10");
 

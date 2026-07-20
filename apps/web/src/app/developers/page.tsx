@@ -3,6 +3,7 @@ import Link from "next/link";
 import { CodeBlock } from "@/components/copy";
 import { Arrow, Button, Chip, Container, Eyebrow } from "@/components/ui";
 import { getToolsWithStats } from "@/lib/data";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Developers",
@@ -70,7 +71,7 @@ export default function DevelopersPage() {
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <CodeBlock
             label="1 · ask, and get quoted"
-            code={`curl -i http://localhost:8402/api/t/cspr-market-data
+            code={`curl -i ${SITE_URL}/api/t/cspr-market-data
 
 HTTP/1.1 402 Payment Required
 PAYMENT-REQUIRED: true
@@ -89,7 +90,7 @@ PAYMENT-REQUIRED: true
           />
           <CodeBlock
             label="2 · pay, and get the data"
-            code={`curl http://localhost:8402/api/t/cspr-market-data \\
+            code={`curl ${SITE_URL}/api/t/cspr-market-data \\
   -H "PAYMENT-SIGNATURE: $(base64_signed_payload)"
 
 HTTP/1.1 200 OK
@@ -127,7 +128,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
   "command": "pnpm",
   "args": ["--dir", "/path/to/agentifyos/apps/web", "mcp"],
   "env": {
-    "AGENTIFYOS_URL": "http://localhost:8402",
+    "AGENTIFYOS_URL": "${SITE_URL}",
     "AGENTIFYOS_MAX_USD": "0.10"
   }
 }' --scope user`}
@@ -142,7 +143,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         "/path/to/apps/web/node_modules/.bin/tsx",
         "/path/to/apps/web/scripts/mcp-server.ts"
       ],
-      "env": { "AGENTIFYOS_URL": "http://localhost:8402" }
+      "env": { "AGENTIFYOS_URL": "${SITE_URL}" }
     }
   }
 }`}
