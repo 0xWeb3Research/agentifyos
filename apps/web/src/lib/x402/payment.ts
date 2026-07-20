@@ -174,7 +174,10 @@ export function buildPayload(
     from: wallet.accountHash,
     to: req.payTo,
     value: req.amount,
-    validAfter: nowSec - 1,
+    // Casper can execute a transaction in a block whose timestamp precedes
+    // submission time — a tight validAfter makes the contract see the
+    // authorization as not-yet-valid. Backdate like the server-side signer.
+    validAfter: nowSec - 600,
     validBefore: nowSec + req.maxTimeoutSeconds,
     nonce: newNonce(),
   };

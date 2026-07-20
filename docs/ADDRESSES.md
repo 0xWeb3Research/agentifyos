@@ -72,21 +72,30 @@ the contract's purse.
 
 ```
 package hash      3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e
-active version    7   →  contract-4b351800391d4a47a7f932e9498516ed59bb41056d2743c14a8b1a5f90f67b3e
+active version    8   →  contract-032706aeae170fafb6403ce3bec58062f1c4288710838fe1df98ce4ff6c35f4a
 name / symbol     Wrapped CSPR / WCSPR
 decimals          9        (1 WCSPR = 1,000,000,000 atomic units)
 balances dict     uref-f8491246e0eed9c5cd5c0a896dc6e0a270bba846df69b6d497c9694dcdc2770c-007
 explorer          https://testnet.cspr.live/contract-package/3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e
 ```
 
-Versions 1–6 are disabled; **v7 is active**. Always target the *package* hash —
+Versions 1–7 are disabled; **v8 is active**. Always target the *package* hash —
 it's the stable address, and `version: null` routes to the newest enabled version.
+
+> ⚠️ **The contract gets upgraded under you.** On 2026-07-20 the publisher
+> disabled v7 and enabled v8, which **renamed the `amount` argument to `value`**
+> in `transfer_with_authorization` (matching EIP-3009's canonical struct). Because
+> we target the package with `version: null`, every settlement silently started
+> reverting with `User error: 64658` — a missing-required-argument error, not a
+> signature problem. The signed EIP-712 digest was unaffected; its field was
+> already `value`. If settlements begin failing after working, diff the live
+> entry-point args against what we send before suspecting the signature.
 
 ### Entry points we call (verified on-chain)
 
 | Entry point | Arguments | Used for |
 |---|---|---|
-| **`transfer_with_authorization`** | `from: Key`, `to: Key`, `amount: U256`, `valid_after: U64`, `valid_before: U64`, `nonce: List<U8>`, `public_key: PublicKey`, `signature: List<U8>` | **the x402 payment** — facilitator submits the agent's signed authorization |
+| **`transfer_with_authorization`** | `from: Key`, `to: Key`, `value: U256`, `valid_after: U64`, `valid_before: U64`, `nonce: List<U8>`, `public_key: PublicKey`, `signature: List<U8>` | **the x402 payment** — facilitator submits the agent's signed authorization |
 | `transfer` | `recipient: Key`, `amount: U256` | treasury → agent WCSPR distribution |
 | `deposit` | *(none declared)* | wrap CSPR → WCSPR — **payable**, see below |
 | `balance_of` | `address: Key` | on-chain only; can't be called read-only |

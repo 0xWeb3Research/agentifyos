@@ -234,7 +234,11 @@ function twAuthArgs(p: ExactCasperPayload) {
   return Args.fromMap({
     from: CLValue.newCLKey(Key.newKey("account-hash-" + p.authorization.from.slice(2))),
     to: CLValue.newCLKey(Key.newKey("account-hash-" + p.authorization.to.slice(2))),
-    amount: CLValue.newCLUInt256(p.authorization.value),
+    // WCSPR v8 renamed this arg from `amount` to `value`, matching EIP-3009's
+    // canonical struct. v7 is disabled on testnet, so `amount` now reverts with
+    // "User error: 64658". The signed digest is unaffected — the typed-data
+    // field was already `value`.
+    value: CLValue.newCLUInt256(p.authorization.value),
     valid_after: CLValue.newCLUint64(parseInt(p.authorization.validAfter, 10)),
     valid_before: CLValue.newCLUint64(parseInt(p.authorization.validBefore, 10)),
     nonce: CLValue.newCLList(CLTypeUInt8, Array.from(nonceBytes).map((b) => CLValue.newCLUint8(b))),
