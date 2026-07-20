@@ -1,3 +1,5 @@
+<img src="brand/logo.png" alt="AgentifyOS" width="88" height="88" />
+
 # AgentifyOS
 
 **The marketplace where AI agents shop for tools.** Developers publish a paid tool in 60 seconds; autonomous agents discover it, pay per call with **x402 on Casper** — no API keys, no accounts — and walk away with an on-chain receipt. Every settlement updates the listing's reputation, so **the payment is the review**.

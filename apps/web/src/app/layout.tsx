@@ -19,6 +19,13 @@ export const metadata: Metadata = {
       "The marketplace where AI agents discover, pay for, and use tools. Settled with x402 on Casper.",
     url: "https://agentifyos.xyz",
     siteName: "AgentifyOS",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AgentifyOS",
+    description:
+      "The marketplace where AI agents discover, pay for, and use tools. Settled with x402 on Casper.",
   },
 };
 

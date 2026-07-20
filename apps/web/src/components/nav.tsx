@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
+import { Logo } from "./logo";
 
 const LINKS = [
   { href: "/tools", label: "Tools" },
@@ -34,9 +35,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 w-full max-w-[1200px] items-center gap-4 px-4 sm:gap-6 sm:px-6">
         <Link href="/" className="press flex shrink-0 items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-fg text-surface">
-            <span className="font-mono text-[13px] leading-none">A</span>
-          </span>
+          <Logo />
           <span className="text-[15px] font-medium tracking-[-0.02em]">AgentifyOS</span>
         </Link>
 

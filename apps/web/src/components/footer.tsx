@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { Container } from "./ui";
+import { Logo } from "./logo";
 
 export function Footer() {
   return (
     <footer className="mt-24 border-t border-border">
       <Container className="flex flex-col gap-6 py-10 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <span className="grid h-6 w-6 place-items-center rounded-[7px] bg-fg text-surface">
-            <span className="font-mono text-[13px] leading-none">A</span>
-          </span>
+          <Logo />
           <span className="text-sm font-medium tracking-[-0.02em]">AgentifyOS</span>
           <span className="label ml-2">agentifyos.xyz</span>
         </div>
