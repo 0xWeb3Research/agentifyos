@@ -9,13 +9,13 @@
 Publish a paid tool in 60 seconds. Autonomous agents discover it and pay per call
 with **x402 on Casper** — no API keys, no accounts, no human in the loop.
 
-[![live](https://img.shields.io/badge/demo-live-008b37?style=flat-square)](https://web-production-4eaff.up.railway.app)
+[![live](https://img.shields.io/badge/demo-live-008b37?style=flat-square)](https://agentifyos.xyz)
 [![network](https://img.shields.io/badge/casper-testnet-f82636?style=flat-square)](https://testnet.cspr.live)
 [![x402](https://img.shields.io/badge/x402-exact%20scheme-2469ff?style=flat-square)](https://www.x402.org)
 [![asset](https://img.shields.io/badge/settled%20in-WCSPR-666?style=flat-square)](https://testnet.cspr.live/contract-package/3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e)
 
-[Live demo](https://web-production-4eaff.up.railway.app/agent) ·
-[Explainer](https://web-production-4eaff.up.railway.app/explain) ·
+[Live demo](https://agentifyos.xyz/agent) ·
+[Explainer](https://agentifyos.xyz/explain) ·
 [Docs](docs/START-HERE.md) ·
 [Proof](docs/PROOF.md)
 
@@ -51,7 +51,7 @@ on the WCSPR CEP-18 contract, verifiable on the block explorer.
 
 | Settlement | Path | Transaction |
 |---|---|---|
-| Production instance | deployed app → Casper | [`d4530471`](https://testnet.cspr.live/deploy/d45304717007d56ddd2e01a5c1c9fd128dcf36366a6dcb284c13fcf5b0268d2a) |
+| Production, live domain | agentifyos.xyz → Casper | [`bb82313c`](https://testnet.cspr.live/deploy/bb82313c7ae96461bd8f8e32af7a687e51c34c90ef37966bf475f84ab4cb99fd) |
 | Full HTTP 402 loop | CLI → `/api/t/[slug]` → Casper | [`69d1a8be`](https://testnet.cspr.live/deploy/69d1a8be0b8fc3933dcff1a2ee3df75590db693454aff91351bc22dd2999116d) |
 | Agent, four tools, one task | `/agent` → Casper | [`907f08f6`](https://testnet.cspr.live/deploy/907f08f6a4ccd569fb4bde9babf63bb80a273c017772dd3bded39c29d047a925) · [`86d61db6`](https://testnet.cspr.live/deploy/86d61db62442d867adde20254cedab64525b65d578139fbe171ade11ee257b85) · [`0db4cbf1`](https://testnet.cspr.live/deploy/0db4cbf14be6d6e2d30dc1035447ec466de3026e2c0f0eeb2ee642dbc55a1420) |
 
@@ -165,7 +165,7 @@ docs/                  the six documents above
 | State | Zustand |
 | Payments | `@casper-ecosystem/casper-eip-712` · `casper-js-sdk` |
 | Settlement | WCSPR CEP-18 on Casper testnet, `transfer_with_authorization` |
-| Storage | Redis ledger (durable settlements) · Postgres optional |
+| Storage | Redis — the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
 | Testing | Playwright · custom self-test and SEO audit scripts |
 
 Design is refined-light and editorial, inspired by
