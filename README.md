@@ -168,11 +168,6 @@ docs/                  the six documents above
 | Storage | Redis — the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
 | Testing | Playwright · custom self-test and SEO audit scripts |
 
-Design is refined-light and editorial, inspired by
-[designsystems.surf](https://designsystems.surf), re-typeset in Geist and
-retimed to sub-300ms motion with custom easing. Geist Mono carries every price,
-hash, and stat.
-
 ***
 
 <div align="center">
