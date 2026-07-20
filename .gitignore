@@ -33,3 +33,10 @@ playwright-report/
 
 # Rust contract build output
 contracts/*/target/
+
+# Security-scan artifacts — kept local, never committed.
+# .deepsec/ is a self-contained tool (its own node_modules); security-findings/
+# is a categorized vulnerability map that must not ship in a repo that may go
+# public. Address findings in code; don't publish the map.
+.deepsec/
+security-findings/
