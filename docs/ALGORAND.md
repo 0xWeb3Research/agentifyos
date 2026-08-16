@@ -143,12 +143,20 @@ its own fix:
 
 ```bash
 pnpm dev            # in one terminal
-pnpm algo:pay       # in another
+pnpm algo:demo      # in another
 ```
 
-`algo:pay` calls the public paid endpoint over HTTP with no privileged shortcut,
-takes the 402, signs, retries, and prints the Lora link for the transaction that
-settled. Point it anywhere with `--base https://agentifyos.xyz`.
+`algo:demo` is steps 5 and 7 in one command: it works out which account the
+faucet funded, moves USDC to the agent only if it has to, makes one real
+payment, and prints the row to paste into [PROOF](./PROOF.md). Point it anywhere
+with `--base https://agentifyos.xyz`.
+
+`pnpm algo:pay` is the same payment without the top-up, and
+`pnpm algo:pay --wrapped` runs it through `wrapFetchWithPayment` instead of the
+step-by-step client, which is the integration an outside developer would write.
+
+Either way the call goes to the public paid endpoint over HTTP with no
+privileged shortcut: 402, sign, retry, receipt.
 
 ***
 

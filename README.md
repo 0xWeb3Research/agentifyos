@@ -85,9 +85,8 @@ pnpm algo:keygen                              # treasury + agent, paste into .en
 pnpm algo:optin                               # both accounts opt into ASA 10458941
 #  → then fund treasury with USDC  https://faucet.circle.com  (Algorand → TestNet)
 #    opt-in first: Algorand cannot credit an asset to an account that skipped it
-pnpm algo:fund --usdc 1                       # treasury → agent
 pnpm algo:preflight                           # check every prerequisite at once
-pnpm algo:pay                                 # a real paid call, prints the Lora link
+pnpm algo:demo                                # tops up the agent, pays, prints the proof
 ```
 
 Prove the cryptography without spending anything:

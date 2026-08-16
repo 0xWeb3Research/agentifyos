@@ -14,6 +14,7 @@
     "algo:optin": "tsx scripts/algorand/optin.ts",
     "algo:fund": "tsx scripts/algorand/fund.ts",
     "algo:pay": "tsx scripts/algorand/pay-real.ts",
+    "algo:demo": "tsx scripts/algorand/demo.ts",
     "algo:preflight": "tsx scripts/algorand/preflight.ts",
     "casper:keygen": "tsx scripts/casper/keygen.ts",
     "casper:balance": "tsx scripts/casper/balance.ts",

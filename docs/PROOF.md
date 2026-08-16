@@ -55,6 +55,31 @@ That table is a placeholder on purpose. Real rows are pasted in at the
 `ALGORAND-PROOF` marker directly above, replacing the empty row; we would rather
 ship a blank table than a transaction id nobody produced.
 
+### Setup transactions
+
+These are **not** x402 payments, and are listed separately so nothing here is
+mistaken for one. They are the on-chain opt-ins that make the accounts able to
+hold USDC at all, and they are worth checking because they prove the two demo
+accounts are real and correctly configured.
+
+| Account | What | Transaction id |
+|---|---|---|
+| treasury | opt in to ASA 10458941 | [`CUYJJA2YLWELL57FX3GTJETSPYWD2TENIT6SU7ZAPONYVSSD6OCA`](https://lora.algokit.io/testnet/transaction/CUYJJA2YLWELL57FX3GTJETSPYWD2TENIT6SU7ZAPONYVSSD6OCA) |
+| agent | opt in to ASA 10458941 | [`QWS6XV3NYYF3I6CL7JYYAQ4EMQ44Z6H2JVPWSOSZXIR64JWLA43A`](https://lora.algokit.io/testnet/transaction/QWS6XV3NYYF3I6CL7JYYAQ4EMQ44Z6H2JVPWSOSZXIR64JWLA43A) |
+
+Their effect is visible in the error the payment path returns as funding
+progresses, which is itself a useful trace of how far the pipeline gets:
+
+| State | What the facilitator's simulator says |
+|---|---|
+| before opt-in | `asset 10458941 missing from SMT5SJCV32…` |
+| after opt-in, before funding | `underflow on subtracting 2000 from sender amount 0` |
+| funded | settles, and a row appears in the table above |
+
+The second error is emitted by Algorand's own simulator inside the facilitator.
+Reaching it means the 402, the atomic group, the buyer's signature, the handoff
+to the facilitator and its fee-leg signature all worked.
+
 ### Produce one yourself, in about a minute
 
 With the two accounts from `pnpm algo:keygen` funded and opted in (the

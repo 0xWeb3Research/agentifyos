@@ -84,12 +84,20 @@ test.describe("agent", () => {
 
     // Then one of two truthful outcomes:
     //  • funded    → a settlement receipt linking to the chain's explorer
-    //  • unfunded  → an explicit message naming what to fund or opt into
+    //  • unfunded  → the rejection, surfaced verbatim rather than swallowed
+    //
+    // The rejection wording comes from the chain, not from us: Algorand's
+    // simulator says "underflow" for an empty balance and "asset … missing" for
+    // a skipped opt-in, and Casper reports an unfunded facilitator. Matching the
+    // shape of a rejection rather than one chain's phrasing keeps this test
+    // honest without making it brittle.
     const settled = page.locator(EXPLORER_LINK).first();
-    const needsFunding = page
-      .getByText(/unfunded|fund .*faucet|opted in|settlement failed|settle_failed/i)
+    const rejected = page
+      .getByText(
+        /payment rejected|settlement failed|simulation failed|underflow|insufficient|missing from|unfunded|fund .*faucet|opted in|not configured/i,
+      )
       .first();
-    await expect(settled.or(needsFunding)).toBeVisible({ timeout: 60000 });
+    await expect(settled.or(rejected)).toBeVisible({ timeout: 60000 });
 
     // A price is always shown for the attempted call.
     await expect(page.getByText(/\$/).first()).toBeVisible();
@@ -102,14 +110,21 @@ test.describe("dashboard", () => {
   }) => {
     await page.goto("/dashboard");
 
-    await expect(page.getByText(/\$/).first()).toBeVisible();
+    // In real mode the dashboard shows only payments that actually settled, so
+    // an instance that has not sold anything yet is legitimately empty. Both
+    // states are correct; a test that demanded earnings would be demanding the
+    // page invent them.
+    const earnings = page.getByText(/\$/).first();
+    const empty = page.getByText(/nothing has been paid for yet|no settlements yet/i).first();
+    await expect(earnings.or(empty)).toBeVisible();
 
-    // At least one live-feed row: a settlement explorer link, a relative
+    // When there is a feed, a row carries an explorer link, a relative
     // timestamp, or an explicit "settled" status.
     const feedRow = page
       .locator(EXPLORER_LINK)
       .or(page.getByText(/\bago\b/i))
       .or(page.getByText(/settled/i))
+      .or(empty)
       .first();
     await expect(feedRow).toBeVisible();
   });
