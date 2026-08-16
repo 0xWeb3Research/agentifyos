@@ -1,39 +1,34 @@
-# Testing AgentifyOS on Casper testnet · real, no mocks
+# Casper runbook
 
 Zero to a **real on-chain x402 settlement** you can open on
 [testnet.cspr.live](https://testnet.cspr.live). Everything here moves real
 testnet value; nothing is simulated.
+
+Algorand is the default chain. This page is the **alternate** one, selected with
+`CHAIN=casper`: WCSPR on Casper testnet, settled by a facilitator we run
+ourselves. For the default path see the [Algorand runbook](./ALGORAND.md).
 
 > **"Devnet"?** Casper has **mainnet** and **testnet** (plus an optional local
 > node). This guide targets **testnet**: free tokens, real chain.
 
 ---
 
-## The zero-setup path — just watch it happen
+## Before you start: this is not what the hosted demo runs
 
-You don't need any of this to *see* a real settlement. The hosted agent demo is
-open to anyone:
+The open demo at **[agentifyos.xyz/agent](https://agentifyos.xyz/agent)** runs
+the default chain, so its payments settle in USDC on Algorand and link to
+[Lora](https://lora.algokit.io/testnet), not to cspr.live. Nothing on this page
+is needed to watch that.
 
-**→ [agentifyos.xyz/agent](https://agentifyos.xyz/agent)**
+The safety mechanics are the same on either chain: payments settle from a
+**shared testnet wallet**, never yours; anonymous runs draw on a **global daily
+budget** (`DEMO_DAILY_USD_CAP`, default $2/day) so the wallet cannot be drained;
+and it is **testnet** throughout, so the tokens are worthless practice tokens.
+Signing in with **Casper Wallet** when the page prompts proves who you are, costs
+no gas, moves nothing from your account, and skips the shared cap.
 
-Type a task, press **Run agent**, and watch it discover tools, pay for each, and
-settle on Casper testnet — every payment links to a transaction on
-[testnet.cspr.live](https://testnet.cspr.live). No wallet, no install, no signup.
-
-How it stays safe to leave open:
-
-- Payments settle from a **shared testnet wallet**, never yours.
-- Anonymous runs draw on a **global daily budget** (`DEMO_DAILY_USD_CAP`, default
-  $2/day). Once it's spent, the demo asks you to come back tomorrow — the wallet
-  can't be drained.
-- It's **testnet** throughout. The tokens are worthless practice tokens.
-
-Want your own session instead of the shared budget? **Sign in with Casper
-Wallet** when the page prompts you. Signing proves who you are; it costs no gas
-and moves nothing from your account. Signed-in runs skip the shared cap.
-
-The rest of this guide is for running your **own** instance and pushing payments
-from your **own** keys.
+The rest of this guide is for running your **own** instance on Casper, from your
+**own** keys.
 
 ---
 
@@ -43,11 +38,16 @@ from your **own** keys.
 |---|---|
 | **Node 20+ / pnpm** | already set up in this repo |
 | **Casper Wallet** (browser extension) | **only** to pull free CSPR from the faucet ([casperwallet.io](https://www.casperwallet.io)) |
+| `CHAIN=casper` in `apps/web/.env` | otherwise every command settles on Algorand |
 | Time | ~10 minutes |
 
 **Important:** the *agents never use a browser wallet*. They sign with headless
 Ed25519 keypairs (`.pem` files). Casper Wallet is only how *you* claim faucet
-tokens once. See [HOW-IT-WORKS.md §4](./HOW-IT-WORKS.md).
+tokens once. See [HOW-IT-WORKS.md](./HOW-IT-WORKS.md).
+
+> Casper secrets are PEM files on disk, which is the opposite of the Algorand
+> path, where the keys are 25-word mnemonics held in the environment. Each chain
+> keeps its own convention; nothing is shared between them.
 
 ---
 
@@ -68,6 +68,10 @@ Creates three real Ed25519 keys in `apps/web/keys/` (gitignored):
 
 The command prints each account's public key + a cspr.live link. **Copy the
 facilitator and treasury public keys**; you'll fund those next.
+
+> Casper needs a facilitator role of its own because we run that half. On
+> Algorand there is no such role: GoPlausible runs the facilitator, so only
+> `treasury` and `agent` exist there.
 
 ---
 
@@ -94,6 +98,9 @@ pnpm casper:balance
 #   agent              0.0000 CSPR   01e565e859f9…   ← agent needs no CSPR
 ```
 
+Already holding CSPR in one of the roles? `pnpm casper:fund` moves native CSPR
+between them without another faucet claim.
+
 > Need more than 5,000? Email `casper-testnet@make.services`. There is no
 > programmatic faucet API.
 
@@ -101,8 +108,8 @@ pnpm casper:balance
 
 ## 3. Wrap CSPR → WCSPR
 
-x402 settles in **WCSPR**, an x402-enabled CEP-18 token (package
-`3d80df21…4847c1e`, active version 7). You mint it 1:1 by depositing CSPR.
+Casper settles in **WCSPR**, an x402-enabled CEP-18 token (package
+`3d80df21…4847c1e`, active version 8). You mint it 1:1 by depositing CSPR.
 
 ```bash
 pnpm casper:wrap --role treasury --cspr 100
@@ -136,6 +143,9 @@ length prefix and fails `Bytes::from_bytes` inside the proxy caller.
 
 **Alternative:** [Casper Delta](https://casperdelta.xyz/) exposes a WCSPR
 faucet/wrap tool on testnet; verify it targets package `3d80df21…` before relying on it.
+
+> There is no wrapping step on Algorand. USDC is already the settlement asset
+> there, and a listing priced at $0.005 quotes exactly 5000 atomic units.
 
 ---
 
@@ -175,15 +185,24 @@ Options: `--amount <atomic>` (default `8658008`), `--to 00<accounthash>`.
 
 ---
 
-## 6. Run the marketplace against testnet
+## 6. Run the marketplace against Casper testnet
 
 ```bash
-cp ../../.env.example ../../.env    # set MODE=real
-pnpm dev                            # http://localhost:8402
+cp .env.example .env    # then set MODE=real and CHAIN=casper
+pnpm dev                # http://localhost:8402
 ```
+
+`CHAIN=casper` is what switches the paid endpoints, the CLI, and the MCP server
+onto this path; without it they quote USDC on Algorand. Mirror it as
+`NEXT_PUBLIC_CHAIN=casper` so the browser names the same chain the server
+settles on.
 
 Then open **`/agent`**, give the agent a task, and every payment it makes is a
 real Casper testnet settlement with a live deploy hash.
+
+The receipt field carrying that hash is called **`txHash`** on both chains; it
+holds a Casper deploy hash here and an Algorand transaction id on the default
+path. (It was named `deployHash` before Algorand existed.)
 
 ---
 
@@ -202,6 +221,7 @@ pnpm selftest          # payment-loop invariants incl. replay guard
 
 | Symptom | Cause / fix |
 |---|---|
+| Payments quote USDC, not WCSPR | `CHAIN=casper` is unset; the default is Algorand. |
 | `Purse not found` (-32026) | account is unfunded; that's a 0 balance, not an error. Fund it (§2). |
 | Wrap succeeds but WCSPR balance is 0 | you called `deposit` as a plain contract call. Must be the **session/proxy_caller** path (§3). |
 | `out of gas` on wrap | raise gas: the 184 KB session wasm needs ~20 CSPR. Tune from the failed execution cost. |
@@ -218,16 +238,18 @@ pnpm selftest          # payment-loop invariants incl. replay guard
 | Network / CAIP-2 | `casper-test` / `casper:casper-test` |
 | RPC (no auth) | `https://node.testnet.casper.network/rpc` |
 | Explorer | `https://testnet.cspr.live` |
-| WCSPR package | `3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e` (v7 → `contract-4b351800…f67b3e`) |
-| Payment entry point | `transfer_with_authorization(from: Key, to: Key, amount: U256, valid_after: U64, valid_before: U64, nonce: List<U8>, public_key: PublicKey, signature: List<U8>)` |
+| WCSPR package | `3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e` (v8 → `contract-032706ae…c35f4a`) |
+| Payment entry point | `transfer_with_authorization(from: Key, to: Key, value: U256, valid_after: U64, valid_before: U64, nonce: List<U8>, public_key: PublicKey, signature: List<U8>)` |
 | Wrap entry point | `deposit()`: Odra payable, via proxy_caller session wasm |
 | Settlement gas | ~7 CSPR per settlement (facilitator pays) |
 | Faucet | 5,000 CSPR, once per account, Casper Wallet sign-in |
+| Selected by | `CHAIN=casper` (the default is `algorand`) |
 
 **Note on the hosted facilitator:** Casper runs one at
 `x402-facilitator.cspr.cloud`, but its free **testnet quota is 25 calls/day**
 (~12 payments). We **self-host** instead: our facilitator key + the public RPC,
-no API key, no quota.
+no API key, no quota. On Algorand we don't host anything: GoPlausible's
+facilitator is hosted, unmetered, and needs no key.
 
 ### ⚠️ Gas budgets burn what you overpay
 
@@ -243,3 +265,6 @@ consumption on your first successful run** (the explorer shows gas consumed vs.
 cost paid) and lowering `FACILITATOR_GAS_MOTES` / `WRAP_GAS_MOTES` in `.env`
 toward the real figure. For scale, a measured CEP-18 call consumed ~0.39 CSPR of
 gas, but cost its sender 0.92 CSPR because it budgeted 2.5.
+
+This whole section has no Algorand equivalent: there is no gas budget to declare
+there, and no fee for the buyer to overpay, because the facilitator sponsors it.

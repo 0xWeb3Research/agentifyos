@@ -7,16 +7,17 @@
 **The marketplace where AI agents shop for tools.**
 
 Publish a paid tool in 60 seconds. Autonomous agents discover it and pay per call
-with **x402 on Casper**: no API keys, no accounts, no human in the loop.
+with **x402 on Algorand**: no API keys, no accounts, no human in the loop.
 
 [![live](https://img.shields.io/badge/demo-live-008b37?style=flat-square)](https://agentifyos.xyz)
-[![network](https://img.shields.io/badge/casper-testnet-f82636?style=flat-square)](https://testnet.cspr.live)
+[![network](https://img.shields.io/badge/algorand-testnet-000000?style=flat-square)](https://lora.algokit.io/testnet)
 [![x402](https://img.shields.io/badge/x402-exact%20scheme-2469ff?style=flat-square)](https://www.x402.org)
-[![asset](https://img.shields.io/badge/settled%20in-WCSPR-666?style=flat-square)](https://testnet.cspr.live/contract-package/3d80df21ba4ee4d66a2a1f60c32570dd5685e4b279f6538162a5fd1314847c1e)
+[![asset](https://img.shields.io/badge/settled%20in-USDC-2775ca?style=flat-square)](https://lora.algokit.io/testnet/asset/10458941)
+[![facilitator](https://img.shields.io/badge/facilitator-GoPlausible-6f42c1?style=flat-square)](https://facilitator.goplausible.xyz)
 
 [Live demo](https://agentifyos.xyz/agent) ·
 [Explainer](https://agentifyos.xyz/explain) ·
-[Docs](docs/START-HERE.md) ·
+[Algorand runbook](docs/ALGORAND.md) ·
 [Proof](docs/PROOF.md)
 
 </div>
@@ -36,7 +37,7 @@ the agent needs later.
 | Key provisioned before the task | Discovery and payment at runtime |
 | Monthly plan for occasional use | $0.002 for the one call it made |
 | Trust the vendor's star rating | Reputation derived from settled payments |
-| Agent needs a funded card | Agent holds **zero CSPR** and still pays |
+| Agent needs a funded card | Agent holds USDC and pays no network fees |
 
 The plumbing got standardised before the shops opened. x402 defines how a
 machine pays over HTTP; almost nothing sells anything through it. This is the
@@ -44,20 +45,26 @@ supply side.
 
 ***
 
-## Live on Casper testnet
+## Live on Algorand testnet
 
-Nothing here is simulated. Every payment is a real `transfer_with_authorization`
-on the WCSPR CEP-18 contract, verifiable on the block explorer.
+Nothing here is simulated. Every payment is a real USDC asset transfer, settled
+by the [GoPlausible facilitator](https://facilitator.goplausible.xyz) and
+verifiable on [Lora](https://lora.algokit.io/testnet).
 
-| Settlement | Path | Transaction |
-|---|---|---|
-| Production, live domain | agentifyos.xyz → Casper | [`bb82313c`](https://testnet.cspr.live/deploy/bb82313c7ae96461bd8f8e32af7a687e51c34c90ef37966bf475f84ab4cb99fd) |
-| Full HTTP 402 loop | CLI → `/api/t/[slug]` → Casper | [`69d1a8be`](https://testnet.cspr.live/deploy/69d1a8be0b8fc3933dcff1a2ee3df75590db693454aff91351bc22dd2999116d) |
-| Agent, four tools, one task | `/agent` → Casper | [`907f08f6`](https://testnet.cspr.live/deploy/907f08f6a4ccd569fb4bde9babf63bb80a273c017772dd3bded39c29d047a925) · [`86d61db6`](https://testnet.cspr.live/deploy/86d61db62442d867adde20254cedab64525b65d578139fbe171ade11ee257b85) · [`0db4cbf1`](https://testnet.cspr.live/deploy/0db4cbf14be6d6e2d30dc1035447ec466de3026e2c0f0eeb2ee642dbc55a1420) |
+| Piece | Value |
+|---|---|
+| Network | `algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=` |
+| Asset | USDC, [ASA 10458941](https://lora.algokit.io/testnet/asset/10458941), 6 decimals |
+| Scheme | `exact`, AVM profile: signed ASA transfer in an atomic group |
+| Facilitator | `https://facilitator.goplausible.xyz`, hosted, no key or signup |
+| Fee | sponsored by the facilitator, not paid by the buyer |
 
-**The agent held 0 CSPR throughout.** It signs an authorization off-chain; the
-facilitator submits it and absorbs the gas. That is the whole trick. See
-[docs/PROOF.md](docs/PROOF.md) for balances and gas accounting.
+**The buying agent spends no ALGO.** It signs a USDC transfer; the facilitator
+groups it with its own fee transaction, simulates, and submits. The agent's only
+ALGO is Algorand's locked minimum balance, which never moves.
+
+See [docs/PROOF.md](docs/PROOF.md) for settled transactions and how to check
+each one yourself.
 
 ***
 
@@ -68,24 +75,27 @@ pnpm install
 pnpm dev                     # http://localhost:8402
 ```
 
-Payments are real by default, which needs two funded testnet keys. The
-ten-minute setup is [docs/TESTNET.md](docs/TESTNET.md):
+Payments are real by default, which needs two funded testnet accounts. The
+ten-minute setup is [docs/ALGORAND.md](docs/ALGORAND.md):
 
 ```bash
 cd apps/web
-pnpm casper:keygen                            # facilitator / treasury / agent
-#  → fund facilitator + treasury from the testnet faucet
-pnpm casper:wrap --cspr 100                   # CSPR → WCSPR
-pnpm casper:transfer --to agent --amount 10000000000
-pnpm agentify call cspr-market-data           # a real paid call
+pnpm algo:keygen                              # treasury + agent, paste into .env
+#  → fund both with testnet ALGO   https://lora.algokit.io/testnet/fund
+pnpm algo:optin                               # both accounts opt into ASA 10458941
+#  → then fund treasury with USDC  https://faucet.circle.com  (Algorand → TestNet)
+#    opt-in first: Algorand cannot credit an asset to an account that skipped it
+pnpm algo:fund --usdc 1                       # treasury → agent
+pnpm algo:preflight                           # check every prerequisite at once
+pnpm algo:pay                                 # a real paid call, prints the Lora link
 ```
 
 Prove the cryptography without spending anything:
 
 ```bash
 pnpm selftest                # payment-loop invariants, incl. the replay guard
-pnpm casper:signtest         # real EIP-712 sign/verify, offline
-pnpm test:e2e                # Playwright suite, incl. a live settlement
+pnpm algo:preflight          # SDK constants, facilitator, accounts, opt-ins
+pnpm test:e2e                # Playwright suite
 ```
 
 ***
@@ -101,18 +111,28 @@ pnpm test:e2e                # Playwright suite, incl. a live settlement
 | Paid endpoint | agents | `/api/t/[slug]`: real HTTP 402 → pay → result |
 | Discovery | agents | `/api/discovery/*` · `/api/mcp` · `/llms.txt` |
 
-The CLI and MCP server are **ordinary x402 clients**: their own keys, paying
-over the same public endpoint as anyone else. There is no privileged path.
+The CLI, the MCP server, and even the on-site agent demo are **ordinary x402
+clients**: their own keys, paying over the same public endpoint as anyone else,
+over real HTTP. There is no privileged path.
 
 ***
 
 ## The loop
 
-1. Agent calls a tool → **HTTP 402** with `PaymentRequirements` (scheme `exact`, network `casper:casper-test`, asset WCSPR).
-2. Agent signs an **EIP-712** authorization with its Ed25519 key and retries with `PAYMENT-SIGNATURE`. This costs nothing and touches no chain.
-3. The facilitator verifies signature, amount, time window, and payee, then settles on Casper, **paying the gas itself**.
-4. Payment clears, the tool runs, the agent gets the result plus a receipt (`deployHash`).
+1. Agent calls a tool → **HTTP 402** with `PaymentRequirements` in the
+   `PAYMENT-REQUIRED` header (scheme `exact`, network `algorand:SGO1…`, asset
+   USDC), plus a Bazaar declaration describing how to call the tool.
+2. Agent builds a **two-transaction atomic group**: the facilitator's fee
+   transaction, unsigned, and its own USDC transfer, signed. It retries with
+   `PAYMENT-SIGNATURE`. This costs nothing and touches no chain.
+3. The facilitator verifies the group, signs the fee leg, **simulates it against
+   a node**, and submits. It pays the fee.
+4. Payment clears, the tool runs, the agent gets the result plus a receipt with
+   the transaction id, a Lora link, and the facilitator's own receipt URL.
 5. The settlement updates that listing's reputation. The payment is the review.
+   It also lists the resource in the facilitator's public
+   [Bazaar](https://facilitator.goplausible.xyz/discovery/resources), as a side
+   effect of being paid.
 
 ***
 
@@ -122,12 +142,13 @@ over the same public endpoint as anyone else. There is no privileged path.
 |---|---|
 | [START-HERE](docs/START-HERE.md) | the whole idea, assuming zero knowledge |
 | [HOW-IT-WORKS](docs/HOW-IT-WORKS.md) | architecture and the payment flow in detail |
-| [TESTNET](docs/TESTNET.md) | wallet, faucet, funding, first real settlement |
+| [ALGORAND](docs/ALGORAND.md) | accounts, faucets, opt-in, first real settlement |
 | [CLI-AND-MCP](docs/CLI-AND-MCP.md) | terminal usage and wiring into Claude or Cursor |
-| [ADDRESSES](docs/ADDRESSES.md) | accounts, contract hashes, entry points, gas budgets |
+| [ADDRESSES](docs/ADDRESSES.md) | accounts, asset ids, endpoints, budgets |
 | [PROOF](docs/PROOF.md) | on-chain evidence and how to verify it yourself |
+| [TESTNET](docs/TESTNET.md) | the alternate Casper path, behind `CHAIN=casper` |
 
-All six also render in the app at `/docs`, and as plain text at `/llms.txt`.
+All of them also render in the app at `/docs`, and as plain text at `/llms.txt`.
 
 ***
 
@@ -137,22 +158,26 @@ All six also render in the app at `/docs`, and as plain text at `/llms.txt`.
 apps/web
   src/app
     api/t/[slug]       the real HTTP 402 paid endpoint
-    api/agent/run      server-side agent loop (discover → pay → complete)
+    api/agent/run      the agent runner (discover → pay → complete)
     api/discovery/*    machine-readable catalog + search
     api/mcp            HTTP MCP surface
     docs/              the markdown in docs/, rendered
-  src/lib/x402
-    casper.ts          EIP-712 signing, verification, on-chain settlement,
-                       CSPR→WCSPR wrapping, CEP-18 transfer, balance reads
-    client.ts          the x402 HTTP client (402 → sign → retry)
-    facilitator.ts     verify + settle, with the replay guard
+  src/lib
+    chain.ts           which chain settles, and everything derived from it
+    discovery.ts       one machine-readable record per paid resource
+    x402/algorand.ts         resource server, facilitator client, accounts
+    x402/algorand-route.ts   the seller half: quote, verify, settle, deliver
+    x402/algorand-client.ts  the buyer half: 402, sign, retry, receipt
+    x402/algorand-loop.ts    the agent runner, paying over real HTTP
+    x402/settlement.ts       the ledger row and receipt both chains produce
+    x402/casper*.ts          the same three roles on Casper
   scripts
     cli.ts             pnpm agentify
     mcp-server.ts      pnpm mcp
+    algorand/*         keygen · balance · optin · fund · pay · preflight
     casper/*           keygen · balance · wrap · transfer · pay · sign-test
 contracts/tool-registry  our Casper smart contract (Rust)
-brand/                 logo source
-docs/                  the six documents above
+docs/                  the documents above
 ```
 
 ***
@@ -164,18 +189,43 @@ docs/                  the six documents above
 | Framework | Next.js 16 · React 19 · TypeScript |
 | Styling | Tailwind v4 · Geist · React Flow |
 | State | Zustand |
-| Payments | `@casper-ecosystem/casper-eip-712` · `casper-js-sdk` |
-| Settlement | WCSPR CEP-18 on Casper testnet, `transfer_with_authorization` |
-| Our contract | `ToolRegistry` in Rust: anchors listing manifests on-chain ([`9c1b0ac3…`](https://testnet.cspr.live/contract-package/9c1b0ac3b1f2d2db53ef4884761c3567ebecf93ff4f5623e5545903bc0720a18)) |
-| Storage | Redis: the settlement ledger. The catalog is in-code fixtures; no SQL database is wired up |
-| Testing | Playwright · custom self-test and SEO audit scripts |
+| Payments | `@x402-avm/core` · `@x402-avm/avm` · `@x402-avm/fetch` · `@x402-avm/extensions` |
+| Chain access | `algosdk` for accounts, balances, ASA opt-in and funding |
+| Settlement | USDC (ASA 10458941) on Algorand testnet, `exact` scheme, atomic group |
+| Facilitator | GoPlausible, hosted: verify, settle, fee sponsorship, Bazaar listing |
+| Alternate chain | WCSPR CEP-18 on Casper testnet, `transfer_with_authorization` |
+| Storage | Redis: the settlement ledger. The catalog is in-code fixtures |
+| Testing | Playwright · custom self-test, preflight, and SEO audit scripts |
+
+***
+
+## Switching chains
+
+There is a chain picker in the nav. Choosing one writes a cookie, and the server
+resolves it per request, so the switch changes **everything at once**: the price
+each listing quotes and the units it quotes in, the CAIP-2 network in every 402,
+the asset, the payee, which signer moves the money, where receipts resolve, the
+address book, the discovery feed, and the diagrams.
+
+```bash
+curl -s localhost:8402/api/t/algo-market-data | jq -c '.accepts[0] | {network, amount, asset}'
+# {"network":"algorand:SGO1GKSzyE7IEPItTxCByw9x8FmnrCDexi9/cOUJOiI=","amount":"2000","asset":"10458941"}
+
+curl -s -H 'Cookie: agentifyos-chain=casper' localhost:8402/api/t/algo-market-data | jq -c '.accepts[0] | {network, amount, asset}'
+# {"network":"casper:casper-test","amount":"86580087","asset":"3d80df21ba4e…"}
+```
+
+`CHAIN=algorand` (the default) or `CHAIN=casper` sets what a visitor sees before
+they choose. The picker marks a chain this deployment holds no keys for, and the
+paid endpoint answers 503 with the reason rather than pretending to charge.
+
+The 402 handshake is identical either way; the two paths differ only in how a
+payment is signed and broadcast.
 
 ***
 
 <div align="center">
 
-Built for the **Casper Agentic Buildathon 2026**.
-
-_Casper built the rails. We built the market._
+_The rails were standardised. We built the market._
 
 </div>
