@@ -1,6 +1,6 @@
 // Anchor a tool's manifest hash in the on-chain ToolRegistry.
 //
-//   pnpm casper:registry-register [--slug cspr-market-data] [--gas <motes>]
+//   pnpm casper:registry-register [--slug algo-market-data] [--gas <motes>]
 //
 // The hash commits to exactly what the marketplace serves for that listing, so
 // a later silent edit to price or payout address becomes detectable by anyone.
@@ -42,7 +42,7 @@ export function manifestHash(tool: {
 }
 
 async function main() {
-  const slug = arg("slug", "cspr-market-data")!;
+  const slug = arg("slug", "algo-market-data")!;
   const gas = arg("gas", "5000000000")!; // 5 CSPR
   const tool = getToolBySlug(slug);
   if (!tool) {

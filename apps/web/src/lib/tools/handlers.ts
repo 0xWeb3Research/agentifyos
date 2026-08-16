@@ -1,6 +1,10 @@
 import { createHash, randomBytes } from "node:crypto";
-import { CSPR_PRICE_USD } from "../config";
 import { makeWallet, signBytes } from "../x402/payment";
+
+// Illustrative spot price for the demo market-data tool. Display data only:
+// nothing in the payment path converts through it, because USDC already is a
+// dollar.
+const ALGO_PRICE_USD = 0.1732;
 
 // First-party tool handlers. Deterministic (no live network) so the demo runs
 // reliably offline. A published third-party tool would instead proxy to its
@@ -13,7 +17,7 @@ function stableInt(seed: string, mod: number): number {
 }
 
 const pageScraper: ToolHandler = async (input) => {
-  const url = String(input.url ?? "https://casper.network/blog/agentic-commerce");
+  const url = String(input.url ?? "https://algorand.co/blog");
   const host = (() => {
     try {
       return new URL(url).host;
@@ -50,14 +54,14 @@ const textSummarizer: ToolHandler = async (input) => {
   };
 };
 
-const csprMarketData: ToolHandler = async () => {
+const algoMarketData: ToolHandler = async () => {
   const t = Date.now();
   const wobble = ((t / 3.6e6) % 1) * 0.004 - 0.002;
-  const price = +(CSPR_PRICE_USD + wobble).toFixed(4);
+  const price = +(ALGO_PRICE_USD + wobble).toFixed(4);
   return {
-    symbol: "CSPR",
+    symbol: "ALGO",
     priceUsd: price,
-    change24hPct: +(((wobble / CSPR_PRICE_USD) * 100) + 1.3).toFixed(2),
+    change24hPct: +(((wobble / ALGO_PRICE_USD) * 100) + 1.3).toFixed(2),
     volume24hUsd: 4_820_000 + stableInt(String(Math.floor(t / 6e4)), 900_000),
     liquidityUsd: 12_400_000,
     source: "aggregated-dex",
@@ -95,7 +99,7 @@ const rwaAttestor: ToolHandler = async (input) => {
 export const HANDLERS: Record<string, ToolHandler> = {
   "page-scraper": pageScraper,
   "text-summarizer": textSummarizer,
-  "cspr-market-data": csprMarketData,
+  "algo-market-data": algoMarketData,
   "rwa-attestor": rwaAttestor,
 };
 

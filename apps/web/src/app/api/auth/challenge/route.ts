@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { authOrigin, createChallenge } from "@/lib/auth/siwx";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
+import { getChain } from "@/lib/chain-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
     domain: host,
     uri: origin,
     accountHash: accountHash && ACCOUNT_RE.test(accountHash) ? accountHash : undefined,
-    chainId: process.env.CSPR_NETWORK || "casper:casper-test",
+    chainId: (await getChain()).caip2,
   });
   return NextResponse.json(challenge, { headers: { "Cache-Control": "no-store" } });
 }

@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import { relTime, shortHash, usd } from "@/lib/format";
-import { explorerTx } from "@/lib/config";
+import { useChainLinks } from "./chain-context";
 import type { Settlement } from "@/lib/types";
 
 const KEEP = 12;
 
 // The settlement ledger, live. Seeds from a server snapshot so the first paint
-// is never empty, then polls the (uncached) API every 2s. New deploy hashes at
+// is never empty, then polls the (uncached) API every 2s. New transactions at
 // the top mount fresh DOM nodes, which animate in; settled DOM stays put.
 export function LiveFeed({ initial }: { initial: Settlement[] }) {
+  const { chain, explorerTx } = useChainLinks();
   const [rows, setRows] = useState<Settlement[]>(() => initial.slice(0, KEEP));
 
   useEffect(() => {
@@ -70,15 +71,27 @@ export function LiveFeed({ initial }: { initial: Settlement[] }) {
             <span className="min-w-0 flex-1 truncate text-[13px] text-fg">{s.toolName}</span>
             <span className="stat shrink-0 text-success">{usd(s.amountUsd)}</span>
             <span className="stat hidden shrink-0 text-muted sm:inline">{relTime(s.createdAt)}</span>
-            <a
-              href={explorerTx(s.deployHash)}
-              target="_blank"
-              rel="noreferrer"
-              className="press stat hidden shrink-0 text-muted transition-colors hover:text-accent sm:inline"
-              title="View deploy on cspr.live"
-            >
-              {shortHash(s.deployHash)}
-            </a>
+            {/* Only a real settlement has a transaction to look at. A seeded or
+                mock row carries a deterministic pseudo-hash, and linking it to
+                an explorer would present a fabricated hash as evidence. */}
+            {s.mode === "real" ? (
+              <a
+                href={explorerTx(s.txHash)}
+                target="_blank"
+                rel="noreferrer"
+                className="press stat hidden shrink-0 text-muted transition-colors hover:text-accent sm:inline"
+                title={`View transaction on ${chain.explorerName}`}
+              >
+                {shortHash(s.txHash)}
+              </a>
+            ) : (
+              <span
+                className="stat hidden shrink-0 text-muted sm:inline"
+                title="simulated settlement: no on-chain transaction"
+              >
+                {shortHash(s.txHash)}
+              </span>
+            )}
           </div>
         ))}
       </div>

@@ -5,12 +5,15 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, SITE_NAME, abs } from "@/lib/site";
+import { ChainProvider } from "@/components/chain-context";
+import { chainReadiness, getChainId } from "@/lib/chain-server";
+import { defaultChain } from "@/lib/chain";
 import "./globals.css";
 
 const DESCRIPTION =
-  "Developers publish paid tools in 60 seconds. Autonomous agents discover them, pay per call with x402 on Casper. No API keys, no accounts. The payment is the review.";
+  `Developers publish paid tools in 60 seconds. Autonomous agents discover them, pay per call with x402 on ${defaultChain.name}. No API keys, no accounts. The payment is the review.`;
 const SHORT_DESCRIPTION =
-  "The marketplace where AI agents discover, pay for, and use tools. Settled with x402 on Casper.";
+  `The marketplace where AI agents discover, pay for, and use tools. Settled with x402 on ${defaultChain.name}.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -24,13 +27,14 @@ export const metadata: Metadata = {
   keywords: [
     "x402",
     "AI agent payments",
-    "Casper Network",
+    "Algorand",
+    "GoPlausible facilitator",
     "agentic commerce",
     "pay per call API",
     "MCP server",
     "machine payable web",
     "HTTP 402",
-    "WCSPR",
+    "USDC",
     "agent tool marketplace",
   ],
   // Deliberately NO `alternates.canonical` here. Child segments inherit it, so a
@@ -103,18 +107,24 @@ const siteGraph = [
   },
 ];
 
-export default function RootLayout({
+// Reading the chain cookie here is what makes the switcher change the whole app
+// rather than one badge: the provider seeds every client component, and every
+// server component below resolves the same value from the same request.
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const chainId = await getChainId();
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <JsonLd data={siteGraph} />
-        <Nav />
-        {children}
-        <Footer />
+        <ChainProvider id={chainId}>
+          <Nav chainReady={chainReadiness()} />
+          {children}
+          <Footer />
+        </ChainProvider>
       </body>
     </html>
   );

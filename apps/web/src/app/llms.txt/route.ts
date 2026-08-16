@@ -1,3 +1,5 @@
+import { ALGO } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
 import { getToolsWithStats } from "@/lib/data";
 import { listDocs } from "@/lib/docs";
 import { usd } from "@/lib/format";
@@ -39,7 +41,7 @@ const PAGES: { path: string; title: string; purpose: string }[] = [
   {
     path: "/agent",
     title: "Live demo",
-    purpose: "Watch an agent run a real payment against Casper testnet.",
+    purpose: "Watch an agent run a real payment against the active chain's testnet.",
   },
   {
     path: "/roadmap",
@@ -54,13 +56,15 @@ const PAGES: { path: string; title: string; purpose: string }[] = [
 ];
 
 export async function GET() {
+  const chain = await getChain();
+  const CHAIN = chain.id;
   const tools = getToolsWithStats();
   const docs = await listDocs();
 
   const toolLines = tools
     .map(
       (t) =>
-        `- ${t.name} · ${usd(t.priceEvents[0].usd)}/call · ${t.tagline}  →  GET ${abs(`/api/t/${t.slug}`)} (HTTP 402, pay with x402 on casper:casper-test)`,
+        `- ${t.name} · ${usd(t.priceEvents[0].usd)}/call · ${t.tagline}  →  GET ${abs(`/api/t/${t.slug}`)} (HTTP 402, pay with x402 on ${chain.caip2})`,
     )
     .join("\n");
 
@@ -72,10 +76,30 @@ export async function GET() {
     (p) => `- [${p.title}](${abs(p.path)}): ${p.purpose}`,
   ).join("\n");
 
+  const settlement =
+    CHAIN === "algorand"
+      ? `## Settlement
+
+- Chain: ${chain.networkLabel}, CAIP-2 \`${chain.caip2}\`
+- Asset: ${chain.symbol} (${chain.assetName}), ASA ${chain.assetRef}, ${chain.decimals} decimals. Prices are exact dollars: $0.005 is 5000 atomic units, nothing is converted.
+- Facilitator: GoPlausible, ${ALGO.facilitatorUrl}. It verifies, settles, and sponsors the network fee.
+- Mechanics: the buyer signs a ${chain.symbol} transfer inside a two-transaction atomic group; the facilitator adds and signs the fee-payer transaction and submits the group. A buying agent therefore pays no network fees and spends only ${chain.symbol}. It still needs an Algorand account, which locks about 0.2 ALGO of minimum balance (0.1 base, 0.1 for the ${chain.symbol} opt-in). That balance is locked, never spent.
+- Opt-in: every account that receives ${chain.symbol} must opt into ASA ${chain.assetRef} first.
+- Explorer: ${chain.explorerName}, ${chain.explorerBase}. Transactions at /transaction/{txid}, accounts at /account/{address}, the asset at /asset/${chain.assetRef}.
+- Public registry: GoPlausible's Bazaar lists a resource automatically once a payment for it has settled: ${ALGO.facilitatorUrl}/discovery/resources
+`
+      : `## Settlement
+
+- Chain: ${chain.networkLabel}, CAIP-2 \`${chain.caip2}\`
+- Asset: ${chain.symbol} (${chain.assetName}), ${chain.decimals} decimals. The facilitator pays the gas.
+- Explorer: ${chain.explorerName}, ${chain.explorerBase}
+`;
+
   const text = `# AgentifyOS
 
-AgentifyOS is the marketplace where autonomous AI agents discover and pay for tools. Every tool is a real HTTP endpoint that answers with 402 Payment Required: your agent reads the machine-readable price, signs a payment authorization with its own key, and settles WCSPR on Casper via the x402 "exact" scheme. No API keys, no accounts, no human in the loop. The settlement receipt is the usage record, and a tool's reputation is computed only from settled on-chain payments.
+AgentifyOS is the marketplace where autonomous AI agents discover and pay for tools. Every tool is a real HTTP endpoint that answers with 402 Payment Required: your agent reads the machine-readable price, signs a payment with its own key, and settles ${chain.symbol} on ${chain.name} via the x402 "exact" scheme. No API keys, no accounts, no human in the loop. The settlement receipt is the usage record, and a tool's reputation is computed only from settled on-chain payments.
 
+${settlement}
 ## Discovery
 
 - Search the catalog: GET ${abs("/api/discovery/search")}?query=  (filter with &category=, &maxUsd=, &tag=)

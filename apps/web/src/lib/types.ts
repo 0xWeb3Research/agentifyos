@@ -73,7 +73,7 @@ export interface Settlement {
   payerLabel: string; // short label
   amountUsd: number;
   amountAtomic: string;
-  deployHash: string;
+  txHash: string;
   network: string;
   status: SettlementStatus;
   latencyMs: number;
@@ -87,15 +87,18 @@ export interface Receipt {
   event: string;
   costUsd: number;
   payer: string;
-  deployHash: string;
+  txHash: string;
   resultHash: string;
   network: string;
-  // "real" when the deploy hash is a genuine on-chain transaction (explorerUrl
-  // resolves on testnet.cspr.live); "mock" when it settled in-process. Mock
-  // receipts carry a null explorerUrl so a fabricated hash is never presented
-  // as a verifiable on-chain link.
+  // "real" when the hash is a genuine on-chain transaction (explorerUrl resolves
+  // on Lora or cspr.live); "mock" when it settled in-process. Mock receipts
+  // carry a null explorerUrl so a fabricated hash is never presented as a
+  // verifiable on-chain link.
   mode: Mode;
   explorerUrl: string | null;
+  // The facilitator's own record of the same payment, when it has one. Lets a
+  // reader confirm the settlement without trusting our ledger. Algorand only.
+  facilitatorReceiptUrl?: string | null;
   budgetRemainingUsd: number | null;
   createdAt: string;
 }

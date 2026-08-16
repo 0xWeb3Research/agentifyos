@@ -1,5 +1,6 @@
 import { ALLOW_UNAUTH_SPEND, MODE } from "../config";
 import { readSession, SESSION_COOKIE, type Session } from "../auth/siwx";
+import { defaultChain as chain } from "../chain";
 
 // Read and verify the SIWX session directly from a Request's Cookie header.
 // Next's route handlers get a raw `Request`, so we parse the cookie ourselves
@@ -46,7 +47,7 @@ export function authorizeSpend(req: Request): SpendAuthResult {
   return {
     allowed: false,
     reason:
-      "authentication required: signing in with Casper is required to spend from the server wallet in real mode",
+      `authentication required: signing in with a ${chain.name} wallet is required to spend from the server wallet in real mode`,
     session: null,
   };
 }

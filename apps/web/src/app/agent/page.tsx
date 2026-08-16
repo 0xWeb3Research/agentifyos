@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Arrow, Button, Chip, Container, Eyebrow } from "@/components/ui";
 import { WireLog } from "@/components/wire-log";
 import { WalletConnect, type SessionInfo } from "@/components/wallet-connect";
-import { explorerTx } from "@/lib/config";
+import { useChain, useChainLinks } from "@/components/chain-context";
 import { compact, shortHash, usd } from "@/lib/format";
 import type { WireStep } from "@/lib/x402/loop";
 import type { Receipt } from "@/lib/types";
@@ -19,30 +19,29 @@ import type { Receipt } from "@/lib/types";
 // reports the granted figure back in `budgetUsd`. That value drives the meter.
 const BUDGET = 0.1;
 
-// Each tool call is a REAL Casper settlement that waits for on-chain finality
-// (~12s), so the default keeps a browser run comfortably short. The four-tool
-// "Full run" takes ~100s. Reliable via `pnpm casper:pay` / the API, but long
-// enough that a browser request can be cut off before it returns.
-const FULL_TASK =
-  "You have 0.1 WCSPR. Get the live CSPR price, scrape https://casper.network/blog/agentic-commerce, summarize it, and attest the summary.";
+// Each tool call is a REAL on-chain settlement and waits for finality, so the
+// default keeps a browser run comfortably short. The four-tool "Full run" takes
+// long enough that a browser request can be cut off before it returns; the API
+// and the CLI run it reliably.
+const fullTask = (symbol: string) =>
+  `You have 0.1 ${symbol}. Get the live ALGO price, scrape https://algorand.co/blog, summarize it, and attest the summary.`;
 
-const DEFAULT_TASK = "Get the live CSPR price, then attest the quote on-chain.";
+const DEFAULT_TASK = "Get the live ALGO price, then attest the quote on-chain.";
 
-const PRESETS: { label: string; task: string }[] = [
+const presets = (symbol: string): { label: string; task: string }[] => [
   { label: "Price + attest", task: DEFAULT_TASK },
   {
     label: "Scrape + summarize",
-    task: "Scrape https://casper.network/blog/agentic-commerce and summarize the article.",
+    task: "Scrape https://algorand.co/blog and summarize the article.",
   },
-  { label: "Full run (~100s)", task: FULL_TASK },
+  { label: "Full run", task: fullTask(symbol) },
 ];
 
 // When arriving via ?tool=<slug>, prefill a task that features that tool.
 const TOOL_TASKS: Record<string, string> = {
-  "cspr-market-data": "Get the live CSPR price, then attest the quote on-chain.",
-  "page-scraper": "Scrape https://casper.network/blog/agentic-commerce and summarize it.",
-  "text-summarizer":
-    "Scrape https://casper.network/blog/agentic-commerce, then summarize the article.",
+  "algo-market-data": "Get the live ALGO price, then attest the quote on-chain.",
+  "page-scraper": "Scrape https://algorand.co/blog and summarize it.",
+  "text-summarizer": "Scrape https://algorand.co/blog, then summarize the article.",
   "rwa-attestor":
     "Get the live CSPR price and notarize the result as an on-chain attestation.",
 };
@@ -86,11 +85,12 @@ type Completed = { step: RunStep; settled: boolean };
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 export default function AgentPage() {
+  const chain = useChain();
   return (
     <main>
       <Container className="pt-16 pb-6 sm:pt-20">
         <div className="animate-fade-up">
-          <Eyebrow>live demo · casper testnet</Eyebrow>
+          <Eyebrow>live demo · {chain.networkLabel.toLowerCase()}</Eyebrow>
           <h1 className="mt-4 max-w-[22ch] text-[32px] font-medium leading-[1.05] tracking-[-0.03em]">
             Watch an agent pay its way
           </h1>
@@ -100,11 +100,11 @@ export default function AgentPage() {
           <div className="mt-5 flex flex-wrap items-start gap-2.5 rounded-[var(--radius-md)] border border-border bg-surface px-4 py-3">
             <Chip tone="success">open demo</Chip>
             <p className="min-w-0 flex-1 text-[13px] leading-relaxed text-fg-secondary">
-              Run it now — no wallet needed. Payments settle from a shared testnet
-              wallet under a daily budget, so the run is real but bounded. To use
-              your own session instead of the shared budget,{" "}
-              <span className="text-fg">sign in with Casper</span>{" "}
-              when prompted. It&apos;s testnet — no real money anywhere.
+              Run it now, no wallet needed. Payments settle from a shared testnet
+              account under a daily budget, so the run is real but bounded. The
+              agent spends {chain.symbol} and pays no network fees:{" "}
+              <span className="text-fg">{chain.feePayer}</span>. It is testnet, so
+              no real money moves anywhere.
             </p>
           </div>
         </div>
@@ -117,6 +117,7 @@ export default function AgentPage() {
 }
 
 function AgentRunner() {
+  const chain = useChain();
   const params = useSearchParams();
   const toolParam = params.get("tool");
 
@@ -175,9 +176,7 @@ function AgentRunner() {
       if (!res.ok || !body || !Array.isArray(body.steps)) {
         if (res.status === 401) {
           setNeedsAuth(true);
-          setError(
-            body?.reason ?? "authentication required: sign in with your Casper wallet first.",
-          );
+          setError(body?.reason ?? "authentication required: sign in first.");
         } else if (res.status === 429) {
           setError(
             `rate limited: try again in ${body?.retryAfterSec ? `${body.retryAfterSec}s` : "a moment"}.`,
@@ -276,7 +275,7 @@ function AgentRunner() {
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="label mr-1">presets</span>
-            {PRESETS.map((p) => (
+            {presets(chain.symbol).map((p) => (
               <button
                 key={p.label}
                 type="button"
@@ -294,7 +293,7 @@ function AgentRunner() {
                   <span className="label">budget</span>
                   <span className="font-mono text-[13px] tabular-nums text-fg">
                     {budget.toFixed(3)}
-                    <span className="text-muted"> WCSPR</span>
+                    <span className="text-muted"> {chain.symbol}</span>
                   </span>
                 </div>
                 <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-tint">
@@ -324,9 +323,9 @@ function AgentRunner() {
               {needsAuth && (
                 <div className="flex flex-col gap-2 rounded-[var(--radius-md)] border border-border bg-surface p-4">
                   <p className="text-[13px] leading-relaxed text-fg-secondary">
-                    This demo spends real WCSPR from the server&apos;s wallet, so it
-                    asks who you are first. Signing costs nothing and moves no funds
-                    from your account.
+                    This demo spends real {chain.symbol} from the server&apos;s
+                    account, so it asks who you are first. Signing costs nothing and
+                    moves no funds from your own account.
                   </p>
                   <WalletConnect
                     onSession={(s: SessionInfo | null) => {
@@ -399,8 +398,8 @@ function AgentRunner() {
               <SummaryStat value={String(settledCount)} label="settlements" />
               <span className="hidden h-8 w-px bg-surface/15 sm:block" />
               <SummaryStat
-                value={`${totals.budgetRemainingUsd.toFixed(3)} WCSPR`}
-                label="left in wallet"
+                value={`${totals.budgetRemainingUsd.toFixed(3)} ${chain.symbol}`}
+                label="left in the budget"
               />
             </div>
             <p className="font-mono text-[13px] text-surface/70">the payment is the review.</p>
@@ -447,7 +446,7 @@ function StepItem({
             <ErrorChip
               message={
                 step.error === "budget_exceeded"
-                  ? "budget exceeded: agent stopped to stay in wallet"
+                  ? "budget exceeded: agent stopped to stay inside its budget"
                   : step.error ?? "call failed"
               }
             />
@@ -464,6 +463,7 @@ function StepItem({
 }
 
 function ReceiptChip({ receipt, costUsd }: { receipt: Receipt; costUsd: number }) {
+  const { chain, explorerTx } = useChainLinks();
   return (
     <span className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-bg px-2.5 py-1">
       <span className="inline-flex items-center gap-1 font-mono text-[11px] uppercase tracking-[0.05em] text-success">
@@ -472,14 +472,27 @@ function ReceiptChip({ receipt, costUsd }: { receipt: Receipt; costUsd: number }
       </span>
       <span className="font-mono text-[12px] font-medium tabular-nums text-fg">{usd(costUsd)}</span>
       <a
-        href={explorerTx(receipt.deployHash)}
+        href={explorerTx(receipt.txHash)}
         target="_blank"
         rel="noopener noreferrer"
+        title={`${receipt.txHash} on ${chain.explorerName}`}
         className="press group inline-flex items-center gap-1 font-mono text-[12px] text-accent hover:underline"
       >
-        {shortHash(receipt.deployHash)}
+        {shortHash(receipt.txHash)}
         <Arrow className="opacity-60 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
       </a>
+      {/* The facilitator's own record of the same payment: proof that does not
+          come from us. Only Algorand receipts carry one. */}
+      {receipt.facilitatorReceiptUrl && (
+        <a
+          href={receipt.facilitatorReceiptUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="press label text-muted transition-colors hover:text-accent"
+        >
+          facilitator receipt
+        </a>
+      )}
     </span>
   );
 }
@@ -523,7 +536,7 @@ function CheckIcon() {
 // A one-line, human summary of a tool's JSON result for the receipt row.
 function summarizeResult(slug: string, result: unknown): string {
   const r = (result ?? {}) as Record<string, unknown>;
-  if (slug === "cspr-market-data") {
+  if (slug === "algo-market-data") {
     const p = Number(r.priceUsd);
     const c = Number(r.change24hPct);
     if (!Number.isNaN(p)) {

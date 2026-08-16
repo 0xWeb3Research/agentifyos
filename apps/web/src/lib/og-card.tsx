@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { ImageResponse } from "next/og";
+import { defaultChain as chain } from "@/lib/chain";
 import { BRAND_COLOR, SITE_TAGLINE } from "@/lib/site";
 
 // The shared link-preview card, used by the Open Graph, Twitter, and per-tool
@@ -31,7 +32,7 @@ export async function renderOgCard(opts: OgCardOptions = {}) {
   const {
     title = SITE_TAGLINE,
     subtitle = "Publish a paid tool in 60 seconds. Agents discover it and pay per call with x402. No API keys, no accounts.",
-    badge = "x402 on Casper",
+    badge = `x402 on ${chain.name}`,
     footnote = "agentifyos.xyz",
   } = opts;
 

@@ -7,7 +7,7 @@ import { abs } from "@/lib/site";
 export const metadata: Metadata = {
   title: "Docs",
   description:
-    "Everything about AgentifyOS: how x402 payments work on Casper, the testnet runbook, the CLI and MCP server, and the on-chain addresses.",
+    "Everything about AgentifyOS: how x402 payments work on Algorand, the testnet runbook, the CLI and MCP server, and the on-chain addresses.",
   alternates: { canonical: "/docs" },
   openGraph: {
     title: "Docs",

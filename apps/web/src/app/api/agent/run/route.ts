@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { getToolsWithStats } from "@/lib/data";
 import { MODE } from "@/lib/config";
+import { getChainId } from "@/lib/chain-server";
 
-// Real-mode settlement POSTs a signed transaction to the Casper RPC. Next patches
-// global fetch and its caching layer mangles that body (the node answers 413), so
-// this segment opts out entirely and runs on the Node runtime.
+// Real-mode settlement POSTs a signed transaction to a node or a facilitator.
+// Next patches global fetch and its caching layer mangles that body (a Casper
+// node answers 413), so this segment opts out entirely and runs on the Node
+// runtime.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
@@ -35,7 +37,7 @@ interface AgentStep {
 }
 
 export async function POST(req: Request) {
-  // In real mode this handler spends from the server-held Casper keys, so gate
+  // In real mode this handler spends from the server-held role keys, so gate
   // it before doing any work. Mock mode is always allowed (nothing settles on-chain).
   const auth = authorizeSpend(req);
   if (!auth.allowed) {
@@ -50,6 +52,7 @@ export async function POST(req: Request) {
   };
   const task = typeof body.task === "string" ? body.task : "";
 
+  const on = await getChainId();
   const tools = getToolsWithStats();
   const wallet = makeWallet("demo-agent", "atlas-01");
   const baseUrl = new URL(req.url).origin;
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error: "demo_budget_exhausted",
-          reason: `today's public demo budget of $${demo.capUsd < 0.01 ? demo.capUsd : demo.capUsd.toFixed(2)} is spent. Sign in with Casper to run it with your own session, or try again tomorrow.`,
+          reason: `today's public demo budget of $${demo.capUsd < 0.01 ? demo.capUsd : demo.capUsd.toFixed(2)} is spent. Try again tomorrow, or run the loop yourself against the public 402 endpoint.`,
         },
         { status: 429 },
       );
@@ -101,6 +104,7 @@ export async function POST(req: Request) {
       input,
       budgetRemainingUsd: remaining,
       baseUrl,
+      on,
     });
 
     if (call.ok) {
@@ -131,14 +135,21 @@ export async function POST(req: Request) {
 
   const ok = steps.length > 0 && steps.every((s) => s.ok);
 
-  // In real mode the on-chain payer is the Casper key in keys/agent.pem, not the
-  // in-process demo wallet, so report the identity that actually signed.
+  // In real mode the on-chain payer is a role key held by the server (an
+  // Algorand mnemonic, or a Casper PEM), not the in-process demo wallet, so
+  // report the identity that actually signed.
   let shown = { accountHash: wallet.accountHash, publicKey: wallet.publicKey, label: wallet.label };
   if (MODE === "real") {
     try {
-      const casper = await import("@/lib/x402/casper");
-      const real = casper.loadRoleWallet("agent");
-      shown = { accountHash: real.address, publicKey: real.publicKeyHex, label: "agent" };
+      if (on === "algorand") {
+        const algo = await import("@/lib/x402/algorand");
+        const real = algo.loadRoleAccount("agent");
+        shown = { accountHash: real.addr, publicKey: real.addr, label: "agent" };
+      } else {
+        const casper = await import("@/lib/x402/casper");
+        const real = casper.loadRoleWallet("agent");
+        shown = { accountHash: real.address, publicKey: real.publicKeyHex, label: "agent" };
+      }
     } catch {
       /* fall back to the demo identity if keys are unavailable */
     }

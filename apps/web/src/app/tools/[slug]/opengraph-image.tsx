@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { OG_SIZE, renderOgCard } from "@/lib/og-card";
+import { defaultChain as chain } from "@/lib/chain";
 import { getToolBySlug, getToolsWithStats } from "@/lib/data";
 import { usd } from "@/lib/format";
 
@@ -29,6 +30,6 @@ export default async function ToolOpengraphImage({
     title: tool.name,
     subtitle: tool.tagline,
     badge: `${usd(tool.primaryPrice)} per call`,
-    footnote: `${tool.publisher.handle} · x402 on Casper`,
+    footnote: `${tool.publisher.handle} · x402 on ${chain.name}`,
   });
 }

@@ -300,12 +300,12 @@ export interface SettleResult {
   success: boolean;
   // "settled": confirmed on-chain. "pending": accepted by the node but our poll
   // window elapsed before confirmation — the transfer MAY still execute and move
-  // the payer's WCSPR, so callers must record it (with the deployHash) and must
+  // the payer's WCSPR, so callers must record it (with the txHash) and must
   // NOT re-charge or re-submit. "failed": rejected before or during submission,
   // no funds moved. `success` stays false for both pending and failed so old
   // call sites fail closed; new call sites branch on `status`.
   status: "settled" | "pending" | "failed";
-  deployHash: string;
+  txHash: string;
   explorerUrl: string;
   network: string;
   payer: string;
@@ -321,7 +321,7 @@ export async function settleOnChain(
 ): Promise<SettleResult> {
   const pre = verifyPayment(payload, req);
   const payer = payload.authorization.from;
-  if (!pre.valid) return { success: false, status: "failed", deployHash: "", explorerUrl: "", network: req.network, payer, reason: pre.reason };
+  if (!pre.valid) return { success: false, status: "failed", txHash: "", explorerUrl: "", network: req.network, payer, reason: pre.reason };
 
   // The facilitator pays gas. An unfunded account has no on-chain entity, so the
   // node rejects its transactions with a generic -32016; check first and say why.
@@ -330,7 +330,7 @@ export async function settleOnChain(
     return {
       success: false,
       status: "failed",
-      deployHash: "",
+      txHash: "",
       explorerUrl: "",
       network: req.network,
       payer,
@@ -346,16 +346,16 @@ export async function settleOnChain(
 
   // Submission fails if the facilitator has no CSPR for gas; report it cleanly
   // rather than throwing, so callers can surface "fund the facilitator".
-  let deployHash: string;
+  let txHash: string;
   try {
-    deployHash = await putTransactionRaw(tx);
+    txHash = await putTransactionRaw(tx);
   } catch (e) {
     const msg = (e as Error).message;
     const unfunded = /insufficient|balance|purse|funds/i.test(msg);
     return {
       success: false,
       status: "failed",
-      deployHash: "",
+      txHash: "",
       explorerUrl: "",
       network: req.network,
       payer,
@@ -366,10 +366,10 @@ export async function settleOnChain(
   }
 
   try {
-    await waitForTransactionRaw(deployHash, 90_000);
+    await waitForTransactionRaw(txHash, 90_000);
   } catch (e) {
     const msg = (e as Error).message;
-    const explorerUrl = `${TESTNET.explorerBase}/deploy/${deployHash}`;
+    const explorerUrl = `${TESTNET.explorerBase}/deploy/${txHash}`;
     // A timeout is NOT a clean failure: the tx was accepted by the node and may
     // still execute after our polling window, moving the payer's WCSPR. Report
     // it as pending (never success) with the hash so callers surface "pending ·
@@ -378,7 +378,7 @@ export async function settleOnChain(
     return {
       success: false,
       status: timedOut ? "pending" : "failed",
-      deployHash,
+      txHash,
       explorerUrl,
       network: req.network,
       payer,
@@ -390,8 +390,8 @@ export async function settleOnChain(
   return {
     success: true,
     status: "settled",
-    deployHash,
-    explorerUrl: `${TESTNET.explorerBase}/deploy/${deployHash}`,
+    txHash,
+    explorerUrl: `${TESTNET.explorerBase}/deploy/${txHash}`,
     network: req.network,
     payer,
   };

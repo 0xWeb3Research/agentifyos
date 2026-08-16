@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CodeBlock } from "@/components/copy";
 import { Arrow, Button, Chip, Container, Eyebrow } from "@/components/ui";
+import { ALGO, ALGO_TREASURY_ADDRESS, explorerTx } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
+// config re-exports most of chain.ts, but not these two.
+import { facilitatorReceipt, toAtomic } from "@/lib/chain";
 import { getToolsWithStats } from "@/lib/data";
 import { SITE_URL } from "@/lib/site";
 
@@ -16,8 +20,8 @@ const MCP_TOOLS = [
   { name: "search_tools", spends: false, desc: "Find tools by free text. Returns slug, price, and input schema." },
   { name: "get_tool", spends: false, desc: "Full detail for one tool: price, schemas, stats." },
   { name: "call_tool", spends: true, desc: "Pay for a tool and return its result plus an on-chain receipt." },
-  { name: "get_balance", spends: false, desc: "This wallet's on-chain CSPR and WCSPR." },
-  { name: "list_settlements", spends: false, desc: "Recent marketplace payments, each with a deploy hash." },
+  { name: "get_balance", spends: false, desc: "This account's on-chain balances." },
+  { name: "list_settlements", spends: false, desc: "Recent marketplace payments, each with a verifiable transaction." },
 ];
 
 const ENDPOINTS = [
@@ -29,9 +33,19 @@ const ENDPOINTS = [
   { method: "GET", path: "/llms.txt", desc: "Agent-readable manifest of the whole marketplace." },
 ];
 
-export default function DevelopersPage() {
+export default async function DevelopersPage() {
+  const chain = await getChain();
   const tools = getToolsWithStats();
   const live = tools.filter((t) => t.handler);
+  // Elide rather than invent: the payTo in the sample is this instance's real
+  // receiving account when one is configured, and an obvious placeholder when
+  // it isn't. No sample hash is ever passed off as a settled transaction.
+  const payToSample = ALGO_TREASURY_ADDRESS
+    ? `${ALGO_TREASURY_ADDRESS.slice(0, 8)}…${ALGO_TREASURY_ADDRESS.slice(-6)}`
+    : "<treasury address>";
+  const facReceiptLine = facilitatorReceipt("…")
+    ? `,\n    "facilitatorReceiptUrl": "${facilitatorReceipt("…")}"`
+    : "";
 
   return (
     <main>
@@ -64,14 +78,17 @@ export default function DevelopersPage() {
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           Call any tool and you get a <span className="font-mono text-[13px]">402</span> quoting
-          the price, the token, and who to pay. Sign that authorization, retry with a{" "}
+          the price, the asset, and who to pay. Sign that transfer, retry with a{" "}
           <span className="font-mono text-[13px]">PAYMENT-SIGNATURE</span> header, and the
-          response carries your data plus a receipt.
+          response carries your data plus a receipt. Prices are exact dollars:{" "}
+          {chain.symbol} has {chain.decimals} decimals, so $0.002 is{" "}
+          <span className="font-mono text-[13px]">{toAtomic(0.002)}</span> atomic units
+          and nothing is converted.
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <CodeBlock
             label="1 · ask, and get quoted"
-            code={`curl -i ${SITE_URL}/api/t/cspr-market-data
+            code={`curl -i ${SITE_URL}/api/t/algo-market-data
 
 HTTP/1.1 402 Payment Required
 PAYMENT-REQUIRED: true
@@ -81,16 +98,16 @@ PAYMENT-REQUIRED: true
   "error": "payment_required",
   "accepts": [{
     "scheme": "exact",
-    "network": "casper:casper-test",
-    "amount": "86580087",
-    "asset": "3d80df21…4847c1e",
-    "payTo": "00bd135e…2a3fee"
+    "network": "${chain.caip2}",
+    "amount": "${toAtomic(0.002)}",
+    "asset": "${chain.assetRef}",
+    "payTo": "${payToSample}"
   }]
 }`}
           />
           <CodeBlock
             label="2 · pay, and get the data"
-            code={`curl ${SITE_URL}/api/t/cspr-market-data \\
+            code={`curl ${SITE_URL}/api/t/algo-market-data \\
   -H "PAYMENT-SIGNATURE: $(base64_signed_payload)"
 
 HTTP/1.1 200 OK
@@ -100,12 +117,20 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
   "result": { "symbol": "CSPR", "priceUsd": 0.0244, … },
   "receipt": {
     "costUsd": 0.002,
-    "deployHash": "e50c18e4…f5fa55",
-    "explorerUrl": "https://testnet.cspr.live/deploy/e50c18e4…"
+    "txHash": "…",
+    "explorerUrl": "${explorerTx("…")}"${facReceiptLine}
   }
 }`}
           />
         </div>
+        <p className="mt-4 max-w-[68ch] text-[13px] leading-relaxed text-fg-secondary">
+          You sign one thing: a {chain.symbol} transfer inside a two-transaction
+          atomic group. The facilitator adds and signs the second transaction, the
+          one that pays the network fee, then submits the group. A buying agent
+          therefore spends only {chain.symbol}. It still needs an account, and an
+          Algorand account locks about 0.2 ALGO of minimum balance once it has
+          opted into the {chain.symbol} ASA, but that balance is locked, never spent.
+        </p>
       </Container>
 
       {/* ── 2. MCP ────────────────────────────────────────────────────── */}
@@ -116,8 +141,8 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           Point Claude Desktop, Claude Code, or Cursor at the marketplace and it can buy
-          tools on its own. The server holds its own Casper key and does the real 402
-          handshake. A call from Claude produces a genuine on-chain settlement.
+          tools on its own. The server holds its own {chain.name} account and does the
+          real 402 handshake. A call from Claude produces a genuine on-chain settlement.
         </p>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -184,30 +209,36 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           Same thing from a terminal. It holds its own key and pays over the same public
-          endpoint, nothing privileged.
+          endpoint, nothing privileged. Client and server both sit on{" "}
+          <span className="font-mono text-[13px]">@x402-avm/core</span>,{" "}
+          <span className="font-mono text-[13px]">/avm</span>,{" "}
+          <span className="font-mono text-[13px]">/fetch</span>,{" "}
+          <span className="font-mono text-[13px]">/extensions</span>, and{" "}
+          <span className="font-mono text-[13px]">algosdk</span>.
         </p>
         <div className="mt-6 grid gap-4 lg:grid-cols-2">
           <CodeBlock
             label="commands"
             code={`pnpm agentify tools                 # the catalog
 pnpm agentify search "price feed"   # search it
-pnpm agentify call cspr-market-data # pay for a tool
+pnpm agentify call algo-market-data # pay for a tool
 pnpm agentify balance               # on-chain balances
 pnpm agentify receipts              # recent settlements`}
           />
           <CodeBlock
             label="a real payment"
-            code={`$ pnpm agentify call cspr-market-data
+            code={`$ pnpm agentify call algo-market-data
 
-REQ   GET /api/t/cspr-market-data          +0ms
-402   payment required: ~$0.0020          +50ms
-SIG   signed EIP-712 as 0041611f2c09…     +58ms
-PAID  settled · e50c18e49e666b66…      +11823ms
+REQ   GET /api/t/algo-market-data
+402   payment required: $0.0020 in ${chain.symbol}
+SIG   signed the ${chain.symbol} transfer
+GRP   facilitator added the fee transaction
+PAID  settled · atomic group submitted
 
 receipt
   cost      $0.0020
-  deploy    e50c18e49e666b666b1cbe20…
-  explorer  https://testnet.cspr.live/…`}
+  tx        …
+  explorer  ${chain.explorerBase}/…`}
           />
         </div>
       </Container>
@@ -233,6 +264,25 @@ receipt
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="mt-5 rounded-[var(--radius-card)] border border-border bg-surface p-6">
+          <Eyebrow>the Bazaar</Eyebrow>
+          <p className="mt-2.5 max-w-[64ch] text-[14px] leading-relaxed text-fg-secondary">
+            Discovery is not only ours. GoPlausible runs a public registry of x402
+            resources, and a listing appears in it by itself once one payment for it
+            has settled. So an agent that has never heard of AgentifyOS can still find
+            these tools at{" "}
+            <a
+              href={`${ALGO.facilitatorUrl}/discovery/resources`}
+              target="_blank"
+              rel="noreferrer"
+              className="font-mono text-[13px] text-accent hover:underline"
+            >
+              facilitator.goplausible.xyz/discovery/resources
+            </a>
+            .
+          </p>
         </div>
 
         <div className="mt-5 rounded-[var(--radius-card)] border border-border bg-surface p-6">

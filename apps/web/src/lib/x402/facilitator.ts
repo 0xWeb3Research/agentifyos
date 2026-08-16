@@ -1,7 +1,7 @@
 import { MODE } from "../config";
 import {
   canonical,
-  pseudoDeployHash,
+  pseudoTxHash,
   verifySignature,
   type ExactPayload,
   type PaymentRequirements,
@@ -16,7 +16,7 @@ export interface VerifyResult {
 export interface SettleResult {
   success: boolean;
   payer: string;
-  deployHash: string;
+  txHash: string;
   network: string;
   latencyMs: number;
   errorReason?: string;
@@ -105,7 +105,7 @@ export class MockFacilitator implements FacilitatorClient {
     const fail = (reason?: string): SettleResult => ({
       success: false,
       payer,
-      deployHash: "",
+      txHash: "",
       network: req.network,
       latencyMs: Date.now() - started,
       errorReason: reason,
@@ -134,7 +134,7 @@ export class MockFacilitator implements FacilitatorClient {
     return {
       success: true,
       payer,
-      deployHash: pseudoDeployHash(payload, started),
+      txHash: pseudoTxHash(payload, started),
       network: req.network,
       latencyMs,
     };

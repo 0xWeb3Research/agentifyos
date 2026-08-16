@@ -34,6 +34,14 @@ playwright-report/
 # Rust contract build output
 contracts/*/target/
 
+# Submission workspace — deck, screenshots, form answers, judge notes. Local
+# only: it is scratch for a hackathon form, not part of the product.
+submit/
+
+# Agent transcripts dumped into the repo root while pairing.
+claude-session.jsonl
+codex-session.jsonl
+
 # Security-scan artifacts — kept local, never committed.
 # .deepsec/ is a self-contained tool (its own node_modules); security-findings/
 # is a categorized vulnerability map that must not ship in a repo that may go

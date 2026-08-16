@@ -1,4 +1,7 @@
+"use client";
+
 import { clsx } from "clsx";
+import { useChain } from "./chain-context";
 import type { StepKind, WireStep } from "@/lib/x402/loop";
 
 const KIND_COLOR: Record<StepKind, string> = {
@@ -34,6 +37,7 @@ export function WireLog({
   className?: string;
   dense?: boolean;
 }) {
+  const chain = useChain();
   return (
     <div
       className={clsx(
@@ -43,7 +47,9 @@ export function WireLog({
     >
       <div className="flex items-center justify-between border-b border-border px-3.5 py-2">
         <span className="label">x402 wire log</span>
-        <span className="label text-muted">casper:casper-test</span>
+        <span className="label text-muted" title={chain.caip2}>
+          {chain.networkLabel.toLowerCase()}
+        </span>
       </div>
       <div className="divide-y divide-border">
         {steps.length === 0 && (

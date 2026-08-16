@@ -9,7 +9,7 @@
 // list is the financial audit trail, the mock list is demo exhaust.
 //
 // This is what makes the dashboard honest: it reads only from here, so the
-// numbers on screen are payments that genuinely settled on Casper.
+// numbers on screen are payments that genuinely settled on-chain.
 import type { Settlement } from "../types";
 import { getRedis } from "./redis";
 

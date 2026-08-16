@@ -81,7 +81,7 @@ async function main() {
         payerLabel: s.payerLabel,
         amountUsd: s.amountUsd,
         amountAtomic: s.amountAtomic,
-        deployHash: s.deployHash,
+        txHash: s.txHash,
         network: s.network,
         status: s.status,
         latencyMs: s.latencyMs,

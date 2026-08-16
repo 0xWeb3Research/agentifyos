@@ -10,7 +10,7 @@ const BASE = process.env.BASE || "http://localhost:8402";
 const ROUTES = [
   "/",
   "/tools",
-  "/tools/cspr-market-data",
+  "/tools/algo-market-data",
   "/explain",
   "/docs",
   "/docs/start-here",
@@ -84,7 +84,7 @@ for (const path of [
   "/apple-icon.png",
   "/opengraph-image",
   "/twitter-image",
-  "/tools/cspr-market-data/opengraph-image",
+  "/tools/algo-market-data/opengraph-image",
   "/docs/start-here/opengraph-image",
 ]) {
   const r = await fetch(BASE + path);

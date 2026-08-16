@@ -123,7 +123,7 @@ async function main(): Promise<void> {
     const receiptStep = r.steps.find((s) => s.kind === "receipt");
     return (
       r.ok === true &&
-      !!r.receipt?.deployHash &&
+      !!r.receipt?.txHash &&
       !!r.result &&
       !!settleStep &&
       settleStep.ok === true &&

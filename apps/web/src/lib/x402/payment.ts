@@ -7,8 +7,7 @@ import {
   randomBytes,
   type KeyObject,
 } from "node:crypto";
-import { CSPR } from "../config";
-import { toAtomic } from "../format";
+import { CSPR, DEFAULT_CHAIN, chainMeta, toAtomic, type ChainId } from "../chain";
 import type { PriceEvent, Tool } from "../types";
 
 // ── x402 V2 wire types (Casper "exact" scheme) ──────────────────────────────
@@ -59,18 +58,25 @@ export function buildRequirements(
   event: PriceEvent,
   resourceUrl: string,
   payTo: string,
+  on: ChainId = DEFAULT_CHAIN,
 ): PaymentRequirements {
+  const chain = chainMeta(on);
   return {
     scheme: "exact",
-    network: CSPR.network,
-    amount: toAtomic(event.usd),
-    asset: CSPR.wcsprPackageHash,
+    network: chain.caip2,
+    amount: toAtomic(event.usd, on),
+    asset: chain.assetRef,
     payTo,
     maxTimeoutSeconds: 60,
     resource: resourceUrl,
     description: `${tool.name} · ${event.title}`,
     mimeType: "application/json",
-    extra: CSPR.asset,
+    extra: {
+      name: chain.assetName,
+      symbol: chain.symbol,
+      version: "1",
+      decimals: String(chain.decimals),
+    },
   };
 }
 
@@ -79,11 +85,12 @@ export function make402(
   event: PriceEvent,
   resourceUrl: string,
   payTo: string,
+  on: ChainId = DEFAULT_CHAIN,
 ): Payment402Body {
   return {
     x402Version: 2,
     error: "payment_required",
-    accepts: [buildRequirements(tool, event, resourceUrl, payTo)],
+    accepts: [buildRequirements(tool, event, resourceUrl, payTo, on)],
   };
 }
 
@@ -230,7 +237,7 @@ export function hashResult(result: unknown): string {
   return createHash("sha256").update(canonical(result)).digest("hex");
 }
 
-export function pseudoDeployHash(payload: ExactPayload, settledAtMs: number): string {
+export function pseudoTxHash(payload: ExactPayload, settledAtMs: number): string {
   return createHash("sha256")
     .update(canonical(payload.payload.authorization) + ":" + settledAtMs)
     .digest("hex");

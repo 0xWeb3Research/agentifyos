@@ -28,7 +28,7 @@ export interface PaidFetchResult {
     event: string;
     costUsd: number;
     payer: string;
-    deployHash: string;
+    txHash: string;
     resultHash: string;
     network: string;
     explorerUrl: string;
@@ -117,7 +117,7 @@ export async function fetchWithPayment(
     return { ok: false, status: paid.status, error: body?.error ?? String(paid.status), requirements, steps };
   }
 
-  step("paid", `settled · ${body?.receipt?.deployHash?.slice(0, 16) ?? "?"}…`, body?.receipt);
+  step("paid", `settled · ${body?.receipt?.txHash?.slice(0, 16) ?? "?"}…`, body?.receipt);
   return {
     ok: true,
     status: paid.status,

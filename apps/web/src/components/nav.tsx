@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { Logo } from "./logo";
+import { ChainSwitcher } from "./chain-switcher";
+import type { ChainId } from "@/lib/chain";
 
 const LINKS = [
   { href: "/tools", label: "Tools" },
@@ -16,7 +18,7 @@ const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
 ];
 
-export function Nav() {
+export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -55,10 +57,7 @@ export function Nav() {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <span className="label hidden items-center gap-1.5 rounded-[var(--radius-pill)] border border-border bg-surface px-2.5 py-1 lg:inline-flex">
-            <span className="inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full bg-success" />
-            casper testnet
-          </span>
+          <ChainSwitcher ready={chainReady} className="hidden lg:block" />
           <Link
             href="/tools"
             className="press hidden rounded-[var(--radius-sm)] bg-fg px-3.5 py-1.5 text-sm font-medium text-surface hover:bg-fg/90 sm:inline-flex"
@@ -109,10 +108,7 @@ export function Nav() {
               </Link>
             ))}
             <div className="mt-2 flex items-center justify-between border-t border-border px-3 pb-2 pt-3">
-              <span className="label inline-flex items-center gap-1.5">
-                <span className="inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full bg-success" />
-                casper testnet
-              </span>
+              <ChainSwitcher ready={chainReady} />
               <Link
                 href="/tools"
                 className="press rounded-[var(--radius-sm)] bg-fg px-3.5 py-1.5 text-sm font-medium text-surface"

@@ -14,6 +14,9 @@ import {
 import { ToolCard, isLive } from "@/components/tool-card";
 import { CodeBlock, CopyRow } from "@/components/copy";
 import { JsonLd } from "@/components/json-ld";
+import { resolvePayTo } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
+import { defaultChain } from "@/lib/chain";
 import { getToolBySlug, getToolsWithStats } from "@/lib/data";
 import { compact, pct, usd } from "@/lib/format";
 import { SITE_URL, abs } from "@/lib/site";
@@ -39,8 +42,8 @@ function toolGraph(tool: ToolWithStats) {
         "@type": "Offer",
         price: tool.primaryPrice,
         priceCurrency: "USD",
-        // Priced in USD but settled in WCSPR; the page explains the conversion.
-        description: `${usd(tool.primaryPrice)} per call, settled with x402 on Casper`,
+        // Priced in USD and settled in USDC, so the two are the same number.
+        description: `${usd(tool.primaryPrice)} per call, settled with x402 on ${defaultChain.name}`,
         availability: isLive(tool)
           ? "https://schema.org/InStock"
           : "https://schema.org/PreOrder",
@@ -95,6 +98,8 @@ export default async function ToolDetailPage({
   if (!tool) notFound();
 
   const { stats, publisher } = tool;
+  const chain = await getChain();
+  const payTo = resolvePayTo(publisher.payTo, chain.id);
 
   const related = getToolsWithStats()
     .filter((t) => t.category === tool.category && t.slug !== slug)
@@ -235,12 +240,28 @@ export default async function ToolDetailPage({
                   <p className="truncate text-[13px] text-muted">{publisher.handle}</p>
                 </div>
               </div>
-              {/* CopyRow copies the FULL payTo hash and truncates only visually.
+              {/* CopyRow copies the FULL payTo value and truncates only visually.
                   Piping shortHash() into a copy affordance would put an unusable,
-                  ellipsized value on the clipboard. */}
+                  ellipsized value on the clipboard. Show the account this listing's
+                  payments ACTUALLY land in: on Algorand a receiver has to be opted
+                  into the USDC ASA, so today that is the one marketplace treasury. */}
               <div className="mt-3 border-t border-border pt-0.5">
-                <CopyRow label="pay to" value={publisher.payTo} />
+                <CopyRow
+                  label="pay to"
+                  value={payTo || "not configured"}
+                  mono={Boolean(payTo)}
+                />
               </div>
+              {chain.id !== "casper" && (
+                <p className="mt-2 text-[12px] leading-relaxed text-fg-secondary">
+                  Payments settle into the marketplace treasury for now. Per-publisher
+                  payout accounts need a USDC opt-in per seller, which is on the{" "}
+                  <Link href="/roadmap" className="text-accent hover:underline">
+                    roadmap
+                  </Link>
+                  .
+                </p>
+              )}
             </div>
 
             {/* integrate block */}

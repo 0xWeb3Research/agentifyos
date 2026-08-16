@@ -4,6 +4,7 @@ import { clsx } from "clsx";
 import { LiveFeed } from "@/components/live-feed";
 import { Arrow, Button, Chip, Container, Eyebrow, LogoTile } from "@/components/ui";
 import { PLATFORM_FEE, explorerTx } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
 import { compact, relTime, shortHash, usd } from "@/lib/format";
 import { getSeededSettlements, getToolsWithStats } from "@/lib/data";
 import { earningsByTool, readRealSettlements, totalsOf } from "@/lib/store/ledger";
@@ -11,7 +12,7 @@ import { earningsByTool, readRealSettlements, totalsOf } from "@/lib/store/ledge
 export const metadata: Metadata = {
   title: "Dashboard",
   description:
-    "Earnings from real x402 settlements on Casper testnet: totals, per-tool revenue after the platform fee, and a live feed of payments linking to the block explorer.",
+    "Earnings from real x402 settlements on Algorand testnet: totals, per-tool revenue after the platform fee, and a live feed of payments linking to the block explorer.",
   alternates: { canonical: "/dashboard" },
   // Publisher earnings, not a landing page: keep it out of the index but let
   // crawlers follow the tool and explorer links it points at.
@@ -26,6 +27,7 @@ export default async function DashboardPage({
 }) {
   const { sim } = await searchParams;
   const simulation = sim === "1";
+  const chain = await getChain();
 
   // Real mode reads only the durable ledger: payments that actually settled.
   const real = await readRealSettlements(200);
@@ -46,7 +48,7 @@ export default async function DashboardPage({
             <p className="mt-2 max-w-[62ch] text-[14px] leading-relaxed text-fg-secondary">
               {simulation
                 ? "Seeded demo data: invented numbers showing what a busy marketplace would look like. None of this settled on-chain."
-                : "Every figure below comes from a payment that actually settled on Casper testnet. Nothing here is simulated."}
+                : `Every figure below comes from a payment that actually settled on ${chain.networkLabel}. Nothing here is simulated.`}
             </p>
           </div>
           <SimToggle simulation={simulation} />
@@ -63,7 +65,7 @@ export default async function DashboardPage({
             <p className="max-w-[52ch] text-[14px] leading-relaxed text-fg-secondary">
               This dashboard only shows real on-chain payments, so it stays empty until an
               agent actually buys something. Run the demo and it fills up, every row
-              linking to a transaction on the block explorer.
+              linking to its {chain.txLabel} on {chain.explorerName}.
             </p>
             <div className="mt-1 flex flex-wrap justify-center gap-3">
               <Button href="/agent">
@@ -157,7 +159,7 @@ export default async function DashboardPage({
                 <div className="divide-y divide-border">
                   {settlements.slice(0, 25).map((s) => (
                     <div
-                      key={s.id + s.deployHash}
+                      key={s.id + s.txHash}
                       className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5"
                     >
                       <span className="stat shrink-0 truncate text-muted">{s.payerLabel}</span>
@@ -167,12 +169,12 @@ export default async function DashboardPage({
                         {relTime(s.createdAt)}
                       </span>
                       <a
-                        href={explorerTx(s.deployHash)}
+                        href={explorerTx(s.txHash)}
                         target="_blank"
                         rel="noreferrer"
                         className="stat shrink-0 text-muted transition-colors hover:text-accent"
                       >
-                        {shortHash(s.deployHash)} ↗
+                        {shortHash(s.txHash)} ↗
                       </a>
                     </div>
                   ))}

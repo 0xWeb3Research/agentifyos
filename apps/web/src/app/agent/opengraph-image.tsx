@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export default function OpengraphImage() {
   return renderOgCard({
     title: "Watch an agent pay for itself.",
-    subtitle: "Give an agent a task and a WCSPR budget, then watch it discover tools, sign each call, and settle on Casper testnet with a receipt per payment.",
+    subtitle: "Give an agent a task and a USDC budget, then watch it discover tools, sign each call, and settle on Algorand testnet with a receipt per payment.",
     badge: "Live demo",
   });
 }

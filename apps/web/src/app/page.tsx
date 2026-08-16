@@ -4,6 +4,8 @@ import { Marquee } from "@/components/marquee";
 import { WireLog } from "@/components/wire-log";
 import { ToolCard } from "@/components/tool-card";
 import { Arrow, Button, Container, Eyebrow, LogoTile } from "@/components/ui";
+import { getChain } from "@/lib/chain-server";
+import type { ChainMeta } from "@/lib/chain";
 import { getToolsWithStats } from "@/lib/data";
 import { publishers } from "@/lib/seed";
 import { compact, pct, usd } from "@/lib/format";
@@ -16,17 +18,20 @@ export const metadata: Metadata = {
 };
 
 // A representative wire trace for the hero (no side effects at render time).
-const HERO_TRACE: WireStep[] = [
-  { seq: 0, kind: "request", label: "GET cspr-market-data · Price quote", ok: true, atMs: 0 },
-  { seq: 1, kind: "402", label: "HTTP 402: pay 0.002 in WCSPR to continue", ok: true, atMs: 4 },
-  { seq: 2, kind: "sign", label: "agent signs authorization with its own key", ok: true, atMs: 9 },
+// Built per chain, because a trace that named the wrong asset would be the first
+// thing a reader saw and the first thing they stopped trusting.
+const heroTrace = (chain: ChainMeta): WireStep[] => [
+  { seq: 0, kind: "request", label: "GET algo-market-data · Price quote", ok: true, atMs: 0 },
+  { seq: 1, kind: "402", label: `HTTP 402: pay 0.002 in ${chain.symbol} to continue`, ok: true, atMs: 4 },
+  { seq: 2, kind: "sign", label: `agent signs the ${chain.symbol} transfer with its own key`, ok: true, atMs: 9 },
   { seq: 3, kind: "verify", label: "facilitator /verify → valid", ok: true, atMs: 118 },
-  { seq: 4, kind: "settle", label: "facilitator /settle → settled on casper", ok: true, atMs: 1_284 },
-  { seq: 5, kind: "result", label: "200 OK: CSPR $0.0231, +1.3% 24h", ok: true, atMs: 1_291 },
-  { seq: 6, kind: "receipt", label: "receipt + deploy hash → testnet.cspr.live", ok: true, atMs: 1_293 },
+  { seq: 4, kind: "settle", label: `facilitator /settle → settled on ${chain.id}`, ok: true, atMs: 3_140 },
+  { seq: 5, kind: "result", label: "200 OK: ALGO $0.1732, +1.3% 24h", ok: true, atMs: 3_147 },
+  { seq: 6, kind: "receipt", label: `receipt + ${chain.txLabel} → ${chain.explorerName}`, ok: true, atMs: 3_149 },
 ];
 
-export default function Home() {
+export default async function Home() {
+  const chain = await getChain();
   const tools = getToolsWithStats();
   const featured = tools.slice(0, 6);
   const totalCalls = tools.reduce((a, t) => a + t.stats.totalCalls, 0);
@@ -45,8 +50,8 @@ export default function Home() {
             </h1>
             <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-fg-secondary">
               Developers publish a paid tool in 60 seconds. Autonomous agents
-              discover it, pay per call with x402 on Casper. No API keys, no
-              accounts. Every settlement is the review.
+              discover it, pay per call with x402 on {chain.name}. No API keys,
+              no accounts. Every settlement is the review.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Button href="/agent" size="md">
@@ -71,9 +76,9 @@ export default function Home() {
             className="animate-fade-up"
             style={{ animationDelay: "80ms" }}
           >
-            <WireLog steps={HERO_TRACE} dense />
+            <WireLog steps={heroTrace(chain)} dense />
             <p className="label mt-3 text-center">
-              one paid tool call, start to finish · ~1.3s
+              one paid tool call, start to finish
             </p>
           </div>
         </Container>
@@ -87,7 +92,7 @@ export default function Home() {
         <Container className="py-16">
           <Eyebrow>how it works</Eyebrow>
           <div className="mt-6 grid gap-px overflow-hidden rounded-[var(--radius-card)] border border-border bg-border sm:grid-cols-3">
-            {STEPS.map((s, i) => (
+            {steps(chain).map((s, i) => (
               <div key={s.title} className="bg-surface p-6">
                 <span className="stat text-muted">0{i + 1}</span>
                 <h3 className="mt-3 text-[17px] font-medium tracking-[-0.02em]">{s.title}</h3>
@@ -119,8 +124,11 @@ export default function Home() {
             />
           </div>
           <p className="stat mt-3 text-muted">
-            real settlements on casper-test · every hash in the film resolves on
-            testnet.cspr.live
+            a recorded run of the live demo · every payment in it settled
+            on-chain, and the current ones are in the{" "}
+            <Link href="/dashboard" className="text-accent hover:underline">
+              dashboard
+            </Link>
           </p>
         </Container>
 
@@ -186,10 +194,12 @@ export default function Home() {
         <Container className="pb-8 pt-4">
           <div className="flex flex-col items-center gap-5 rounded-[var(--radius-card)] border border-border bg-fg px-8 py-14 text-center text-surface">
             <Eyebrow>
-              <span className="text-surface/60">first tool market on casper x402</span>
+              <span className="text-surface/60">
+                first tool market on {chain.id} x402
+              </span>
             </Eyebrow>
             <h2 className="max-w-[20ch] text-[30px] font-medium leading-tight tracking-[-0.03em]">
-              Casper built the rails. We built the market.
+              {chain.name} settles it. We built the market.
             </h2>
             <div className="mt-1 flex flex-wrap justify-center gap-3">
               <Link
@@ -211,7 +221,7 @@ export default function Home() {
   );
 }
 
-const STEPS = [
+const steps = (chain: ChainMeta) => [
   {
     title: "Publish a manifest",
     body: "Paste your endpoint, describe the inputs and outputs, set a price per call. One manifest becomes a listing, a discovery record, and an MCP tool.",
@@ -222,7 +232,7 @@ const STEPS = [
   },
   {
     title: "x402 settles it",
-    body: "The agent signs a payment, the facilitator settles WCSPR on Casper, and your earnings and the tool's reputation tick up with the receipt.",
+    body: `The agent signs a payment, the facilitator settles ${chain.symbol} on ${chain.name} and covers the network fee, and your earnings and the tool's reputation tick up with the receipt.`,
   },
 ];
 

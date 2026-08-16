@@ -6,7 +6,12 @@ import { Arrow, Button, Container, Eyebrow, StatusPill } from "@/components/ui";
 import { CodeBlock } from "@/components/copy";
 import { ToolCard } from "@/components/tool-card";
 import { WalletConnect, type SessionInfo } from "@/components/wallet-connect";
+import { useChain } from "@/components/chain-context";
 import type { Capability, SchemaField, ToolWithStats } from "@/lib/types";
+
+// Sign-in is Casper Wallet specific. On Algorand there is no wallet checkout
+// yet, so the form stays usable and the panel says what actually happens to
+// payouts instead of gating on a signature nobody can produce.
 
 const CATEGORIES = ["Web Data", "AI", "DeFi", "RWA", "Identity", "Media"] as const;
 const TYPES = ["string", "number", "url", "boolean", "object", "string[]"] as const;
@@ -44,9 +49,13 @@ export default function PublishPage() {
   ]);
   const [output, setOutput] = useState<Row>({ name: "result", type: "object" });
   const [published, setPublished] = useState(false);
-  // Publishing is gated on proving you control a Casper account: the account
-  // you sign in with becomes your payout address, so you can only list tools
-  // that pay you.
+  const chain = useChain();
+  // Casper has a wallet sign-in; Algorand's is not built yet, so publishing is
+  // ungated there rather than gated on a flow that does not exist.
+  const requiresSignIn = chain.id === "casper";
+  // Where the chain has a sign-in flow, publishing is gated on it: the account
+  // you prove becomes your payout address, so you can only list tools that pay
+  // you.
   const [session, setSession] = useState<SessionInfo | null>(null);
 
   function setInputRow(i: number, key: keyof Row, val: string) {
@@ -107,8 +116,9 @@ export default function PublishPage() {
     price: {
       event: eventName,
       usd: price,
-      network: "casper:casper-test",
-      asset: "WCSPR",
+      network: chain.caip2,
+      asset: chain.symbol,
+      assetRef: chain.assetRef,
       freeTrial,
     },
     input: inputSchema,
@@ -172,7 +182,9 @@ export default function PublishPage() {
           style={{ animationDelay: "30ms" }}
         >
           <div className="min-w-0">
-            <Eyebrow>{session ? "payouts go to" : "sign in to publish"}</Eyebrow>
+            <Eyebrow>
+              {session ? "payouts go to" : requiresSignIn ? "sign in to publish" : "payouts"}
+            </Eyebrow>
             <p className="mt-1.5 max-w-[54ch] text-[13px] leading-relaxed text-fg-secondary">
               {session ? (
                 <>
@@ -182,11 +194,18 @@ export default function PublishPage() {
                   </span>
                   , the account you signed in with.
                 </>
-              ) : (
+              ) : requiresSignIn ? (
                 <>
                   No email, no password. Sign a one-time message with your Casper Wallet to
                   prove the account is yours. It becomes your payout address. Signing moves
                   no funds and costs no gas.
+                </>
+              ) : (
+                <>
+                  Payments settle in {chain.symbol}. A receiving account has to be
+                  opted into the {chain.symbol} ASA before it can be paid at all, so
+                  for now every listing pays into the marketplace treasury and per-publisher
+                  payout accounts land with wallet checkout.
                 </>
               )}
             </p>
@@ -341,10 +360,10 @@ export default function PublishPage() {
 
           <Button
             onClick={() => setPublished(true)}
-            disabled={!session}
+            disabled={requiresSignIn && !session}
             className="w-full"
           >
-            {session ? (
+            {session || !requiresSignIn ? (
               <>
                 Publish tool <Arrow />
               </>
@@ -352,7 +371,7 @@ export default function PublishPage() {
               "Connect a wallet to publish"
             )}
           </Button>
-          {!session && (
+          {requiresSignIn && !session && (
             <p className="stat text-center text-muted">
               publishing requires a signed-in Casper account
             </p>

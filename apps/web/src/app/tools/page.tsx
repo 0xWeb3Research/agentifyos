@@ -7,7 +7,7 @@ import { compact } from "@/lib/format";
 export const metadata: Metadata = {
   title: "Tools",
   description:
-    "The catalog of tools an agent can buy. Search by name or tag, filter by category and price, and see which endpoints are callable today over x402 on Casper.",
+    "The catalog of tools an agent can buy. Search by name or tag, filter by category and price, and see which endpoints are callable today over x402 on Algorand.",
   alternates: { canonical: "/tools" },
   openGraph: {
     title: "Tools · AgentifyOS",

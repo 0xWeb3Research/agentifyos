@@ -80,10 +80,10 @@ const res = await settleOnChain(facilitator, payload, req);
 
 if (res.success) {
   console.log(`\n  ✅ SETTLED on Casper testnet`);
-  console.log(`     deploy   ${res.deployHash}`);
+  console.log(`     deploy   ${res.txHash}`);
   console.log(`     explorer ${res.explorerUrl}`);
 } else {
   console.log(`\n  ✗ settlement failed: ${res.reason}`);
-  if (res.deployHash) console.log(`     deploy   ${res.explorerUrl}`);
+  if (res.txHash) console.log(`     deploy   ${res.explorerUrl}`);
   process.exit(1);
 }

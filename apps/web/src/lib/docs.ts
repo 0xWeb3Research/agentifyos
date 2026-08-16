@@ -31,11 +31,18 @@ const MANIFEST: Omit<DocMeta, "minutes">[] = [
       "The x402 handshake end to end: the 402 quote, the signature, the settlement, and the receipt. Includes the contract call we make.",
   },
   {
+    slug: "algorand",
+    file: "ALGORAND.md",
+    title: "Algorand runbook",
+    summary:
+      "The default chain, end to end: accounts, faucets, the USDC opt-in, the GoPlausible facilitator, and a first real settlement on Lora.",
+  },
+  {
     slug: "testnet",
     file: "TESTNET.md",
-    title: "Testnet runbook",
+    title: "Casper runbook",
     summary:
-      "Get a wallet, claim faucet tokens, fund the accounts, and push a real payment through. Follow it top to bottom and it works.",
+      "The alternate chain, behind CHAIN=casper. Wallet, faucet, wrapping CSPR, and pushing a payment through the self-hosted facilitator.",
   },
   {
     slug: "cli-and-mcp",

@@ -1,4 +1,4 @@
-import { CSPR_PRICE_USD, CSPR } from "./config";
+export { toAtomic, fromAtomic } from "./chain";
 
 export function usd(n: number): string {
   if (n === 0) return "$0";
@@ -23,13 +23,6 @@ export function shortHash(h: string, head = 6, tail = 4): string {
   if (!h) return "";
   if (h.length <= head + tail + 1) return h;
   return `${h.slice(0, head)}…${h.slice(-tail)}`;
-}
-
-// USD → WCSPR atomic units (9 decimals) at the illustrative CSPR price.
-export function toAtomic(amountUsd: number): string {
-  const decimals = Number(CSPR.asset.decimals);
-  const cspr = amountUsd / CSPR_PRICE_USD;
-  return BigInt(Math.round(cspr * 10 ** decimals)).toString();
 }
 
 export function relTime(iso: string, now = Date.now()): string {

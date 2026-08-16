@@ -2,7 +2,7 @@
 // Casper key and the facilitator settles it on Casper testnet by calling
 // `transfer_with_authorization`. Used when MODE=real. Server-only.
 import path from "node:path";
-import { explorerTx } from "../config";
+import { explorerTx } from "../chain";
 import { toAtomic } from "../format";
 import { recordSettlement } from "../data";
 import { getHandler } from "../tools/handlers";
@@ -104,7 +104,7 @@ export async function executeRealPaidCall(opts: {
   step(
     "settle",
     settle.success
-      ? `settled on Casper testnet · ${settle.deployHash.slice(0, 16)}…`
+      ? `settled on Casper testnet · ${settle.txHash.slice(0, 16)}…`
       : `settle failed: ${settle.reason}`,
     settle.success,
     settle,
@@ -115,7 +115,7 @@ export async function executeRealPaidCall(opts: {
   // run without claiming success or re-charging.
   if (settle.status === "pending") {
     const pending: Settlement = {
-      id: "stl_" + settle.deployHash.slice(0, 16),
+      id: "stl_" + settle.txHash.slice(0, 16),
       toolId: tool.id,
       toolSlug: tool.slug,
       toolName: tool.name,
@@ -124,7 +124,7 @@ export async function executeRealPaidCall(opts: {
       payerLabel: agentW.accountHash.slice(0, 8),
       amountUsd: event.usd,
       amountAtomic: req.amount,
-      deployHash: settle.deployHash,
+      txHash: settle.txHash,
       network: settle.network,
       status: "pending",
       latencyMs: Date.now() - start,
@@ -144,7 +144,7 @@ export async function executeRealPaidCall(opts: {
   step("result", "200 OK: tool result delivered", true, result);
 
   const settlement: Settlement = {
-    id: "stl_" + settle.deployHash.slice(0, 16),
+    id: "stl_" + settle.txHash.slice(0, 16),
     toolId: tool.id,
     toolSlug: tool.slug,
     toolName: tool.name,
@@ -153,7 +153,7 @@ export async function executeRealPaidCall(opts: {
     payerLabel: agentW.accountHash.slice(0, 8),
     amountUsd: event.usd,
     amountAtomic: req.amount,
-    deployHash: settle.deployHash,
+    txHash: settle.txHash,
     network: settle.network,
     status: "settled",
     latencyMs: Date.now() - start,
@@ -168,11 +168,11 @@ export async function executeRealPaidCall(opts: {
     event: event.name,
     costUsd: event.usd,
     payer: agentW.address,
-    deployHash: settle.deployHash,
+    txHash: settle.txHash,
     resultHash: hashResult(result),
     network: settle.network,
     mode: "real",
-    explorerUrl: explorerTx(settle.deployHash),
+    explorerUrl: explorerTx(settle.txHash, "casper"),
     budgetRemainingUsd:
       typeof opts.budgetRemainingUsd === "number"
         ? +(opts.budgetRemainingUsd - event.usd).toFixed(4)

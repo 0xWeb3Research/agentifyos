@@ -8,7 +8,7 @@ export const runtime = "nodejs";
 export default function OpengraphImage() {
   return renderOgCard({
     title: "What ships next.",
-    subtitle: "The full x402 loop runs on Casper testnet today. Next: a self-hosted facilitator, mainnet, and an on-chain tool registry.",
+    subtitle: "The full x402 loop runs on Algorand testnet today. Next: a self-hosted facilitator, mainnet, wallet checkout, and an on-chain tool registry.",
     badge: "Roadmap",
   });
 }

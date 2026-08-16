@@ -1,3 +1,4 @@
+import { defaultChain } from "./chain";
 import type { Publisher, Settlement, Tool, ToolStats } from "./types";
 import { makeWallet } from "./x402/payment";
 
@@ -17,7 +18,7 @@ export const SEED_NOW = Date.now();
 
 // ── publishers ───────────────────────────────────────────────────────────────
 export const publishers: Publisher[] = [
-  { id: "pub_casperlabs", handle: "@casper-labs", name: "Casper Labs", payTo: makeWallet("casper-labs", "Casper Labs").accountHash, monogram: "CL", color: "#EEF3FF" },
+  { id: "pub_ledgerworks", handle: "@ledgerworks", name: "Ledgerworks", payTo: makeWallet("ledgerworks", "Ledgerworks").accountHash, monogram: "LW", color: "#EEF3FF" },
   { id: "pub_scrapeworks", handle: "@scrapeworks", name: "ScrapeWorks", payTo: makeWallet("scrapeworks", "ScrapeWorks").accountHash, monogram: "SW", color: "#F1F0FF" },
   { id: "pub_lexfor", handle: "@lexforge", name: "LexForge", payTo: makeWallet("lexforge", "LexForge").accountHash, monogram: "LF", color: "#FFF3EC" },
   { id: "pub_meridian", handle: "@meridian-data", name: "Meridian Data", payTo: makeWallet("meridian", "Meridian Data").accountHash, monogram: "MD", color: "#ECFBF1" },
@@ -44,14 +45,14 @@ export const tools: Tool[] = [
     publisherId: pub("pub_scrapeworks"),
     originUrl: "internal://page-scraper",
     handler: "page-scraper",
-    input: [{ name: "url", type: "url", description: "Page to fetch", required: true, example: "https://casper.network/blog" }],
+    input: [{ name: "url", type: "url", description: "Page to fetch", required: true, example: "https://algorand.co/blog" }],
     output: [
       { name: "markdown", type: "string", description: "Clean page content" },
       { name: "title", type: "string" },
       { name: "wordCount", type: "number" },
       { name: "links", type: "string[]" },
     ],
-    outputExample: { title: "casper.network · extracted page", wordCount: 512, markdown: "# casper.network …" },
+    outputExample: { title: "algorand.co · extracted page", wordCount: 512, markdown: "# algorand.co …" },
     priceEvents: [{ name: "scrape", title: "Scrape a page", usd: 0.005, freeTrial: true }],
     status: "verified",
     createdAt: new Date(SEED_NOW - 41 * 864e5).toISOString(),
@@ -84,16 +85,16 @@ export const tools: Tool[] = [
     color: "#F4F4F5",
   },
   {
-    id: "tool_cspr_market",
-    slug: "cspr-market-data",
-    name: "CSPR Market Data",
-    tagline: "Live CSPR price, 24h change, volume, and liquidity in one metered call. The price feed your DeFi agent quotes against before it trades.",
+    id: "tool_algo_market",
+    slug: "algo-market-data",
+    name: "ALGO Market Data",
+    tagline: "Live ALGO price, 24h change, volume, and liquidity in one metered call. The price feed your DeFi agent quotes against before it trades.",
     category: "DeFi",
-    tags: ["defi", "price", "cspr", "market-data"],
+    tags: ["defi", "price", "algo", "market-data"],
     capabilities: ["x402", "mcp", "rest", "streaming"],
     publisherId: pub("pub_meridian"),
-    originUrl: "internal://cspr-market-data",
-    handler: "cspr-market-data",
+    originUrl: "internal://algo-market-data",
+    handler: "algo-market-data",
     input: [],
     output: [
       { name: "priceUsd", type: "number" },
@@ -101,7 +102,7 @@ export const tools: Tool[] = [
       { name: "volume24hUsd", type: "number" },
       { name: "liquidityUsd", type: "number" },
     ],
-    outputExample: { symbol: "CSPR", priceUsd: 0.0231, change24hPct: 1.3 },
+    outputExample: { symbol: "ALGO", priceUsd: 0.1732, change24hPct: 1.3 },
     priceEvents: [{ name: "quote", title: "Price quote", usd: 0.002 }],
     status: "verified",
     createdAt: new Date(SEED_NOW - 28 * 864e5).toISOString(),
@@ -135,13 +136,13 @@ export const tools: Tool[] = [
   // ── fixtures ──────────────────────────────────────────────────────────────
   ...fixture("web-search", "Web Search", "AI search and fetch across the open web, returning ranked passages ready to drop into a RAG context window.", "Web Data", ["search", "rag", "web"], "pub_scrapeworks", 0.008, "search", "⌕", "#F1F0FF", "verified"),
   ...fixture("pdf-extract", "PDF Extract", "Extract structured text, tables, and metadata from any PDF URL. Handles scanned documents with OCR fallback.", "Web Data", ["pdf", "ocr", "extract"], "pub_northwind", 0.012, "extract", "▦", "#F4F4F5", "verified"),
-  ...fixture("wallet-risk", "Wallet Risk Score", "Score any Casper account for exposure and sanctions risk before your agent transacts with it.", "DeFi", ["defi", "risk", "compliance", "cspr"], "pub_meridian", 0.006, "score", "◇", "#ECFBF1", "verified"),
+  ...fixture("wallet-risk", "Wallet Risk Score", "Score any Algorand account for exposure and sanctions risk before your agent transacts with it.", "DeFi", ["defi", "risk", "compliance", "algo"], "pub_meridian", 0.006, "score", "◇", "#ECFBF1", "verified"),
   ...fixture("token-price", "Token Price Oracle", "Cross-chain token prices with confidence intervals, updated every block. Quote before you swap.", "DeFi", ["defi", "price", "oracle"], "pub_meridian", 0.003, "quote", "◉", "#ECFBF1", "verified"),
-  ...fixture("geocode", "Geocoder", "Turn a street address into precise latitude/longitude with a normalized address and confidence score.", "Web Data", ["geo", "maps", "address"], "pub_casperlabs", 0.004, "geocode", "◍", "#EEF3FF", "unverified"),
+  ...fixture("geocode", "Geocoder", "Turn a street address into precise latitude/longitude with a normalized address and confidence score.", "Web Data", ["geo", "maps", "address"], "pub_ledgerworks", 0.004, "geocode", "◍", "#EEF3FF", "unverified"),
   ...fixture("sentiment", "Sentiment Engine", "Classify text sentiment and emotion with per-span scores. A cheap signal for trading and moderation agents.", "AI", ["ai", "nlp", "sentiment"], "pub_northwind", 0.005, "classify", "◐", "#F4F4F5", "verified"),
   ...fixture("translate", "Neural Translate", "Translate between 90 languages while preserving markdown and code fences intact.", "AI", ["ai", "translate", "i18n"], "pub_lexfor", 0.007, "translate", "文", "#FFF3EC", "verified"),
   ...fixture("rwa-registry", "RWA Registry Lookup", "Resolve a real-world asset identifier to its registry record, ownership chain, and current attestations.", "RWA", ["rwa", "registry", "lookup"], "pub_verata", 0.015, "lookup", "▣", "#FFF0F3", "unverified"),
-  ...fixture("nft-metadata", "Casper NFT Metadata", "Fetch normalized metadata, media, and ownership for any Casper CEP-78 NFT by contract and token id.", "Web Data", ["nft", "cep-78", "cspr"], "pub_casperlabs", 0.002, "fetch", "◆", "#EEF3FF", "verified"),
+  ...fixture("nft-metadata", "ASA Metadata", "Fetch normalized metadata, media, and ownership for any Algorand standard asset by id.", "Web Data", ["nft", "asa", "algo"], "pub_ledgerworks", 0.002, "fetch", "◆", "#EEF3FF", "verified"),
   ...fixture("email-verify", "Email Verifier", "Check deliverability, MX records, and disposable-domain status for any email address in one call.", "Identity", ["identity", "email", "verify"], "pub_verata", 0.003, "verify", "✉", "#FFF0F3", "verified"),
 ];
 
@@ -230,8 +231,8 @@ export const settlementBacklog: Settlement[] = Array.from({ length: 48 }, (_, i)
     payerLabel: AGENT_LABELS[Math.floor(rnd() * AGENT_LABELS.length)],
     amountUsd: ev.usd,
     amountAtomic: "0",
-    deployHash: pseudoHash(t.slug + ":deploy:" + i),
-    network: "casper:casper-test",
+    txHash: pseudoHash(t.slug + ":deploy:" + i),
+    network: defaultChain.caip2,
     status: "settled" as const,
     latencyMs: 1150 + Math.floor(rnd() * 480),
     mode: "mock" as const,

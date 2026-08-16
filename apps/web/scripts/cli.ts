@@ -1,17 +1,19 @@
 #!/usr/bin/env -S npx tsx
-// agentify · the AgentifyOS CLI. A real x402 client: it holds its own Casper key,
-// hits the marketplace's paid endpoints over HTTP, gets a 402, signs, retries,
-// and settles on Casper testnet.
+// agentify · the AgentifyOS CLI. A real x402 client: it holds its own key, hits
+// the marketplace's paid endpoints over HTTP, gets a 402, signs, retries, and
+// settles on the active chain's testnet. Algorand by default; CHAIN=casper
+// switches it to the Casper path.
 //
 //   pnpm agentify tools                        list the catalog
 //   pnpm agentify search <query>               search it
 //   pnpm agentify call <slug> [--k=v ...]      pay for a tool and get the result
 //   pnpm agentify balance                      on-chain balances
 //   pnpm agentify receipts                     recent settlements
+import "dotenv/config";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getCsprBalance, getWcsprBalance, loadWalletFromFile } from "../src/lib/x402/casper";
-import { fetchWithPayment, searchTools } from "../src/lib/x402/client";
+import { DEFAULT_CHAIN as CHAIN, defaultChain as chain } from "../src/lib/chain";
+import { searchTools } from "../src/lib/x402/client";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const KEYS = join(here, "..", "keys");
@@ -43,6 +45,111 @@ const flag = (name: string, def?: string) => {
 
 function usd(n: number) {
   return n < 0.01 ? `$${n.toFixed(4)}` : `$${n.toFixed(2)}`;
+}
+
+function stepTag(kind: string) {
+  return kind === "402"
+    ? c.yellow("402")
+    : kind === "sign"
+      ? c.blue("SIG")
+      : kind === "paid" || kind === "settle" || kind === "result"
+        ? c.green("PAID")
+        : kind === "error"
+          ? c.red("ERR")
+          : c.dim("REQ");
+}
+
+function logStep(kind: string, label: string, atMs: number) {
+  console.log(`  ${stepTag(kind).padEnd(14)} ${safe(label)}  ${c.dim(`+${atMs}ms`)}`);
+}
+
+interface CallOutcome {
+  ok: boolean;
+  error?: string;
+  result?: unknown;
+  receipt?: {
+    costUsd: number;
+    txHash: string;
+    explorerUrl: string | null;
+    facilitatorReceiptUrl?: string | null;
+  };
+}
+
+async function payOnAlgorand(url: string, role: string, maxUsd: number): Promise<CallOutcome> {
+  const { loadRoleAccount } = await import("../src/lib/x402/algorand");
+  const { makePayClient, payAndFetch } = await import("../src/lib/x402/algorand-client");
+  const account = loadRoleAccount(role === "treasury" ? "treasury" : "agent");
+
+  console.log(
+    c.dim(`  wallet ${account.addr}\n  holds USDC; the facilitator sponsors the network fee\n`),
+  );
+
+  const out = await payAndFetch(url, makePayClient(account), {
+    maxUsd,
+    onStep: (s) => logStep(s.kind, s.label, s.atMs),
+  });
+  const body = out.body as { result?: unknown; receipt?: CallOutcome["receipt"] } | null;
+  return { ok: out.ok, error: out.error, result: body?.result, receipt: body?.receipt };
+}
+
+async function payOnCasper(url: string, role: string, maxUsd: number): Promise<CallOutcome> {
+  const { loadWalletFromFile } = await import("../src/lib/x402/casper");
+  const { fetchWithPayment } = await import("../src/lib/x402/client");
+  const wallet = loadWalletFromFile(join(KEYS, `${role}.pem`));
+
+  console.log(c.dim(`  wallet ${wallet.publicKeyHex.slice(0, 20)}…  (holds WCSPR, no CSPR needed)\n`));
+
+  const out = await fetchWithPayment(url, wallet, {
+    maxUsd,
+    onStep: (s) => logStep(s.kind, s.label, s.atMs),
+  });
+  return { ok: out.ok, error: out.error, result: out.result, receipt: out.receipt };
+}
+
+async function printAlgorandBalances() {
+  const { getBalances, hasRoleAccount, loadRoleAccount, TESTNET } = await import(
+    "../src/lib/x402/algorand"
+  );
+  console.log(c.bold("\n  Algorand testnet balances\n"));
+  for (const role of ["treasury", "agent"] as const) {
+    if (!hasRoleAccount(role)) {
+      console.log(`  ${role.padEnd(12)} ${c.dim("(no key: run pnpm algo:keygen)")}`);
+      continue;
+    }
+    const account = loadRoleAccount(role);
+    const b = await getBalances(account.addr);
+    const usdc = b.optedIn
+      ? (Number(b.usdc) / 10 ** TESTNET.decimals).toFixed(4)
+      : "not opted in";
+    console.log(
+      `  ${role.padEnd(12)} ${(Number(b.algo) / 1e6).toFixed(4).padStart(12)} ALGO   ` +
+        `${usdc.padStart(14)} USDC   ${c.dim(account.addr.slice(0, 12) + "…")}`,
+    );
+  }
+  console.log(c.dim(`\n  fund ALGO: ${chain.faucet}\n  fund USDC: https://faucet.circle.com\n`));
+}
+
+async function printCasperBalances() {
+  const { getCsprBalance, getWcsprBalance, loadWalletFromFile } = await import(
+    "../src/lib/x402/casper"
+  );
+  console.log(c.bold("\n  Casper testnet balances\n"));
+  for (const role of ["facilitator", "agent", "treasury"]) {
+    try {
+      const w = loadWalletFromFile(join(KEYS, `${role}.pem`));
+      const [cspr, wcspr] = await Promise.all([
+        getCsprBalance(w.publicKeyHex),
+        getWcsprBalance(w.accountHash),
+      ]);
+      console.log(
+        `  ${role.padEnd(12)} ${(Number(cspr) / 1e9).toFixed(4).padStart(12)} CSPR   ` +
+          `${(Number(wcspr) / 1e9).toFixed(4).padStart(12)} WCSPR`,
+      );
+    } catch {
+      console.log(`  ${role.padEnd(12)} ${c.dim("(no key: run pnpm casper:keygen)")}`);
+    }
+  }
+  console.log();
 }
 
 async function main() {
@@ -78,7 +185,6 @@ async function main() {
         }
       }
       const keyName = flag("key", "agent")!;
-      const wallet = loadWalletFromFile(join(KEYS, `${keyName}.pem`));
       const url = `${BASE}/api/t/${slug}${params.toString() ? `?${params}` : ""}`;
 
       // --max is a safety cap: Number("abc") is NaN, which passes every
@@ -89,20 +195,12 @@ async function main() {
         process.exit(1);
       }
 
-      console.log(c.bold(`\n  paying for ${slug}`));
-      console.log(c.dim(`  wallet ${wallet.publicKeyHex.slice(0, 20)}…  (holds WCSPR, no CSPR needed)\n`));
+      console.log(c.bold(`\n  paying for ${slug} on ${chain.networkLabel}`));
 
-      const out = await fetchWithPayment(url, wallet, {
-        maxUsd,
-        onStep: (s) => {
-          const tag =
-            s.kind === "402" ? c.yellow("402") :
-            s.kind === "sign" ? c.blue("SIG") :
-            s.kind === "paid" ? c.green("PAID") :
-            s.kind === "error" ? c.red("ERR") : c.dim("REQ");
-          console.log(`  ${tag.padEnd(14)} ${safe(s.label)}  ${c.dim(`+${s.atMs}ms`)}`);
-        },
-      });
+      const out =
+        CHAIN === "casper"
+          ? await payOnCasper(url, keyName, maxUsd)
+          : await payOnAlgorand(url, keyName, maxUsd);
 
       if (!out.ok) {
         console.log(c.red(`\n  failed: ${safe(out.error)}\n`));
@@ -120,31 +218,19 @@ async function main() {
       if (out.receipt) {
         console.log(c.bold("\n  receipt"));
         console.log(`    cost      ${c.green(usd(out.receipt.costUsd))}`);
-        console.log(`    deploy    ${safe(out.receipt.deployHash)}`);
+        console.log(`    ${chain.txLabel.padEnd(9)} ${safe(out.receipt.txHash)}`);
         console.log(`    explorer  ${c.blue(safe(out.receipt.explorerUrl))}`);
+        if (out.receipt.facilitatorReceiptUrl) {
+          console.log(`    receipt   ${c.blue(safe(out.receipt.facilitatorReceiptUrl))}`);
+        }
       }
       console.log();
       break;
     }
 
     case "balance": {
-      console.log(c.bold("\n  Casper testnet balances\n"));
-      for (const role of ["facilitator", "agent", "treasury"]) {
-        try {
-          const w = loadWalletFromFile(join(KEYS, `${role}.pem`));
-          const [cspr, wcspr] = await Promise.all([
-            getCsprBalance(w.publicKeyHex),
-            getWcsprBalance(w.accountHash),
-          ]);
-          console.log(
-            `  ${role.padEnd(12)} ${(Number(cspr) / 1e9).toFixed(4).padStart(12)} CSPR   ` +
-              `${(Number(wcspr) / 1e9).toFixed(4).padStart(12)} WCSPR`,
-          );
-        } catch {
-          console.log(`  ${role.padEnd(12)} ${c.dim("(no key: run pnpm casper:keygen)")}`);
-        }
-      }
-      console.log();
+      if (CHAIN === "casper") await printCasperBalances();
+      else await printAlgorandBalances();
       break;
     }
 
@@ -155,7 +241,7 @@ async function main() {
       for (const s of settlements) {
         console.log(
           `  ${c.dim(safe(s.payerLabel).padEnd(10))} ${safe(s.toolName).padEnd(20)} ` +
-            `${c.green(usd(Number(s.amountUsd)).padStart(8))}  ${c.dim(safe(s.deployHash).slice(0, 16) + "…")}`,
+            `${c.green(usd(Number(s.amountUsd)).padStart(8))}  ${c.dim(safe(s.txHash).slice(0, 16) + "…")}`,
         );
       }
       console.log();
@@ -164,12 +250,12 @@ async function main() {
 
     default:
       console.log(`
-  ${c.bold("agentify")} · pay for tools with x402 on Casper
+  ${c.bold("agentify")} · pay for tools with x402 on ${chain.name}
 
     ${c.bold("tools")}                      list the catalog
     ${c.bold("search")} <query>             search for a tool
     ${c.bold("call")} <slug> [--k=v]        pay for a tool and get its result
-    ${c.bold("balance")}                    on-chain CSPR + WCSPR balances
+    ${c.bold("balance")}                    on-chain balances
     ${c.bold("receipts")}                   recent settlements
 
   options
@@ -178,6 +264,7 @@ async function main() {
 
   env
     AGENTIFYOS_URL   marketplace base URL (default https://agentifyos.xyz)
+    CHAIN            algorand (default) or casper
 `);
   }
 }

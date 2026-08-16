@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Eyebrow, Button, Arrow } from "@/components/ui";
+import { ALGO } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
 import { AddressBook } from "@/components/addresses";
 import { MoneyDiagram, PaymentDiagram, SystemDiagram } from "@/components/diagram/diagrams";
 
@@ -11,7 +13,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/explain" },
 };
 
-export default function ExplainPage() {
+export default async function ExplainPage() {
+  const chain = await getChain();
   return (
     <main>
       <Container className="pb-8 pt-16">
@@ -37,8 +40,10 @@ export default function ExplainPage() {
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           An agent asks for data it doesn&apos;t have. Instead of demanding an API key,
           the server quotes a price with <span className="font-mono text-[13px]">HTTP 402</span>.
-          The agent signs a payment, which costs it nothing and touches no blockchain.
-          A <em>facilitator</em> then submits it on-chain and covers the fee.
+          The agent signs a USDC transfer, which costs it nothing to sign and never
+          reaches the network on its own. A <em>facilitator</em> pairs that signature
+          with a fee-paying transaction of its own, submits both as one atomic group,
+          and picks up the fee.
         </p>
         <div className="mt-6">
           <PaymentDiagram />
@@ -53,12 +58,42 @@ export default function ExplainPage() {
             Where the money comes from
           </h2>
         </div>
-        <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
-          Test tokens come from a faucet, once. From there they split two ways: the
-          facilitator gets CSPR to pay transaction fees, and the treasury converts
-          CSPR into <span className="font-mono text-[13px]">WCSPR</span>, the token
-          tools are actually priced in. Agents only ever hold WCSPR.
-        </p>
+        {chain.id === "casper" ? (
+          <>
+            <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+              One faucet: 5,000 testnet CSPR, once per account. The treasury then
+              wraps CSPR into{" "}
+              <span className="font-mono text-[13px]">WCSPR</span> one for one,
+              because the x402 scheme settles on a CEP-18 token rather than the
+              native coin, and funds agents in WCSPR from there.
+            </p>
+            <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+              The agent pays no gas at all, and holds no CSPR: it signs an
+              authorization, and our facilitator key pays to submit it. Prices are
+              quoted in dollars and converted to WCSPR at an illustrative rate, so
+              a dollar figure here is approximate in a way it is not on Algorand.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+              Two faucets, once each: testnet ALGO from Lora, testnet{" "}
+              <span className="font-mono text-[13px]">USDC</span> from Circle. Every
+              account that will ever receive USDC first opts into{" "}
+              <span className="font-mono text-[13px]">ASA {ALGO.assetId}</span>, which
+              is the one on-chain step you cannot skip. After that the treasury funds
+              agents in USDC and agents pay publishers in USDC. There is no wrapping
+              step and no conversion table: a dollar price is a USDC amount, exactly.
+            </p>
+            <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+              The agent pays no network fees, because GoPlausible signs and funds the
+              fee transaction in the group. It is not fee-free in the strict sense: an
+              Algorand account holds about 0.2 ALGO of minimum balance, 0.1 for the
+              account and 0.1 for the USDC opt-in. That amount is locked, not spent,
+              and it never moves again.
+            </p>
+          </>
+        )}
         <div className="mt-6">
           <MoneyDiagram />
         </div>
@@ -91,15 +126,15 @@ export default function ExplainPage() {
           </h2>
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
-          None of the above is hypothetical. These are the live Casper testnet
-          accounts and the contract this instance settles through. Click any value
-          to copy it, or open the arrow to see it on the block explorer.
+          None of the above is hypothetical. These are the live {chain.networkLabel}{" "}
+          accounts and the asset this instance settles through. Click any value to
+          copy it, or open the arrow to see it on {chain.explorerName}.
         </p>
         <div className="mt-6 max-w-[760px]">
           <AddressBook />
         </div>
         <p className="mt-5 text-[13px] text-fg-secondary">
-          Gas budgets, entry-point signatures, and the funding runbook live in{" "}
+          Opt-ins, minimum balances, and the funding runbook live in{" "}
           <Link href="/docs/addresses" className="text-accent hover:underline">
             the address reference
           </Link>
@@ -114,8 +149,9 @@ export default function ExplainPage() {
             Watch an agent do all of this, live.
           </h2>
           <p className="max-w-[52ch] text-[14px] leading-relaxed text-fg-secondary">
-            The demo runs the real thing on Casper testnet. Every payment produces a
-            transaction hash you can open on the block explorer.
+            The demo runs the real thing on {chain.networkLabel}. Every payment
+            produces a {chain.txLabel} you can open on {chain.explorerName}, plus a
+            receipt the facilitator serves independently of us.
           </p>
           <div className="mt-1 flex flex-wrap justify-center gap-3">
             <Button href="/agent">

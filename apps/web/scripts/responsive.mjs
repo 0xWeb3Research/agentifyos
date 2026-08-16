@@ -1,6 +1,6 @@
 import { chromium } from "@playwright/test";
 
-const ROUTES = ["/", "/tools", "/tools/cspr-market-data", "/explain", "/docs", "/docs/start-here", "/docs/addresses", "/agent", "/publish", "/dashboard", "/developers", "/roadmap", "/tools/preview"];
+const ROUTES = ["/", "/tools", "/tools/algo-market-data", "/explain", "/docs", "/docs/start-here", "/docs/addresses", "/agent", "/publish", "/dashboard", "/developers", "/roadmap", "/tools/preview"];
 const WIDTHS = [390, 768];
 const out = "/private/tmp/claude-501/-Users-sidharthp-Documents-Projects-x402-research/48db66e8-95b7-4021-96cc-4eb5ffe9c257/scratchpad";
 const shoot = process.argv.includes("--shoot");

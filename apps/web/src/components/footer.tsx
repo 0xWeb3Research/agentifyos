@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Container } from "./ui";
 import { Logo } from "./logo";
+import { getChain } from "@/lib/chain-server";
 
-export function Footer() {
+export async function Footer() {
+  const chain = await getChain();
   return (
     <footer className="mt-24 border-t border-border">
       <Container className="flex flex-col gap-6 py-10 sm:flex-row sm:items-center sm:justify-between">
@@ -23,7 +25,7 @@ export function Footer() {
           <a href="/whitepaper.pdf" className="hover:text-fg">Whitepaper</a>
           <a href="/llms.txt" className="hover:text-fg">llms.txt</a>
         </nav>
-        <p className="label">first tool market on casper x402</p>
+        <p className="label">first tool market on {chain.name.toLowerCase()} x402</p>
       </Container>
     </footer>
   );

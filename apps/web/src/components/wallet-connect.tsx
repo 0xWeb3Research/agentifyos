@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { clsx } from "clsx";
+import { useChain } from "./chain-context";
 import { Button, Chip } from "./ui";
 
 // ── Casper Wallet browser extension ─────────────────────────────────────────
@@ -51,7 +52,37 @@ export interface SessionInfo {
   address: string;
 }
 
-export function WalletConnect({
+/**
+ * Sign-in, on whichever chain is settling.
+ *
+ * The SIWX flow below is Casper Wallet specific: the extension, the message
+ * prefix, and the account-hash derivation all are. Algorand has no equivalent
+ * wired up yet, so rather than offer a button that cannot work, say what is
+ * actually true and what is coming.
+ */
+export function WalletConnect(props: {
+  onSession?: (s: SessionInfo | null) => void;
+  className?: string;
+}) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks -- called unconditionally; the branch is below it
+  const chain = useChain();
+  if (chain.id !== "casper") return <WalletComingSoon className={props.className} />;
+  return <CasperWalletConnect {...props} />;
+}
+
+function WalletComingSoon({ className }: { className?: string }) {
+  return (
+    <div className={clsx("flex flex-col gap-1.5", className)}>
+      <Chip>wallet checkout coming</Chip>
+      <p className="max-w-[46ch] text-[12.5px] leading-relaxed text-fg-secondary">
+        Signing with Pera and Defly is next. Until then the demo pays from a
+        server-held testnet account, not from yours.
+      </p>
+    </div>
+  );
+}
+
+function CasperWalletConnect({
   onSession,
   className,
 }: {

@@ -88,7 +88,7 @@ export function getSeededSettlements(limit = 24): Settlement[] {
  * In MOCK mode it falls back to the seeded demo backlog so a fresh install isn't
  * a blank page — those fixtures are explicitly `mode: "mock"` demo exhaust. In
  * REAL mode it does NOT: an empty ledger returns empty, because substituting
- * pseudo-hash fixtures would present fabricated, cspr.live-linked settlements as
+ * pseudo-hash fixtures would present fabricated, explorer-linked settlements as
  * genuine on-chain activity. For guaranteed-genuine data use `getRealSettlements`.
  */
 export async function getSettlements(limit = 24): Promise<Settlement[]> {

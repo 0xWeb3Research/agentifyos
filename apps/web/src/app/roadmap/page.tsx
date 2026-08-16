@@ -4,12 +4,12 @@ import { Container, Eyebrow } from "@/components/ui";
 export const metadata: Metadata = {
   title: "Roadmap",
   description:
-    "What AgentifyOS ships today and what comes next: the full x402 loop on Casper testnet, then a self-hosted facilitator, mainnet, and an on-chain tool registry.",
+    "What AgentifyOS ships today and what comes next: the full x402 loop on Algorand testnet, then a self-hosted facilitator, mainnet, and an on-chain tool registry.",
   alternates: { canonical: "/roadmap" },
   openGraph: {
     title: "Roadmap · AgentifyOS",
     description:
-      "From the x402 loop running on Casper testnet today to a self-hosted facilitator, mainnet, and an on-chain tool registry.",
+      "From the x402 loop running on Algorand testnet today to a self-hosted facilitator, mainnet, and an on-chain tool registry.",
   },
 };
 
@@ -38,12 +38,12 @@ const PHASES: Phase[] = [
         desc: "Every tool is a real 402 endpoint over the x402 exact scheme: advertise price, sign, verify, settle, receipt.",
       },
       {
-        title: "Casper testnet settlements",
-        desc: "The facilitator settles real WCSPR on-chain via transfer_with_authorization; each receipt carries a deploy hash to testnet.cspr.live.",
+        title: "Algorand testnet settlements",
+        desc: "The GoPlausible facilitator settles real USDC (ASA 10458941) in a two-transaction atomic group and sponsors the network fee. Each receipt carries a transaction id on Lora plus the facilitator's own record of the same payment.",
       },
       {
         title: "MCP + llms.txt discovery",
-        desc: "Agents find and call tools over an MCP endpoint or the discovery API, and llms.txt is the machine-readable front door.",
+        desc: "Agents find and call tools over an MCP endpoint or the discovery API, and llms.txt is the machine-readable front door. A listing also shows up in GoPlausible's public Bazaar by itself, once one payment for it has settled.",
       },
     ],
   },
@@ -56,19 +56,23 @@ const PHASES: Phase[] = [
     items: [
       {
         title: "Self-hosted facilitator",
-        desc: "Promote the in-process facilitator to a standalone service other builders can point their own 402 endpoints at.",
+        desc: "Verification and settlement go through GoPlausible's hosted facilitator today. Running our own gives the market a second, independent settler and a fallback when theirs is unavailable.",
       },
       {
-        title: "Casper mainnet",
-        desc: "Flip from casper-test to mainnet: real CSPR moves and every receipt anchors to cspr.live.",
+        title: "Algorand mainnet",
+        desc: "Flip from testnet to mainnet: the same loop against USDC ASA 31566704, with real dollars moving and every receipt anchored on Lora mainnet.",
       },
       {
         title: "Listed in MCP directories",
         desc: "Publish AgentifyOS in the Claude and Cursor MCP directories so any agent host can mount the catalog in one click.",
       },
       {
-        title: "Onboard Casper builders as suppliers",
-        desc: "Wrap other Casper teams' endpoints into paid manifests, turning the market into two-sided supply.",
+        title: "Wallet checkout with Pera and Defly",
+        desc: "Today the demo pays from a server-held account. Next a human connects Pera or Defly, signs the USDC transfer in the browser, and buys a tool call directly.",
+      },
+      {
+        title: "Onboard Algorand builders as suppliers",
+        desc: "Wrap other Algorand teams' endpoints into paid manifests, turning the market into two-sided supply.",
       },
     ],
   },
@@ -80,16 +84,16 @@ const PHASES: Phase[] = [
     dot: "bg-muted",
     items: [
       {
-        title: "Stablecoin settlement",
-        desc: "Settle in a Casper-native stablecoin the moment the Manifest standard ships it, giving agent budgets price stability.",
+        title: "Per-publisher payout accounts",
+        desc: "Every settlement lands in one treasury today, because a receiver has to opt into the USDC ASA before it can be paid at all. An onboarding step that opts a publisher in lets payments settle straight to them.",
       },
       {
-        title: "Session-key spend caps",
-        desc: "Account-abstraction session keys let an agent hold a bounded, revocable budget instead of a raw wallet.",
+        title: "Delegated spend caps",
+        desc: "A bounded, revocable signing key lets an agent hold a budget instead of a raw account, so a compromised agent can only ever spend what it was granted.",
       },
       {
-        title: "On-chain Odra ToolRegistry",
-        desc: "An Odra smart contract anchoring each manifest's hash on-chain, making listings tamper-evident and portable.",
+        title: "On-chain ToolRegistry",
+        desc: "An AVM smart contract anchoring each manifest's hash on-chain, making listings tamper-evident and portable between marketplaces.",
       },
     ],
   },
@@ -107,8 +111,9 @@ export default function RoadmapPage() {
             machine economy
           </h1>
           <p className="mt-5 max-w-[54ch] text-[15px] leading-relaxed text-fg-secondary">
-            AgentifyOS runs the full x402 loop today, settling real WCSPR on
-            Casper testnet. From here the path is mainnet, third-party
+            AgentifyOS runs the full x402 loop today, settling real USDC on
+            Algorand testnet with the network fee sponsored by the facilitator.
+            From here the path is mainnet, wallet checkout, third-party
             suppliers, and an on-chain registry the whole ecosystem can build
             on.
           </p>

@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/site";
 import { authorizeSpend } from "@/lib/security/authz";
 import { resolveSpendBudget } from "@/lib/security/spend";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
+import { defaultChain as chain } from "@/lib/chain";
 
 // A pragmatic MCP-style endpoint so an agent host (Claude, Cursor, …) can list
 // AgentifyOS tools, read a manifest, and actually pay-and-call one over the full
@@ -35,7 +36,7 @@ const TOOL_DEFS = [
   {
     name: "call_tool",
     description:
-      "Pay for and call a tool. Runs the x402 handshake (402 → sign → verify → settle on Casper) and returns the result plus a receipt and the wire trace.",
+      `Pay for and call a tool. Runs the x402 handshake (402 → sign → verify → settle on ${chain.name}) and returns the result plus a receipt and the wire trace.`,
     inputSchema: {
       type: "object",
       properties: {
@@ -52,7 +53,7 @@ export async function GET() {
   return NextResponse.json({
     name: "agentifyos",
     description:
-      "The marketplace where AI agents discover and pay for tools via x402 on Casper. Search the catalog, read a manifest, and pay-per-call over MCP.",
+      `The marketplace where AI agents discover and pay for tools via x402 on ${chain.name}. Search the catalog, read a manifest, and pay-per-call over MCP.`,
     tools: TOOL_DEFS,
     config: {
       mcpServers: {

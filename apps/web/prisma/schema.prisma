@@ -83,7 +83,7 @@ model Settlement {
   payerLabel   String
   amountUsd    Float
   amountAtomic String
-  deployHash   String
+  txHash   String
   network      String
   status       String   @default("settled") // verified | settled | failed
   latencyMs    Int
@@ -102,7 +102,7 @@ model Receipt {
   event              String
   costUsd            Float
   payer              String
-  deployHash         String
+  txHash         String
   resultHash         String
   network            String
   explorerUrl        String

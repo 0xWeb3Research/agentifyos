@@ -1,11 +1,7 @@
 import { CopyRow } from "./copy";
 import { Chip } from "./ui";
-import {
-  CSPR,
-  ROLE_ACCOUNTS,
-  explorerAccount,
-  explorerContractPackage,
-} from "@/lib/config";
+import { ALGO, CSPR, explorerAccount, explorerAsset, roleAccounts } from "@/lib/config";
+import { getChain } from "@/lib/chain-server";
 
 function Panel({
   title,
@@ -29,53 +25,83 @@ function Panel({
 
 // Everything AgentifyOS touches on-chain, straight from runtime config, so what
 // this page shows is what the running instance actually signs and settles with.
-export function AddressBook() {
+export async function AddressBook() {
+  const chain = await getChain();
+  const casper = chain.id === "casper";
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      {ROLE_ACCOUNTS.map((a) => (
+      {roleAccounts(chain.id).map((a) => (
         <Panel key={a.role} title={a.title} note={a.blurb}>
-          <CopyRow
-            label="public key"
-            value={a.publicKey}
-            href={explorerAccount(a.publicKey)}
-          />
-          <CopyRow label="account hash" value={a.accountHash} />
+          {a.address ? (
+            <CopyRow
+              label={casper ? "public key" : "address"}
+              value={a.address}
+              href={explorerAccount(a.address, chain.id)}
+            />
+          ) : (
+            <CopyRow label="address" value="not configured" mono={false} />
+          )}
+          {a.accountHash && <CopyRow label="account hash" value={a.accountHash} />}
         </Panel>
       ))}
 
-      <Panel
-        title="WCSPR contract"
-        note="the CEP-18 token every tool is priced in"
-      >
-        <CopyRow
-          label="package hash"
-          value={CSPR.wcsprPackageHash}
-          href={explorerContractPackage(CSPR.wcsprPackageHash)}
-        />
-        <CopyRow label="symbol" value={`${CSPR.asset.symbol} · ${CSPR.asset.name}`} mono={false} />
-        <CopyRow
-          label="decimals"
-          value={`${CSPR.asset.decimals}  (1 WCSPR = 1,000,000,000 atomic units)`}
-        />
-        <CopyRow label="entry point" value="transfer_with_authorization" />
-      </Panel>
+      {casper ? (
+        <Panel title="WCSPR contract" note="the CEP-18 token every tool is priced in">
+          <CopyRow
+            label="package hash"
+            value={CSPR.wcsprPackageHash}
+            href={explorerAsset(CSPR.wcsprPackageHash, "casper")}
+          />
+          <CopyRow label="symbol" value={`${CSPR.asset.symbol} · ${CSPR.asset.name}`} mono={false} />
+          <CopyRow
+            label="decimals"
+            value={`${CSPR.asset.decimals}  (1 WCSPR = 1,000,000,000 atomic units)`}
+          />
+          <CopyRow label="entry point" value="transfer_with_authorization" />
+        </Panel>
+      ) : (
+        <Panel title="USDC" note="the asset every tool is priced in">
+          <CopyRow label="asset id" value={`ASA ${ALGO.assetId}`} href={explorerAsset(undefined, "algorand")} />
+          <CopyRow label="symbol" value={`${ALGO.asset.symbol} · ${ALGO.asset.name}`} mono={false} />
+          <CopyRow
+            label="decimals"
+            value={`${ALGO.asset.decimals}  (1 USDC = 1,000,000 atomic units)`}
+          />
+          <CopyRow label="scheme" value="exact · signed ASA transfer in an atomic group" mono={false} />
+        </Panel>
+      )}
+
+      {!casper && (
+        <Panel title="Facilitator" note="hosted by GoPlausible · verifies, settles, pays the fee">
+          <CopyRow label="base url" value={ALGO.facilitatorUrl} href={ALGO.facilitatorUrl} />
+          <CopyRow
+            label="supported"
+            value={`${ALGO.facilitatorUrl}/supported`}
+            href={`${ALGO.facilitatorUrl}/supported`}
+          />
+          <CopyRow
+            label="bazaar"
+            value={`${ALGO.facilitatorUrl}/discovery/resources`}
+            href={`${ALGO.facilitatorUrl}/discovery/resources`}
+          />
+        </Panel>
+      )}
 
       <Panel title="Network" note="testnet only · nothing here touches mainnet">
-        <CopyRow label="chain name" value={CSPR.chainName} />
-        <CopyRow label="caip-2 id" value={CSPR.network} />
-        <CopyRow label="json-rpc" value={CSPR.rpc} />
-        <CopyRow label="explorer" value={CSPR.explorerBase} href={CSPR.explorerBase} />
-        <CopyRow
-          label="faucet"
-          value={`${CSPR.explorerBase}/tools/faucet`}
-          href={`${CSPR.explorerBase}/tools/faucet`}
-        />
+        <CopyRow label="chain name" value={chain.networkLabel} mono={false} />
+        <CopyRow label="caip-2 id" value={chain.caip2} />
+        <CopyRow label="node" value={casper ? CSPR.rpc : ALGO.algod} />
+        <CopyRow label="explorer" value={chain.explorerBase} href={chain.explorerBase} />
+        <CopyRow label="faucet" value={chain.faucet} href={chain.faucet} />
+        {!casper && (
+          <CopyRow label="usdc faucet" value={ALGO.usdcFaucet} href={ALGO.usdcFaucet} />
+        )}
       </Panel>
 
       <p className="flex flex-wrap items-center gap-2 text-[13px] leading-relaxed text-fg-secondary">
         <Chip tone="success">public</Chip>
-        Every value above is safe to share. The matching private keys are PEM files
-        that never leave the machine running the facilitator.
+        Every value above is safe to share. The matching secrets are{" "}
+        {casper ? "PEM files" : "mnemonics"} that never leave the machine running the app.
       </p>
     </div>
   );
