@@ -3,8 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
-import { CHAIN_IDS, chainMeta, type ChainId } from "@/lib/chain";
-import { useChain } from "./chain-context";
+import { NETWORK_IDS, networkMeta, type NetworkId } from "@/lib/chain";
 
 // Writing the cookie from the browser (rather than posting to a route) keeps the
 // switch to one round trip: set it, then ask the server to re-render. It is a
@@ -15,13 +14,15 @@ const COOKIE = "agentifyos-chain";
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 export interface ChainSwitcherProps {
-  /** Which chains this deployment holds keys for, from `chainReadiness()`. */
-  ready: Record<ChainId, boolean>;
+  /** Which networks this deployment can actually use, from `chainReadiness()`. */
+  ready: Record<NetworkId, boolean>;
+  /** The selected network, resolved from the cookie on the server. */
+  active: NetworkId;
   className?: string;
 }
 
-export function ChainSwitcher({ ready, className }: ChainSwitcherProps) {
-  const active = useChain();
+export function ChainSwitcher({ ready, active, className }: ChainSwitcherProps) {
+  const activeMeta = networkMeta(active);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -45,9 +46,9 @@ export function ChainSwitcher({ ready, className }: ChainSwitcherProps) {
     };
   }, [open]);
 
-  function choose(id: ChainId) {
+  function choose(id: NetworkId) {
     setOpen(false);
-    if (id === active.id) return;
+    if (id === active) return;
     document.cookie = `${COOKIE}=${id}; path=/; max-age=${ONE_YEAR}; SameSite=Lax`;
     // refresh() re-runs the server components, which re-read the cookie and
     // re-seed the chain provider. Everything downstream follows from that.
@@ -61,7 +62,7 @@ export function ChainSwitcher({ ready, className }: ChainSwitcherProps) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Settlement chain: ${active.networkLabel}. Change it.`}
+        aria-label={`Network: ${activeMeta.networkLabel}. Change it.`}
         className={clsx(
           "label press inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border px-2.5 py-1",
           "border-border bg-surface transition-colors hover:border-border-hover",
@@ -71,10 +72,10 @@ export function ChainSwitcher({ ready, className }: ChainSwitcherProps) {
         <span
           className={clsx(
             "inline-block h-1.5 w-1.5 rounded-full",
-            ready[active.id] ? "animate-pulse-dot bg-success" : "bg-warn",
+            ready[active] ? "animate-pulse-dot bg-success" : "bg-warn",
           )}
         />
-        {active.networkLabel.toLowerCase()}
+        {activeMeta.networkLabel.toLowerCase()}
         <svg
           width="9"
           height="9"
@@ -91,50 +92,67 @@ export function ChainSwitcher({ ready, className }: ChainSwitcherProps) {
           role="listbox"
           className="absolute right-0 top-[calc(100%+6px)] z-50 w-[288px] overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface shadow-lg"
         >
-          <p className="border-b border-border px-3 py-2 text-[11px] uppercase tracking-[0.08em] text-muted">
-            settle payments on
-          </p>
-          {CHAIN_IDS.map((id) => {
-            const meta = chainMeta(id);
-            const isActive = id === active.id;
+          {/*
+            Two sections, because these are two different kinds of thing. The
+            settlement chains decide who gets paid. Midnight decides who gets to
+            know. Listing them under one heading would imply Nightpass moves
+            money, which it does not.
+          */}
+          {(["settlement", "access"] as const).map((role) => {
+            const ids = NETWORK_IDS.filter((id) => networkMeta(id).role === role);
+            if (ids.length === 0) return null;
             return (
-              <button
-                key={id}
-                type="button"
-                role="option"
-                aria-selected={isActive}
-                onClick={() => choose(id)}
-                className={clsx(
-                  "flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors",
-                  isActive ? "bg-tint" : "hover:bg-tint",
-                )}
-              >
-                <span
-                  className={clsx(
-                    "mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full",
-                    isActive ? "bg-success" : "bg-border-hover",
-                  )}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline gap-2">
-                    <span className="text-[14px] font-medium">{meta.networkLabel}</span>
-                    {!ready[id] && (
-                      <span className="text-[11px] text-warn">not configured here</span>
-                    )}
-                  </span>
-                  <span className="mt-0.5 block text-[12px] leading-snug text-fg-secondary">
-                    {meta.symbol} · {meta.feePayer}
-                  </span>
-                  <span className="mt-0.5 block font-mono text-[11px] text-muted">
-                    {meta.caip2.length > 34 ? meta.caip2.slice(0, 34) + "…" : meta.caip2}
-                  </span>
-                </span>
-              </button>
+              <div key={role}>
+                <p className="border-b border-border px-3 py-2 text-[11px] uppercase tracking-[0.08em] text-muted">
+                  {role === "settlement" ? "settle payments on" : "prove access on"}
+                </p>
+                {ids.map((id) => {
+                  const meta = networkMeta(id);
+                  const isActive = id === active;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      role="option"
+                      aria-selected={isActive}
+                      onClick={() => choose(id)}
+                      className={clsx(
+                        "flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors",
+                        isActive ? "bg-tint" : "hover:bg-tint",
+                      )}
+                    >
+                      <span
+                        className={clsx(
+                          "mt-1.5 inline-block h-1.5 w-1.5 shrink-0 rounded-full",
+                          isActive ? "bg-success" : "bg-border-hover",
+                        )}
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-baseline gap-2">
+                          <span className="text-[14px] font-medium">{meta.networkLabel}</span>
+                          {!ready[id] && (
+                            <span className="text-[11px] text-warn">
+                              {id === "midnight" ? "not deployed here" : "not configured here"}
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 block text-[12px] leading-snug text-fg-secondary">
+                          {meta.symbol} · {meta.tagline}
+                        </span>
+                        <span className="mt-0.5 block font-mono text-[11px] text-muted">
+                          {meta.ref.length > 34 ? meta.ref.slice(0, 34) + "…" : meta.ref}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
             );
           })}
           <p className="border-t border-border px-3 py-2 text-[12px] leading-snug text-fg-secondary">
-            Switching changes what every price is quoted in, where receipts
-            resolve, and which signer moves the money.
+            {active === "midnight"
+              ? "Nightpass proves an agent may call a tool without revealing which agent it is. Payment still settles on a chain above."
+              : "Switching changes what every price is quoted in, where receipts resolve, and which signer moves the money."}
           </p>
         </div>
       )}

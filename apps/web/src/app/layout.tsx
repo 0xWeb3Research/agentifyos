@@ -6,7 +6,7 @@ import { Footer } from "@/components/footer";
 import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, SITE_NAME, abs } from "@/lib/site";
 import { ChainProvider } from "@/components/chain-context";
-import { chainReadiness, getChainId } from "@/lib/chain-server";
+import { chainReadiness, getChainId, getNetworkId } from "@/lib/chain-server";
 import { defaultChain } from "@/lib/chain";
 import "./globals.css";
 
@@ -116,12 +116,13 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const chainId = await getChainId();
+  const network = await getNetworkId();
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <JsonLd data={siteGraph} />
         <ChainProvider id={chainId}>
-          <Nav chainReady={chainReadiness()} />
+          <Nav chainReady={chainReadiness()} network={network} />
           {children}
           <Footer />
         </ChainProvider>

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { Logo } from "./logo";
 import { ChainSwitcher } from "./chain-switcher";
-import type { ChainId } from "@/lib/chain";
+import type { NetworkId } from "@/lib/chain";
 
 const LINKS = [
   { href: "/tools", label: "Tools" },
@@ -18,9 +18,21 @@ const LINKS = [
   { href: "/dashboard", label: "Dashboard" },
 ];
 
-export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
+// Shielded belongs to Midnight, so it appears when Midnight is the selected
+// network and stays out of the way otherwise. The page itself remains reachable
+// by URL: hiding a link is navigation, not access control.
+const MIDNIGHT_LINK = { href: "/shielded", label: "Shielded" };
+
+export function Nav({
+  chainReady,
+  network,
+}: {
+  chainReady: Record<NetworkId, boolean>;
+  network: NetworkId;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const links = network === "midnight" ? [...LINKS, MIDNIGHT_LINK] : LINKS;
 
   // Close the menu on navigation, and don't leave the page scroll-locked.
   useEffect(() => setOpen(false), [pathname]);
@@ -42,7 +54,7 @@ export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
         </Link>
 
         <nav className="hidden min-w-0 items-center gap-0.5 md:flex lg:gap-1">
-          {LINKS.map((l) => (
+          {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
@@ -57,7 +69,7 @@ export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
         </nav>
 
         <div className="ml-auto flex items-center gap-2">
-          <ChainSwitcher ready={chainReady} className="hidden lg:block" />
+          <ChainSwitcher ready={chainReady} active={network} className="hidden lg:block" />
           <Link
             href="/tools"
             className="press hidden rounded-[var(--radius-sm)] bg-fg px-3.5 py-1.5 text-sm font-medium text-surface hover:bg-fg/90 sm:inline-flex"
@@ -95,7 +107,7 @@ export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
       {open && (
         <div className="animate-fade-up border-t border-border bg-bg md:hidden">
           <nav className="mx-auto flex w-full max-w-[1200px] flex-col px-4 py-2">
-            {LINKS.map((l) => (
+            {links.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
@@ -108,7 +120,7 @@ export function Nav({ chainReady }: { chainReady: Record<ChainId, boolean> }) {
               </Link>
             ))}
             <div className="mt-2 flex items-center justify-between border-t border-border px-3 pb-2 pt-3">
-              <ChainSwitcher ready={chainReady} />
+              <ChainSwitcher ready={chainReady} active={network} />
               <Link
                 href="/tools"
                 className="press rounded-[var(--radius-sm)] bg-fg px-3.5 py-1.5 text-sm font-medium text-surface"

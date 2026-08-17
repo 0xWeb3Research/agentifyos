@@ -52,6 +52,13 @@ const MANIFEST: Omit<DocMeta, "minutes">[] = [
       "Use the marketplace from a terminal, or wire it into Claude Desktop and Cursor so an assistant can buy tools on its own.",
   },
   {
+    slug: "nightpass",
+    file: "MIDNIGHT.md",
+    title: "Nightpass on Midnight",
+    summary:
+      "The privacy layer: how an agent proves it holds a paid pass without revealing which agent it is, and why a nullifier is bound to the call index.",
+  },
+  {
     slug: "addresses",
     file: "ADDRESSES.md",
     title: "Addresses",

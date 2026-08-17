@@ -139,6 +139,87 @@ export function chainMeta(id: ChainId): ChainMeta {
   return CHAIN_META[id];
 }
 
+
+// ── networks: settlement chains, plus the access layer ───────────────────────
+//
+// Midnight is deliberately NOT a ChainId. A ChainId answers "which asset moves
+// and who signs", and Nightpass moves no money: it proves entitlement in zero
+// knowledge. Folding it into the settlement union would force every pricing and
+// signing path to pretend it could settle in tNIGHT, which it cannot.
+//
+// So the switcher selects a NetworkId, which is a superset, and settlement keeps
+// resolving to a real ChainId underneath. Picking Midnight changes what the site
+// shows, not who gets paid.
+
+export type NetworkId = ChainId | "midnight";
+
+export const NETWORK_IDS = ["algorand", "casper", "midnight"] as const;
+
+export function parseNetworkId(value: unknown): NetworkId | null {
+  return value === "midnight" ? "midnight" : parseChainId(value);
+}
+
+export const MIDNIGHT = {
+  network: "midnight:preview",
+  chainName: "preview",
+  networkLabel: "Midnight preview",
+  indexer: "https://indexer.preview.midnight.network/api/v3/graphql",
+  explorerBase: "https://explorer.midnight.network/preview",
+  faucet: "https://midnight-tmnight-preview.nethermind.dev/",
+  asset: { name: "Test NIGHT", symbol: "tNIGHT", decimals: 6 },
+} as const;
+
+export type NetworkRole = "settlement" | "access";
+
+export interface NetworkMeta {
+  id: NetworkId;
+  networkLabel: string;
+  symbol: string;
+  /** What selecting this network actually changes. */
+  tagline: string;
+  /** Network identifier, shown in mono under the label. */
+  ref: string;
+  role: NetworkRole;
+  /** Where selecting this network should take a reader, if anywhere. */
+  href?: string;
+}
+
+export const NETWORK_META: Record<NetworkId, NetworkMeta> = {
+  algorand: {
+    id: "algorand",
+    networkLabel: CHAIN_META.algorand.networkLabel,
+    symbol: CHAIN_META.algorand.symbol,
+    tagline: CHAIN_META.algorand.feePayer,
+    ref: CHAIN_META.algorand.caip2,
+    role: "settlement",
+  },
+  casper: {
+    id: "casper",
+    networkLabel: CHAIN_META.casper.networkLabel,
+    symbol: CHAIN_META.casper.symbol,
+    tagline: CHAIN_META.casper.feePayer,
+    ref: CHAIN_META.casper.caip2,
+    role: "settlement",
+  },
+  midnight: {
+    id: "midnight",
+    networkLabel: MIDNIGHT.networkLabel,
+    symbol: MIDNIGHT.asset.symbol,
+    tagline: "access proved in zero knowledge, never disclosed",
+    ref: MIDNIGHT.network,
+    role: "access",
+  },
+};
+
+export function networkMeta(id: NetworkId): NetworkMeta {
+  return NETWORK_META[id];
+}
+
+/** The settlement chain a network selection implies. Midnight settles nothing. */
+export function settlementChainFor(id: NetworkId): ChainId {
+  return id === "midnight" ? DEFAULT_CHAIN : id;
+}
+
 /**
  * The deployment default's metadata. Only for contexts with no request to read
  * a preference from: page metadata, the manifest, OG images. Everything that

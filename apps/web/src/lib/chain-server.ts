@@ -14,8 +14,10 @@ import {
   DEFAULT_CHAIN,
   chainMeta,
   parseChainId,
+  parseNetworkId,
   type ChainId,
   type ChainMeta,
+  type NetworkId,
 } from "./chain";
 
 export const CHAIN_COOKIE = "agentifyos-chain";
@@ -43,6 +45,44 @@ export async function getChain(): Promise<ChainMeta> {
 }
 
 /**
+ * Which network the visitor has selected, which may be Midnight.
+ *
+ * `getChainId()` above deliberately does not widen: a Midnight selection still
+ * resolves to a real settlement chain there, so no pricing or signing path ever
+ * receives a network it cannot settle on. This is only for what the site shows.
+ */
+export async function getNetworkId(): Promise<NetworkId> {
+  try {
+    const store = await cookies();
+    return parseNetworkId(store.get(CHAIN_COOKIE)?.value) ?? DEFAULT_CHAIN;
+  } catch {
+    return DEFAULT_CHAIN;
+  }
+}
+
+/**
+ * Whether the Nightpass contract is actually deployed on Midnight.
+ *
+ * Read from the same deployment record the CLI writes, so the switcher tells the
+ * truth about a checkout that has never deployed rather than offering a network
+ * with nothing behind it.
+ */
+export function midnightReady(): boolean {
+  if (process.env.NIGHTPASS_CONTRACT?.trim()) return true;
+  try {
+    // Required lazily: this module is imported by client-adjacent code paths.
+    const { existsSync, readFileSync } = require("node:fs") as typeof import("node:fs");
+    const path = require("node:path") as typeof import("node:path");
+    const file = path.resolve(process.cwd(), "..", "..", "midnight", "deployment.json");
+    if (!existsSync(file)) return false;
+    const all = JSON.parse(readFileSync(file, "utf8")) as Record<string, { contractAddress?: string }>;
+    return Boolean(all.preview?.contractAddress || all.preprod?.contractAddress);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Which chains this deployment can actually settle on.
  *
  * A chain with no keys can still be browsed, and every page will describe it
@@ -50,7 +90,7 @@ export async function getChain(): Promise<ChainMeta> {
  * that up front rather than letting a reader discover it by being charged
  * nothing and getting an error.
  */
-export function chainReadiness(): Record<ChainId, boolean> {
+export function chainReadiness(): Record<NetworkId, boolean> {
   const algorandKeys = !!process.env.ALGO_AGENT_MNEMONIC?.trim();
   const algorandPayee = !!(
     process.env.ALGO_TREASURY_ADDRESS || process.env.NEXT_PUBLIC_ALGO_TREASURY_ADDRESS
@@ -67,5 +107,8 @@ export function chainReadiness(): Record<ChainId, boolean> {
       process.env.AGENT_KEY_PEM ||
       process.env.AGENT_PUBLIC_KEY
     )?.trim(),
+    // Midnight needs no keys here: the site only ever reads public state, and
+    // proving happens on the agent's own machine. "Ready" means deployed.
+    midnight: midnightReady(),
   };
 }
