@@ -45,15 +45,80 @@ either both executed or neither did.
 
 ### Settled transactions
 
-| # | Tool | Price | Transaction id | Lora |
+Six real settlements on Algorand testnet, 17 August 2026. Every one is an x402
+payment: HTTP 402, a signed USDC transfer, settled by the GoPlausible
+facilitator.
+
+| # | Tool | Price | Path | Transaction |
 |---|---|---|---|---|
-| - | - | - | *not published yet* | - |
+| 1 | algo-market-data | $0.002 | `pnpm algo:demo` | [`KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA`](https://lora.algokit.io/testnet/transaction/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA) |
+| 2 | algo-market-data | $0.002 | `wrapFetchWithPayment` | [`WIJM6C3ZSY56Z55SNG7DG3KPVW5SBAGJA5WPQX2P7F75TDGHIJ4Q`](https://lora.algokit.io/testnet/transaction/WIJM6C3ZSY56Z55SNG7DG3KPVW5SBAGJA5WPQX2P7F75TDGHIJ4Q) |
+| 3 | algo-market-data | $0.002 | agent run, step 1 | [`K3NVOG7AGNC3PFGLNMWMXNZVZFSQ6AJJ36RTKAJXZELRRPCN3ESA`](https://lora.algokit.io/testnet/transaction/K3NVOG7AGNC3PFGLNMWMXNZVZFSQ6AJJ36RTKAJXZELRRPCN3ESA) |
+| 4 | page-scraper | $0.005 | agent run, step 2 | [`GMLZAZZQFMWVEPGBTIWVEAUT6QRW7GTFBXMUTMTNS2TPLONR6W7A`](https://lora.algokit.io/testnet/transaction/GMLZAZZQFMWVEPGBTIWVEAUT6QRW7GTFBXMUTMTNS2TPLONR6W7A) |
+| 5 | text-summarizer | $0.010 | agent run, step 3 | [`D6TUZOEVJSCYAU5U3ROQ4OFHTEPZ3ZDINTQNLEBGPDAUHAZJW3UA`](https://lora.algokit.io/testnet/transaction/D6TUZOEVJSCYAU5U3ROQ4OFHTEPZ3ZDINTQNLEBGPDAUHAZJW3UA) |
+| 6 | rwa-attestor | $0.020 | agent run, step 4 | [`HI4JXJ66QDIXOKM2NEBTGGLUNVLYJYCHWICZS2YOE7XLFCC7GMBQ`](https://lora.algokit.io/testnet/transaction/HI4JXJ66QDIXOKM2NEBTGGLUNVLYJYCHWICZS2YOE7XLFCC7GMBQ) |
 
 <!-- ALGORAND-PROOF -->
 
-That table is a placeholder on purpose. Real rows are pasted in at the
-`ALGORAND-PROOF` marker directly above, replacing the empty row; we would rather
-ship a blank table than a transaction id nobody produced.
+Rows 3 to 6 are a single agent run: one natural-language task, four tools
+discovered and paid for in sequence, metered against a $0.10 budget and stopping
+with $0.063 unspent.
+
+### The balances, before and after
+
+The six payments total exactly $0.041, and that is exactly what moved.
+
+| Account | USDC before | USDC after | ALGO before | ALGO after |
+|---|---|---|---|---|
+| agent (buyer) | 20.0000 | 19.9590 | 3.9990 | **3.9990** |
+| treasury (seller) | 20.0000 | 20.0410 | 3.9990 | **3.9990** |
+
+**Neither account's ALGO moved.** That is the gasless claim, measured rather than
+asserted: six settlements, and the buyer's native balance is unchanged to the
+microALGO.
+
+### Reading transaction 1 on the public indexer
+
+Not our server, not our database, and not even an explorer:
+
+```bash
+curl -s https://testnet-idx.algonode.cloud/v2/transactions/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA
+```
+
+```
+type      axfer
+sender    SMT5SJCV322CQ6SBYFCDBGWWXGOQULQ5CKXKJOHHTTZRDUDV2XDMLYYXQQ   the agent
+receiver  W7TYQROP7L6O6QEBVR675D4O3DT2DQUMSX4UIRYNYWV2W26MKSH5IN3ERY   the treasury
+amount    2000 micro of ASA 10458941                                    $0.002 in USDC
+fee       0                                                             the buyer pays nothing
+group     02BZJmMnkq3r6WoiGu3LjtyxCo4Si6KBy5wW02MDmh0=
+note      x402-payment-v2-1786944043684
+round     66389819
+```
+
+And the group it belongs to has exactly two members:
+
+```
+pay    sender ZMFK2OI7ZBD2…  fee 2000  note "x402-fee-payer-1786944043683"
+axfer  sender SMT5SJCV322C…  fee    0  note "x402-payment-v2-1786944043684"
+```
+
+The `pay` is GoPlausible's fee sponsor covering both transactions. The `axfer` is
+the buyer's USDC transfer with a fee of zero. They share one group id, so either
+both executed or neither did. The `x402-payment-v2` note is the protocol's own
+marker, written by the SDK and not by us.
+
+### What is not here
+
+- **No facilitator receipt links.** GoPlausible's `/api/receipt/{txid}` answers
+  `receipts are available for Algorand, Base and Solana MainNet settlements
+  only`, so on testnet there is nothing to link. `facilitatorReceipt()` returns
+  null rather than handing out a URL that errors.
+- **Not yet listed in the public Bazaar.** Listing happens when a resource is
+  paid for at a publicly reachable URL; these six settled against
+  `http://localhost:8402`. A payment against the deployed domain should list it
+  at <https://facilitator.goplausible.xyz/discovery/resources>, and we would
+  rather say that than claim a listing nobody can see.
 
 ### Setup transactions
 

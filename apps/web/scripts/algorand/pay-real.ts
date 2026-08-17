@@ -101,7 +101,6 @@ async function main() {
   console.log(`  ✓ settled on Algorand testnet\n`);
   console.log(`    transaction   ${txId}`);
   console.log(`    explorer      ${ALGO.explorerBase}/transaction/${txId}`);
-  console.log(`    facilitator   ${TESTNET.facilitatorUrl}/api/receipt/${txId}`);
   console.log(`    payer         ${ALGO.explorerBase}/account/${agent.addr}\n`);
 
   const after = await getBalances(agent.addr);

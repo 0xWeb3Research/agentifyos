@@ -183,11 +183,22 @@ export function explorerContractPackage(packageHash: string): string {
 /**
  * The facilitator's own receipt for a settled payment.
  *
- * Independent of us: GoPlausible serves it from their records, so a reader can
- * confirm the payment without taking our word or our database for it.
+ * GoPlausible serves receipts from their own records, which would let a reader
+ * confirm a settlement without taking our word for it. But the endpoint is
+ * mainnet-only: on testnet it answers
+ *
+ *   {"error":"receipts are available for Algorand, Base and Solana MainNet
+ *    settlements only"}
+ *
+ * so returning a URL here would hand out a link that errors. Null on testnet is
+ * the honest answer. The independent check that does work on testnet is the
+ * public indexer behind `explorerTx`.
  */
+const ALGORAND_MAINNET_CAIP2 = "algorand:wGHE2Pwdvd7S12BL5FaOP20EGYesN73ktiC1qzkkit8=";
+
 export function facilitatorReceipt(txId: string, on: ChainId = DEFAULT_CHAIN): string | null {
-  return on === "algorand" ? `${ALGO.facilitatorUrl}/api/receipt/${txId}` : null;
+  const onMainnet = ALGO.network === ALGORAND_MAINNET_CAIP2;
+  return on === "algorand" && onMainnet ? `${ALGO.facilitatorUrl}/api/receipt/${txId}` : null;
 }
 
 // ── money ────────────────────────────────────────────────────────────────────

@@ -63,8 +63,26 @@ verifiable on [Lora](https://lora.algokit.io/testnet).
 groups it with its own fee transaction, simulates, and submits. The agent's only
 ALGO is Algorand's locked minimum balance, which never moves.
 
-See [docs/PROOF.md](docs/PROOF.md) for settled transactions and how to check
-each one yourself.
+### Settled, and checkable
+
+| # | Tool | Price | Transaction |
+|---|---|---|---|
+| 1 | algo-market-data | $0.002 | [`KD6GTL4RAXJK…`](https://lora.algokit.io/testnet/transaction/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA) |
+| 2 | algo-market-data | $0.002 | [`WIJM6C3ZSY56…`](https://lora.algokit.io/testnet/transaction/WIJM6C3ZSY56Z55SNG7DG3KPVW5SBAGJA5WPQX2P7F75TDGHIJ4Q) |
+| 3 | algo-market-data | $0.002 | [`K3NVOG7AGNC3…`](https://lora.algokit.io/testnet/transaction/K3NVOG7AGNC3PFGLNMWMXNZVZFSQ6AJJ36RTKAJXZELRRPCN3ESA) |
+| 4 | page-scraper | $0.005 | [`GMLZAZZQFMWV…`](https://lora.algokit.io/testnet/transaction/GMLZAZZQFMWVEPGBTIWVEAUT6QRW7GTFBXMUTMTNS2TPLONR6W7A) |
+| 5 | text-summarizer | $0.010 | [`D6TUZOEVJSCY…`](https://lora.algokit.io/testnet/transaction/D6TUZOEVJSCYAU5U3ROQ4OFHTEPZ3ZDINTQNLEBGPDAUHAZJW3UA) |
+| 6 | rwa-attestor | $0.020 | [`HI4JXJ66QDIX…`](https://lora.algokit.io/testnet/transaction/HI4JXJ66QDIXOKM2NEBTGGLUNVLYJYCHWICZS2YOE7XLFCC7GMBQ) |
+
+Rows 3 to 6 are one agent run: a single task, four tools discovered and paid for
+in sequence against a $0.10 budget.
+
+Across all six, the buyer's USDC went 20.0000 → 19.9590 and its **ALGO did not
+move at all**, 3.9990 before and after. That is the gasless claim measured rather
+than asserted.
+
+[docs/PROOF.md](docs/PROOF.md) reads transaction 1 straight off the public
+indexer, including the two-transaction group and the buyer's fee of zero.
 
 ***
 

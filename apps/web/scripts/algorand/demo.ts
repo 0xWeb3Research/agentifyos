@@ -83,7 +83,8 @@ async function main() {
   console.log(`\n  ✓ settled\n`);
   console.log(`    transaction   ${out.txId}`);
   console.log(`    explorer      ${ALGO.explorerBase}/transaction/${out.txId}`);
-  console.log(`    facilitator   ${TESTNET.facilitatorUrl}/api/receipt/${out.txId}`);
+  // The facilitator only serves receipts for mainnet settlements, so there is
+  // nothing to link here on testnet; the indexer above is the independent check.
   console.log(
     `\n  agent USDC ${usdc(a.usdc)} → ${usdc(after.usdc)}, ` +
       `ALGO ${(Number(a.algo) / 1e6).toFixed(4)} → ${(Number(after.algo) / 1e6).toFixed(4)} ` +
