@@ -18,6 +18,7 @@ import type { Receipt } from "@/lib/types";
 import { authorizeSpend } from "@/lib/security/authz";
 import { resolveSpendBudget, reserveDemoSpend } from "@/lib/security/spend";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
+import { publicOrigin } from "@/lib/site";
 
 // The agent runner. Plans a task into an ordered list of live tools, then walks
 // the x402 handshake for each one in-process, threading the result of each call
@@ -55,7 +56,9 @@ export async function POST(req: Request) {
   const on = await getChainId();
   const tools = getToolsWithStats();
   const wallet = makeWallet("demo-agent", "atlas-01");
-  const baseUrl = new URL(req.url).origin;
+  // Must be the public origin: the Algorand loop pays over real HTTP, so an
+  // internal bind address would make the agent unable to reach its own market.
+  const baseUrl = publicOrigin(req);
   const plan = planTask(task, tools);
 
   // Context threaded between calls: the agent reasons over prior outputs.

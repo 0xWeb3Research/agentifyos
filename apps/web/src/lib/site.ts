@@ -38,6 +38,17 @@ export function abs(path: string): string {
  * genuine local dev, or a deployment with no origin configured, falls back to
  * the request.
  */
+/**
+ * The origin a client outside this process should call us on.
+ *
+ * `new URL(req.url).origin` is the address the server is bound to, which behind
+ * a proxy is internal (0.0.0.0:8080) and unreachable from anywhere else. The
+ * agent runner pays over real HTTP, so it needs the origin the world can see.
+ */
+export function publicOrigin(req: Request): string {
+  return new URL(publicRequestUrl(req)).origin;
+}
+
 export function publicRequestUrl(req: Request): string {
   const url = new URL(req.url);
   const configured = Boolean(

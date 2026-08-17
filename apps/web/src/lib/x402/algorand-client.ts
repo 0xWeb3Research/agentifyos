@@ -105,7 +105,15 @@ export async function payAndFetch(
   const baseHeaders = { accept: "application/json", ...(opts.headers ?? {}) };
 
   step("request", `${method} ${url}`);
-  const first = await doFetch(url, { method, headers: baseHeaders, body: opts.body });
+  // The resource is reached over the network, so it can simply be unreachable.
+  // That is a failed call to report, not an exception to escape as a 500.
+  let first: Response;
+  try {
+    first = await doFetch(url, { method, headers: baseHeaders, body: opts.body });
+  } catch (e) {
+    step("error", `could not reach ${url}: ${(e as Error).message}`, false);
+    return { ok: false, status: 0, error: "resource_unreachable", steps };
+  }
 
   if (first.status !== 402) {
     const body = await first.json().catch(() => null);
@@ -165,11 +173,19 @@ export async function payAndFetch(
     return { ok: false, status: 402, error: "payment_build_failed", requirements, challenge, costUsd, steps };
   }
 
-  const paid = await doFetch(url, {
-    method,
-    headers: { ...baseHeaders, ...header },
-    body: opts.body,
-  });
+  let paid: Response;
+  try {
+    paid = await doFetch(url, {
+      method,
+      headers: { ...baseHeaders, ...header },
+      body: opts.body,
+    });
+  } catch (e) {
+    // The payment was signed but never delivered, so nothing settled and the
+    // buyer was not charged. Say that, rather than throwing.
+    step("error", `could not deliver the payment: ${(e as Error).message}`, false);
+    return { ok: false, status: 0, error: "resource_unreachable", requirements, challenge, costUsd, steps };
+  }
   const body = (await paid.json().catch(() => null)) as { error?: string } | null;
 
   if (!paid.ok) {
