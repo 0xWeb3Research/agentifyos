@@ -7,6 +7,7 @@ import { getFacilitator } from "@/lib/x402/facilitator";
 import { buildRequirements, make402, type ExactPayload } from "@/lib/x402/payment";
 import { NO_STORE, recordPaidCall } from "@/lib/x402/settlement";
 import { clientIp, rateLimit, tooManyRequests } from "@/lib/security/ratelimit";
+import { publicRequestUrl } from "@/lib/site";
 
 // The genuine HTTP 402 paid endpoint: the surface external agents (our CLI, the
 // MCP server, anyone) actually use. GET it with no payment header and you get a
@@ -37,7 +38,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
   }
 
   const event = tool.priceEvents[0];
-  const resource = req.url;
+  const resource = publicRequestUrl(req);
   // The chain is per request, not per deployment: a reader who switched chains
   // in the UI gets quoted, and charged, on the chain they picked.
   const on = await getChainId();

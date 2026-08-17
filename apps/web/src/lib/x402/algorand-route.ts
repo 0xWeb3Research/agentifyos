@@ -25,6 +25,7 @@ import {
   verifyPayment,
 } from "./algorand";
 import { NO_STORE, recordPaidCall } from "./settlement";
+import { publicRequestUrl } from "../site";
 
 /** x402 v2 sends PAYMENT-SIGNATURE; v1 clients still send X-PAYMENT. */
 function paymentHeaderOf(req: Request): string | null {
@@ -37,7 +38,7 @@ export async function algorandPaidResponse(
   event: PriceEvent,
   input: Record<string, unknown>,
 ): Promise<Response> {
-  const resource = req.url;
+  const resource = publicRequestUrl(req);
   const payTo = ALGO_TREASURY_ADDRESS;
 
   // An unset payee is a deployment mistake, not a client error. Saying so beats

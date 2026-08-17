@@ -8,6 +8,7 @@ import { getHandler } from "../tools/handlers";
 import type { PriceEvent, Tool } from "../types";
 import type { ExactCasperPayload } from "./casper";
 import { NO_STORE, recordPaidCall } from "./settlement";
+import { publicRequestUrl } from "../site";
 
 const WCSPR =
   process.env.WCSPR_PACKAGE_HASH ||
@@ -21,7 +22,7 @@ export async function casperPaidResponse(
   payTo: string,
 ): Promise<Response> {
   const casper = await import("./casper");
-  const resource = req.url;
+  const resource = publicRequestUrl(req);
   const header = req.headers.get("payment-signature");
   const started = Date.now();
 

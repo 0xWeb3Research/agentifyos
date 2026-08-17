@@ -21,3 +21,32 @@ export const BRAND_COLOR = "#f82636";
 export function abs(path: string): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }
+
+/**
+ * The URL a client actually asked for, as opposed to the one this process was
+ * handed.
+ *
+ * Behind Railway's proxy `req.url` is the internal address the container is
+ * listening on (`https://localhost:8080/...`). That is fine for reading a path,
+ * and wrong for anything a client will read back and check. An x402 challenge
+ * is exactly that: the resource url is part of what a payment is minted for, so
+ * quoting the internal host produces a payment for a resource that does not
+ * exist at an address nobody can reach.
+ *
+ * Same rule as `authOrigin`: a deployment that has been told its own origin is
+ * believed over any header, since a forwarded host is attacker-controlled. Only
+ * genuine local dev, or a deployment with no origin configured, falls back to
+ * the request.
+ */
+export function publicRequestUrl(req: Request): string {
+  const url = new URL(req.url);
+  const configured = Boolean(
+    process.env.NEXT_PUBLIC_SITE_URL || process.env.RAILWAY_PUBLIC_DOMAIN,
+  );
+  if (configured && process.env.NODE_ENV !== "development") {
+    return `${new URL(SITE_URL).origin}${url.pathname}${url.search}`;
+  }
+  const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? url.host;
+  const proto = req.headers.get("x-forwarded-proto") ?? url.protocol.replace(":", "");
+  return `${proto}://${host}${url.pathname}${url.search}`;
+}
