@@ -167,6 +167,169 @@ describe('the guarantees an operator is actually paying for', () => {
   });
 });
 
+describe('isolation between tools and between agents', () => {
+  it('refuses a pass bought for one tool on a different tool', () => {
+    // The sharpest way to break a per-tool entitlement is to buy the cheapest
+    // pass and spend it on the dearest tool, so this is worth proving.
+    const { sim } = withRegisteredTool('algo-market-data');
+    const dear = toolId('rwa-attestor');
+    sim.registerTool(dear, 20_000n, QUOTA);
+
+    const agentKey = secret();
+    const nonce = secret();
+    sim.as(createNightpassPrivateState(agentKey)).issuePass(toolId('algo-market-data'), nonce);
+
+    // The agent copies its own pass secret across to the expensive tool. The
+    // commitment binds the tool id, so the one it recomputes was never issued.
+    const crossed = withPass(sim.privateState, dear, nonce);
+    expect(() => sim.as(crossed).redeemCall(dear)).toThrow(/not in the issued set/);
+  });
+
+  it('keeps each tool’s call count to itself', () => {
+    const { sim } = withRegisteredTool('algo-market-data');
+    const other = toolId('page-scraper');
+    sim.registerTool(other, 5_000n, QUOTA);
+
+    const agent = createNightpassPrivateState(secret());
+    sim.as(agent).issuePass(toolId('algo-market-data'), secret());
+    sim.redeemCall(toolId('algo-market-data'));
+    sim.redeemCall(toolId('algo-market-data'));
+
+    expect(sim.ledger().callsServed.lookup(toolId('algo-market-data'))).toBe(2n);
+    expect(sim.ledger().callsServed.lookup(other)).toBe(0n);
+  });
+
+  it('gives two agents unrelated nullifiers for the very same call number', () => {
+    const { sim, id } = withRegisteredTool();
+
+    sim.as(createNightpassPrivateState(secret())).issuePass(id, secret());
+    const first = sim.redeemCall(id);
+
+    sim.as(createNightpassPrivateState(secret())).issuePass(id, secret());
+    const second = sim.redeemCall(id);
+
+    // Both are call index 0. If the index alone drove the nullifier these would
+    // collide and the second agent could never spend its first call.
+    expect(hex(first)).not.toBe(hex(second));
+    expect(sim.ledger().spentCalls.size()).toBe(2n);
+    expect(sim.ledger().passesIssued).toBe(2n);
+  });
+
+  it('makes one agent’s two passes for one tool look unrelated', () => {
+    const { sim, id } = withRegisteredTool();
+    const agentKey = secret();
+
+    const a = sim.as(createNightpassPrivateState(agentKey)).issuePass(id, secret());
+    const b = sim.as(createNightpassPrivateState(agentKey)).issuePass(id, secret());
+
+    // Same buyer, same tool. Only the nonce differs, and that is enough.
+    expect(hex(a)).not.toBe(hex(b));
+  });
+});
+
+describe('guard clauses', () => {
+  it('rejects a listing with no quota to sell', () => {
+    const sim = new NightpassSimulator(secret());
+    expect(() => sim.registerTool(toolId('freebie'), PRICE, 0n)).toThrow(/quota must be positive/);
+  });
+
+  it('rejects every circuit that names a tool which does not exist', () => {
+    const sim = new NightpassSimulator(secret());
+    const ghost = toolId('never-registered');
+    const auditorId = new Uint8Array(createHash('sha256').update('fca-uk').digest());
+
+    expect(() => sim.issuePass(ghost, secret())).toThrow(/unknown tool/);
+    expect(() => sim.setToolActive(ghost, false)).toThrow(/unknown tool/);
+    expect(() => sim.attestUsage(ghost, auditorId, 1n)).toThrow(/unknown tool/);
+
+    // redeemCall needs a locally held pass before it reaches the tool check.
+    const holder = withPass(createNightpassPrivateState(secret()), ghost, secret());
+    expect(() => sim.as(holder).redeemCall(ghost)).toThrow(/unknown tool/);
+  });
+
+  it('stops calls on a tool the publisher has delisted', () => {
+    const { sim, id, publisherKey } = withRegisteredTool();
+    sim.as(createNightpassPrivateState(secret())).issuePass(id, secret());
+    const agentState = sim.privateState;
+
+    sim.as(createNightpassPrivateState(publisherKey)).setToolActive(id, false);
+    expect(() => sim.as(agentState).redeemCall(id)).toThrow(/not active/);
+  });
+
+  it('lets a publisher relist a tool it delisted', () => {
+    const { sim, id, publisherKey } = withRegisteredTool();
+    const publisher = createNightpassPrivateState(publisherKey);
+
+    sim.as(publisher).setToolActive(id, false);
+    expect(sim.ledger().tools.lookup(id).active).toBe(false);
+
+    sim.as(publisher).setToolActive(id, true);
+    expect(sim.ledger().tools.lookup(id).active).toBe(true);
+
+    // Relisting must not quietly reset the terms the tool was sold on.
+    expect(sim.ledger().tools.lookup(id).priceAtomic).toBe(PRICE);
+    expect(sim.ledger().tools.lookup(id).quota).toBe(QUOTA);
+  });
+
+  it('refuses to record the same attestation twice', () => {
+    const { sim, id } = withRegisteredTool();
+    sim.as(createNightpassPrivateState(secret())).issuePass(id, secret());
+    sim.redeemCall(id);
+
+    const auditorId = new Uint8Array(createHash('sha256').update('fca-uk').digest());
+    sim.attestUsage(id, auditorId, 1n);
+    expect(() => sim.attestUsage(id, auditorId, 1n)).toThrow(/already exists/);
+  });
+
+  it('will not attest for a pass the agent does not hold', () => {
+    const { sim, id } = withRegisteredTool();
+    const auditorId = new Uint8Array(createHash('sha256').update('fca-uk').digest());
+    const pretender = withPass(createNightpassPrivateState(secret()), id, secret());
+
+    expect(() => sim.as(pretender).attestUsage(id, auditorId, 1n)).toThrow(/not in the issued set/);
+  });
+});
+
+describe('the derivations an auditor recomputes by hand', () => {
+  it('is deterministic, so an auditor gets the same answer we do', () => {
+    const sim = new NightpassSimulator(secret());
+    const id = toolId('algo-market-data');
+    const sk = secret();
+    const nonce = secret();
+
+    expect(hex(sim.pure.passCommitment(id, sk, nonce))).toBe(
+      hex(sim.pure.passCommitment(id, sk, nonce)),
+    );
+    expect(hex(sim.pure.callNullifier(sim.pure.passCommitment(id, sk, nonce), 7n))).toBe(
+      hex(sim.pure.callNullifier(sim.pure.passCommitment(id, sk, nonce), 7n)),
+    );
+  });
+
+  it('separates its domains, so one derivation cannot stand in for another', () => {
+    const sim = new NightpassSimulator(secret());
+    const x = secret();
+
+    // Every derivation is prefixed with its own domain string. Without that, a
+    // publisher commitment and a pass commitment over the same bytes could
+    // collide and authorise something they were never meant to.
+    const asPublisher = hex(sim.pure.publisherCommitment(x));
+    const asPass = hex(sim.pure.passCommitment(x, x, x));
+    const asNullifier = hex(sim.pure.callNullifier(x, 0n));
+    const asAudit = hex(sim.pure.auditTag(x, x, 0n));
+
+    expect(new Set([asPublisher, asPass, asNullifier, asAudit]).size).toBe(4);
+  });
+
+  it('changes the nullifier for every call index', () => {
+    const sim = new NightpassSimulator(secret());
+    const commitment = secret();
+    const seen = new Set(
+      Array.from({ length: 32 }, (_, i) => hex(sim.pure.callNullifier(commitment, BigInt(i)))),
+    );
+    expect(seen.size).toBe(32);
+  });
+});
+
 describe('selective disclosure: private by default, provable on demand', () => {
   it('lets a named auditor reconstruct a full usage history the public cannot', () => {
     const { sim, id } = withRegisteredTool();
