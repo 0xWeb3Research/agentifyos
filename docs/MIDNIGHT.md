@@ -176,9 +176,18 @@ pnpm nightpass:compile   # compact 0.31.1 -> circuits, prover and verifier keys
 pnpm nightpass:test      # the privacy properties, as adversarial tests
 ```
 
-The test suite is written as things an attacker would try: replaying a call,
-forging a pass, stealing a commitment, spending past a quota, delisting someone
-else's tool, and overstating usage to an auditor.
+39 tests, written as things an attacker would try: replaying a call, forging a
+pass, stealing a commitment, spending a pass bought for one tool on a dearer
+one, spending past a quota, delisting someone else's tool, and overstating usage
+to an auditor.
+
+### The build is reproducible
+
+The ZK keys were deleted and regenerated from source, and the resulting proofs
+still verified against the verifier keys already committed on-chain by the
+original deploy. So a reviewer who compiles this repo themselves gets a prover
+that works against the deployed contract, rather than having to trust the
+artifacts we happened to ship.
 
 ### Deploy to a real network
 
@@ -242,21 +251,42 @@ verified.
 | Deploy tx | `00cc663dd1a1e5ed8ded75342117608262fab11fdc70b627c37672a3c7b13505a6` |
 | Deployed | 2026-08-17, block 463586 onward |
 
-The run that populated it:
+Two independent agent runs against it, blocks 463583 to 463728:
 
-| Step | Circuit | Result |
+| | Circuit | Total on-chain |
 |---|---|---|
-| 3 tools listed | `registerTool` | blocks 463583–463589 |
-| 1 pass bought | `issuePass` | commitment `087d8f534419e798…e3c6`, block 463593 |
-| 3 calls spent | `redeemCall` | nullifiers `d9d5f5066293d863…`, `5146aaedcec6e4a7…`, `9e8b11035a526b28…` |
-| 1 attestation | `attestUsage` | tag `7feba2130e0b4170…0db5`, block 463608 |
+| Tools listed | `registerTool` | 3 |
+| Passes bought | `issuePass` | 2 |
+| Calls spent | `redeemCall` | 6 |
+| Attestations | `attestUsage` | 2 |
 
-Those three nullifiers came from **one** pass. They share no derivable
-relationship, which is the unlinkability claim, visible rather than asserted.
+From the second run, one pass and its three calls:
 
-The auditor check at the end of the run recomputed the attestation from the pass
-secret and reported: tag **matches**, every claimed call **found on-chain**, and
-the claim **exact, not a lower bound**.
+```
+commitment   087d8f534419e798…e3c6
+nullifier    447f9f154f44d956705a666619aa8d888f5e65c06bba2fb2a828013b9f4b8e01
+nullifier    bae0248845551176bf7f78d3d48409784aa18635458036b44734ec6d76f97722
+audit tag    cd5a6465d413a86778e1873b91842ddb2ab82449c55f1a5334eb90f4242475f7
+```
+
+Those nullifiers came from **one** pass. They share no derivable relationship,
+which is the unlinkability claim made visible rather than asserted.
+
+Both runs ended with the auditor check: tag **matches**, every claimed call
+**found on-chain**, and the claim **exact, not a lower bound**.
+
+### Two readings that look wrong and are not
+
+**`served 6` against `quota 5`.** A quota is per pass, not per tool. Two passes
+were bought and each spent three of its five calls, so the tool has served six.
+The suite asserts the per-pass bound directly: a sixth call on a single pass is
+rejected with `quota exhausted`.
+
+**The `/shielded` page trailing the CLI by one request.** The page revalidates on
+a short window and serves stale-while-revalidate, so the first request after the
+window expires returns the previous value and refreshes in the background. The
+next request is current. The CLI reads the indexer directly and has no such
+window, which is why the two can disagree for exactly one request.
 
 ### Verify it yourself
 
@@ -276,8 +306,8 @@ That returns the raw ledger state. To decode it into the table above:
 pnpm nightpass:state
 ```
 
-which at the time of writing reports 3 tools listed, 1 pass issued, 3 calls
-redeemed and 1 attestation, and **no way to connect any of them to each other**.
+which at the time of writing reports 3 tools listed, 2 passes issued, 6 calls
+redeemed and 2 attestations, and **no way to connect any of them to each other**.
 
 Tool ids are `sha256(slug)`, so the catalog names are recoverable by anyone
 without our help:
