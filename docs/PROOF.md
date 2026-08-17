@@ -114,11 +114,26 @@ marker, written by the SDK and not by us.
   `receipts are available for Algorand, Base and Solana MainNet settlements
   only`, so on testnet there is nothing to link. `facilitatorReceipt()` returns
   null rather than handing out a URL that errors.
-- **Not yet listed in the public Bazaar.** Listing happens when a resource is
-  paid for at a publicly reachable URL; these six settled against
-  `http://localhost:8402`. A payment against the deployed domain should list it
-  at <https://facilitator.goplausible.xyz/discovery/resources>, and we would
-  rather say that than claim a listing nobody can see.
+- **Not yet visible in the public Bazaar.** Listing happens when a resource is
+  paid for at a publicly reachable URL. The six above settled against
+  `http://localhost:8402`, and the production settlement below settled against
+  `https://agentifyos.xyz`, which is the condition for listing. It had not
+  appeared at <https://facilitator.goplausible.xyz/discovery/resources> when this
+  was written, and we would rather say that than claim a listing nobody can see.
+
+### Settled against production
+
+The same handshake against the deployed domain, with no privileged shortcut:
+
+```bash
+cd apps/web && pnpm algo:pay --base https://agentifyos.xyz
+```
+
+| Tool | Price | Transaction |
+|---|---|---|
+| algo-market-data | $0.002 | [`5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA) |
+
+The agent's ALGO balance was unchanged across it, same as every row above.
 
 ### Setup transactions
 
