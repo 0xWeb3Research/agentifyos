@@ -4,21 +4,22 @@
 <meta charset="utf-8" />
 <title>AgentifyOS · x402 on Algorand</title>
 <style>
-  /* Print target: 16:9 landscape slides, one per page. */
+  /* Print target: 16:9 landscape slides, one per page. Images are referenced
+     relatively; build-deck.mjs renders from file://, so they embed themselves. */
   @page { size: 297mm 167mm; margin: 0; }
 
   :root {
     --bg: #fafafa;
     --surface: #ffffff;
     --fg: #0a0a0a;
-    --fg2: #666666;
+    --fg2: #5a5a5a;
     --muted: #999999;
     --border: rgba(0, 0, 0, 0.10);
     --tint: rgba(0, 0, 0, 0.03);
     --accent: #2469ff;
-    --accent-tint: rgba(36, 105, 255, 0.10);
+    --accent-tint: rgba(36, 105, 255, 0.09);
     --success: #008b37;
-    --success-tint: rgba(0, 139, 55, 0.10);
+    --success-tint: rgba(0, 139, 55, 0.09);
     --warn: #f50;
     --brand: #f82636;
   }
@@ -26,27 +27,22 @@
   * { box-sizing: border-box; }
 
   html, body {
-    margin: 0;
-    padding: 0;
+    margin: 0; padding: 0;
     background: var(--muted);
     color: var(--fg);
     font-family: ui-sans-serif, -apple-system, "Segoe UI", Inter, Helvetica, Arial, sans-serif;
-    font-size: 15px;
-    line-height: 1.5;
+    font-size: 15px; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
   }
 
   .slide {
     position: relative;
-    width: 297mm;
-    height: 167mm;
-    padding: 15mm 18mm 13mm;
+    width: 297mm; height: 167mm;
+    padding: 17mm 20mm 14mm;
     background: var(--bg);
-    page-break-after: always;
-    break-after: page;
+    page-break-after: always; break-after: page;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    display: flex; flex-direction: column;
   }
   .slide:last-child { page-break-after: auto; break-after: auto; }
 
@@ -56,37 +52,29 @@
   }
 
   .eyebrow {
-    font-size: 11px;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-weight: 500;
-    margin: 0 0 8px;
+    font-size: 11px; letter-spacing: .11em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500; margin: 0 0 10px;
   }
 
-  h1 { font-size: 46px; line-height: 1.06; letter-spacing: -0.028em; margin: 0 0 14px; font-weight: 600; }
-  h2 { font-size: 30px; line-height: 1.12; letter-spacing: -0.022em; margin: 0 0 6px; font-weight: 600; }
-  h3 { font-size: 15px; letter-spacing: -0.006em; margin: 0 0 6px; font-weight: 600; }
+  h1 { font-size: 52px; line-height: 1.04; letter-spacing: -0.03em; margin: 0 0 18px; font-weight: 600; }
+  h2 { font-size: 31px; line-height: 1.12; letter-spacing: -0.023em; margin: 0; font-weight: 600; }
+  h3 { font-size: 15px; letter-spacing: -0.006em; margin: 0 0 7px; font-weight: 600; }
 
-  .lede { font-size: 18px; line-height: 1.45; color: var(--fg2); margin: 0 0 20px; max-width: 76ch; }
+  .lede { font-size: 18.5px; line-height: 1.5; color: var(--fg2); margin: 0; max-width: 70ch; }
   p { margin: 0 0 10px; }
-  .body { font-size: 14.5px; color: var(--fg2); max-width: 84ch; }
-  .small { font-size: 13px; }
+  .body { font-size: 14.5px; line-height: 1.55; color: var(--fg2); max-width: 80ch; }
+  .small { font-size: 13px; line-height: 1.55; }
   strong { color: var(--fg); font-weight: 600; }
 
-  .rule { height: 1px; background: var(--border); margin: 0 0 18px; }
+  /* One consistent gap under every slide title. */
+  .rule { height: 1px; background: var(--border); margin: 16px 0 24px; }
   .grow { flex: 1 1 auto; min-height: 0; }
 
   .foot {
-    margin-top: auto;
-    padding-top: 10px;
+    margin-top: auto; padding-top: 12px;
     border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: .04em;
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 11px; color: var(--muted); letter-spacing: .05em;
   }
 
   code, .mono, pre {
@@ -94,134 +82,107 @@
     font-variant-ligatures: none;
   }
   code {
-    font-size: .88em;
-    background: var(--tint);
-    border: 1px solid var(--border);
-    border-radius: 4px;
-    padding: 1px 5px;
+    font-size: .87em; background: var(--tint);
+    border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px;
   }
   pre {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 11.5px;
-    line-height: 1.55;
-    margin: 0;
-    overflow: hidden;
-    white-space: pre-wrap;
-    word-break: break-word;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 15px 17px;
+    font-size: 12px; line-height: 1.62; margin: 0;
+    overflow: hidden; white-space: pre-wrap; word-break: break-word;
   }
   pre .k { color: var(--accent); }
   pre .g { color: var(--success); }
   pre .c { color: var(--muted); }
 
   table { border-collapse: collapse; width: 100%; font-size: 14px; }
-  th, td { text-align: left; padding: 7px 10px; vertical-align: top; }
+  th, td { text-align: left; padding: 10px 12px; vertical-align: top; }
   thead th {
-    font-size: 11px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    font-weight: 500;
-    border-bottom: 1px solid var(--border);
+    font-size: 11px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); font-weight: 500; border-bottom: 1px solid var(--border);
   }
   tbody tr + tr td { border-top: 1px solid var(--border); }
-  td.num { white-space: nowrap; color: var(--fg2); }
 
-  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
-  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-  .cols4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .cols3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .cols4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 
   .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 18px 20px;
   }
   .card .n {
-    font-size: 11px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin: 0 0 6px;
+    font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 8px;
   }
-  .card p { font-size: 13.5px; color: var(--fg2); margin: 0; }
+  .card p { font-size: 13.5px; line-height: 1.55; color: var(--fg2); margin: 0; }
   .card.accent { border-color: rgba(36,105,255,.3); background: var(--accent-tint); }
-  .card.ok { border-color: rgba(0,139,55,.28); background: var(--success-tint); }
-
-  .stat { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 2px; }
-  .stat.small { font-size: 19px; }
-  /* `.card p` is more specific than `.stat`, so a headline number inside a card
-     would otherwise render at body size. Restate it at matching specificity. */
-  .card p.stat { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin: 0 0 4px; color: var(--fg); }
-  .card p.stat.small { font-size: 19px; }
+  .card.ok { border-color: rgba(0,139,55,.26); background: var(--success-tint); }
+  .card p.stat {
+    font-size: 25px; font-weight: 600; letter-spacing: -0.02em;
+    margin: 0 0 6px; color: var(--fg);
+  }
+  .card p.stat.small { font-size: 18px; }
 
   .pill {
     display: inline-flex; align-items: center; gap: 6px;
-    font-size: 11px; letter-spacing: .05em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
     border: 1px solid var(--border); border-radius: 999px;
-    padding: 3px 10px; background: var(--surface); color: var(--fg2);
+    padding: 4px 11px; background: var(--surface); color: var(--fg2);
   }
   .pill.ok { color: var(--success); border-color: rgba(0,139,55,.28); background: var(--success-tint); }
   .pill.info { color: var(--accent); border-color: rgba(36,105,255,.28); background: var(--accent-tint); }
-  .pills { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+  .pills { display: flex; flex-wrap: wrap; gap: 9px; }
 
-  ul { margin: 0 0 10px; padding-left: 18px; }
-  li { margin: 0 0 6px; color: var(--fg2); font-size: 14.5px; }
+  ul { margin: 0; padding-left: 18px; }
+  li { margin: 0 0 9px; color: var(--fg2); font-size: 14px; line-height: 1.5; }
+  li:last-child { margin-bottom: 0; }
   li strong { color: var(--fg); }
 
-  .flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; align-items: stretch; }
-  .flow .step {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 12px 12px 13px;
+  /* A screenshot of the real product, framed so it reads as a window. */
+  .shot {
+    border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; background: var(--surface);
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
   }
-  .flow .step .i { font-size: 10px; letter-spacing: .1em; color: var(--muted); margin: 0 0 6px; }
-  .flow .step h3 { font-size: 13.5px; margin: 0 0 4px; }
-  .flow .step p { font-size: 12px; color: var(--fg2); margin: 0; line-height: 1.4; }
-  .flow .step.accent { border-color: rgba(36,105,255,.35); background: var(--accent-tint); }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot.crop { height: 100%; }
+  .shot.crop img { height: 100%; object-fit: cover; object-position: top left; }
+  .caption { font-size: 12px; color: var(--muted); margin: 9px 0 0; }
 
-  /* A persona: who it is, what hurts today, what changes. */
+  /* Persona: who, what hurts, what changes. */
   .persona {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; padding: 15px 17px;
+    border-radius: 12px; padding: 22px 24px;
   }
-  .persona .who { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
-  .persona h3 { font-size: 19px; letter-spacing: -0.015em; margin: 0 0 10px; }
-  .persona .pain, .persona .gain { display: flex; gap: 8px; font-size: 13.5px; line-height: 1.45; margin: 0 0 8px; }
-  .persona .tag { flex: 0 0 auto; width: 56px; font-size: 10px; letter-spacing: .07em; text-transform: uppercase; padding-top: 3px; }
-  .persona .pain .tag { color: var(--warn); }
-  .persona .gain .tag { color: var(--success); }
-  .persona .pain span:last-child, .persona .gain span:last-child { color: var(--fg2); }
+  .persona .who { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .persona h3 { font-size: 21px; letter-spacing: -0.018em; margin: 0 0 16px; }
+  .persona .row { display: flex; gap: 12px; font-size: 14px; line-height: 1.5; margin: 0 0 12px; }
+  .persona .row:last-child { margin-bottom: 0; }
+  .persona .tag { flex: 0 0 auto; width: 58px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding-top: 4px; }
+  .persona .row.a .tag { color: var(--warn); }
+  .persona .row.b .tag { color: var(--success); }
+  .persona .row span:last-child { color: var(--fg2); }
 
-  /* A row of headline numbers. */
   .metrics {
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 0;
-    border: 1px solid var(--border); border-radius: 10px; background: var(--surface); overflow: hidden;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); overflow: hidden;
   }
-  .metrics > div { padding: 13px 16px; }
+  .metrics > div { padding: 17px 20px; }
   .metrics > div + div { border-left: 1px solid var(--border); }
-  .metrics .n { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
-  .metrics .v { font-size: 23px; font-weight: 600; letter-spacing: -0.02em; margin: 0; }
-  .metrics .s { font-size: 12px; color: var(--fg2); margin: 2px 0 0; }
-
-  .grouprow {
-    display: grid; grid-template-columns: 36px 1fr 76px; gap: 12px; align-items: center;
-    padding: 10px 13px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 10px; font-size: 13.5px;
-  }
-  .grouprow + .grouprow { margin-top: 8px; }
-  .grouprow .idx { font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--muted); text-align: center; }
-  .grouprow .who { color: var(--fg2); font-size: 12.5px; }
-  .grouprow.you { border-color: rgba(36,105,255,.35); background: var(--accent-tint); }
+  .metrics .n { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+  .metrics .v { font-size: 26px; font-weight: 600; letter-spacing: -0.022em; margin: 0; }
+  .metrics .s { font-size: 12px; color: var(--fg2); margin: 4px 0 0; }
 
   a { color: var(--accent); text-decoration: none; }
-  .links { font-size: 13.5px; }
-  .links div { margin-bottom: 5px; }
-  .links .lbl { display: inline-block; width: 150px; color: var(--fg2); }
+  .links div { margin-bottom: 9px; font-size: 14px; }
+  .links .lbl { display: inline-block; width: 132px; color: var(--muted); font-size: 13px; }
 
   .brandbar { position: absolute; left: 0; top: 0; width: 100%; height: 4px; background: var(--brand); }
   .titlewrap { display: flex; flex-direction: column; justify-content: center; flex: 1 1 auto; }
+  .logo { width: 62px; height: 62px; display: block; margin: 0 0 26px; }
+  .logo.sm { width: 34px; height: 34px; margin: 0; }
 </style>
 </head>
 <body>
@@ -230,60 +191,57 @@
 <section class="slide">
   <div class="brandbar"></div>
   <div class="titlewrap">
+    <img class="logo" src="assets/logo.png" alt="AgentifyOS" />
     <p class="eyebrow">Brainwave 2026 · Blockchain track · resubmission</p>
-    <h1>AgentifyOS</h1>
-    <p class="lede" style="font-size:23px;max-width:64ch;">
-      The marketplace where AI agents shop for tools. A developer lists a paid API
-      in 60 seconds. An agent finds it mid-task, pays a fraction of a cent, and
-      gets on with the job. No signup, no API key, no human in the loop.
+    <h1>The marketplace where<br />AI agents shop for tools.</h1>
+    <p class="lede" style="font-size:21px;max-width:58ch;margin-bottom:26px;">
+      A developer lists a paid API in 60 seconds. An agent finds it mid-task and
+      pays a fraction of a cent. No signup, no API key, no human in the loop.
     </p>
     <div class="pills">
       <span class="pill ok">live on algorand testnet</span>
-      <span class="pill info">6 settlements, real usdc</span>
-      <span class="pill">14 listings</span>
-      <span class="pill">x402 · goplausible facilitator</span>
+      <span class="pill info">real usdc settlements</span>
+      <span class="pill">goplausible facilitator</span>
     </div>
   </div>
   <div class="foot">
-    <span>agentifyos.xyz</span>
-    <span>github.com/0xWeb3Research/agentifyos</span>
+    <span><a href="https://agentifyos.xyz">agentifyos.xyz</a></span>
+    <span><a href="https://github.com/0xWeb3Research/agentifyos">github.com/0xWeb3Research/agentifyos</a></span>
   </div>
 </section>
 
-<!-- 2 · the problem -->
+<!-- 2 · problem -->
 <section class="slide">
   <p class="eyebrow">the problem</p>
   <h2>An AI agent can reason, but it cannot buy.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <p class="lede">
-    Every API an agent might want sits behind a signup form, a credit card and a
-    dashboard, all of it built for a human with a company card. So agents work on
-    a leash: a person guesses in advance which tools the agent will need,
-    provisions keys, and hopes.
+  <div class="rule"></div>
+  <p class="lede" style="margin-bottom:30px;">
+    Every API it wants sits behind a signup form built for a human. So agents
+    work on a leash: somebody provisions keys in advance, and hopes.
   </p>
   <div class="grow">
-    <div class="cols3" style="margin-bottom:18px;">
+    <div class="cols3">
       <div class="card">
-        <p class="n">for the buyer</p>
-        <h3>The leash</h3>
-        <p>An agent that discovers a useful API mid-task cannot use it. It has no account, and no way to open one.</p>
+        <p class="n">the buyer</p>
+        <h3>Cannot open an account</h3>
+        <p>An agent that finds a useful API mid-task simply cannot use it.</p>
       </div>
       <div class="card">
-        <p class="n">for the seller</p>
-        <h3>The floor</h3>
-        <p>Billing makes anything under a dollar not worth selling. So nobody sells the $0.002 call, however useful it is.</p>
+        <p class="n">the seller</p>
+        <h3>Cannot sell a half cent</h3>
+        <p>Billing costs more than the call earns, so it never ships.</p>
       </div>
       <div class="card">
-        <p class="n">for both</p>
-        <h3>The mismatch</h3>
-        <p>Agents want thousands of tiny calls across many vendors. Subscriptions want one big commitment to one.</p>
+        <p class="n">both</p>
+        <h3>Wrong shape entirely</h3>
+        <p>Agents want thousands of tiny calls. Subscriptions want one big commitment.</p>
       </div>
     </div>
-    <p class="body">
-      This is not a technology gap. Payments work fine. It is a
-      <strong>market gap</strong>: there is nowhere a machine can shop.
-    </p>
   </div>
+  <p class="body" style="margin:26px 0 0;">
+    Payments work fine. This is a <strong>market gap</strong>: there is nowhere a
+    machine can shop.
+  </p>
   <div class="foot"><span>02</span><span>the problem</span></div>
 </section>
 
@@ -291,36 +249,27 @@
 <section class="slide">
   <p class="eyebrow">who it is for</p>
   <h2>Two customers, one missing marketplace.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols" style="gap:20px;align-items:start;margin-bottom:14px;">
-    <div class="persona">
-      <p class="who">supply side</p>
-      <h3>The developer with an API</h3>
-      <p class="pain"><span class="tag">today</span><span>Has something worth $0.005 a call. Building signup, billing, quotas and invoicing to sell it costs more than it would ever earn, so it never ships.</span></p>
-      <p class="gain"><span class="tag">with us</span><span>Fills in a manifest, sets a price, publishes. Gets paid per call in USDC, settled on-chain, with no account system to build or run.</span></p>
-      <p class="small" style="margin:10px 0 0;color:var(--muted);">
-        14 listings in the catalog today, from 6 publishers, priced $0.002 to $0.020.
-      </p>
-    </div>
-    <div class="persona">
-      <p class="who">demand side</p>
-      <h3>The agent builder</h3>
-      <p class="pain"><span class="tag">today</span><span>Pre-provisions every key the agent might need, hands it credentials it should not hold, and pays monthly for tools it used twice.</span></p>
-      <p class="gain"><span class="tag">with us</span><span>Gives the agent a wallet and a budget. It discovers tools at runtime, pays for exactly what it uses, and stops when the budget runs out.</span></p>
-      <p class="small" style="margin:10px 0 0;color:var(--muted);">
-        Works today from a terminal, from an MCP client like Claude or Cursor, or over plain HTTP.
-      </p>
-    </div>
-  </div>
+  <div class="rule"></div>
   <div class="grow">
-    <h3 style="margin-bottom:8px;">The same listing serves both</h3>
-    <div class="flow" style="grid-template-columns:repeat(4,1fr);">
-      <div class="step"><p class="i">01</p><h3>More listings</h3><p>Publishing costs a manifest and a price, so the catalog grows cheaply.</p></div>
-      <div class="step"><p class="i">02</p><h3>More agents shop</h3><p>Agents go where there is something to buy, and there is nowhere else yet.</p></div>
-      <div class="step accent"><p class="i">03</p><h3>More settled calls</h3><p>Every call is a payment on-chain, and a fifth of it is our revenue.</p></div>
-      <div class="step"><p class="i">04</p><h3>Better reputation</h3><p>Settled payments rank the catalog, which makes it worth listing on.</p></div>
+    <div class="cols">
+      <div class="persona">
+        <p class="who">supply side</p>
+        <h3>The developer with an API</h3>
+        <p class="row a"><span class="tag">today</span><span>Has something worth $0.005 a call. Building billing to sell it costs more than it earns.</span></p>
+        <p class="row b"><span class="tag">with us</span><span>A manifest and a price. Paid per call in USDC, with no account system to run.</span></p>
+      </div>
+      <div class="persona">
+        <p class="who">demand side</p>
+        <h3>The agent builder</h3>
+        <p class="row a"><span class="tag">today</span><span>Pre-provisions every key the agent might need, and pays monthly for tools it used twice.</span></p>
+        <p class="row b"><span class="tag">with us</span><span>Gives the agent a wallet and a budget. It buys what it needs and stops when the budget runs out.</span></p>
+      </div>
     </div>
   </div>
+  <p class="body" style="margin:26px 0 0;">
+    More listings make the catalog worth shopping. More agents shopping makes it
+    worth listing on. <strong>Every call in between is a settled payment.</strong>
+  </p>
   <div class="foot"><span>03</span><span>customers</span></div>
 </section>
 
@@ -328,25 +277,26 @@
 <section class="slide">
   <p class="eyebrow">the product</p>
   <h2>A marketplace, not a payment demo.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="grow">
-    <table>
-      <thead><tr><th style="width:20%">Surface</th><th style="width:19%">Who uses it</th><th>What it does</th></tr></thead>
-      <tbody>
-        <tr><td><strong>Catalog</strong></td><td>developers, buyers</td><td>Browse and search 14 listings by category, price ceiling and tag. Every listing carries its schema, example output and price.</td></tr>
-        <tr><td><strong>Publish</strong></td><td>developers</td><td>A manifest, a price, a payout address. The listing is live and machine-discoverable immediately.</td></tr>
-        <tr><td><strong>Agent demo</strong></td><td>everyone</td><td>Type a task in plain English. Watch an agent plan it, buy the tools it needs, and show every payment on the wire.</td></tr>
-        <tr><td><strong>Dashboard</strong></td><td>developers</td><td>Earnings per listing, settled calls, and the reputation those payments produced.</td></tr>
-        <tr><td><strong>CLI and MCP</strong></td><td>agent builders</td><td><code>agentify call &lt;slug&gt;</code>, or wire the MCP server into Claude or Cursor and let the assistant buy tools itself.</td></tr>
-        <tr><td><strong>Discovery API</strong></td><td>agents</td><td>The whole catalog as machine-readable records, plus <code>llms.txt</code>, so an agent can shop without a browser.</td></tr>
-      </tbody>
-    </table>
+  <div class="rule"></div>
+  <div class="grow" style="display:flex;min-height:0;margin-bottom:20px;">
+    <div class="shot crop" style="flex:1 1 auto;min-height:0;">
+      <img src="assets/catalog.jpg" alt="The AgentifyOS catalog: paid tool listings with prices, call counts and success rates" />
+    </div>
   </div>
-  <p class="body" style="margin:14px 0 6px;">
-    <strong>Reputation is the payment.</strong> There are no reviews to game: a
-    listing's standing is derived from calls that actually settled on-chain, and
-    faking that costs real money.
-  </p>
+  <div class="cols3" style="gap:26px;">
+    <p class="body small" style="margin:0;">
+      <strong>Browse and publish.</strong> 14 listings, each with a price, a schema
+      and a payout address. Publishing is a manifest and a price.
+    </p>
+    <p class="body small" style="margin:0;">
+      <strong>Buy from anywhere.</strong> The web demo, a terminal, or an MCP
+      client like Claude and Cursor. Plus a discovery API for agents.
+    </p>
+    <p class="body small" style="margin:0;">
+      <strong>Reputation is the payment.</strong> No reviews to game: standing
+      comes from calls that settled on-chain.
+    </p>
+  </div>
   <div class="foot"><span>04</span><span>what we built</span></div>
 </section>
 
@@ -354,41 +304,72 @@
 <section class="slide">
   <p class="eyebrow">how it works</p>
   <h2>Five steps, none of which involve a human.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="flow" style="margin-bottom:20px;">
-    <div class="step">
-      <p class="i">01</p><h3>Find</h3>
-      <p>The agent searches the catalog mid-task and picks a tool on price and schema.</p>
-    </div>
-    <div class="step">
-      <p class="i">02</p><h3>Ask</h3>
-      <p>It calls the tool. The server answers <strong>402 Payment Required</strong> with a price and a payee.</p>
-    </div>
-    <div class="step accent">
-      <p class="i">03</p><h3>Pay</h3>
-      <p>It signs a USDC transfer for exactly that amount. Off-chain, instant, costs nothing.</p>
-    </div>
-    <div class="step">
-      <p class="i">04</p><h3>Settle</h3>
-      <p>A facilitator checks it, submits it, and covers the network fee.</p>
-    </div>
-    <div class="step">
-      <p class="i">05</p><h3>Deliver</h3>
-      <p>The tool runs. The agent gets the result and a receipt anyone can verify.</p>
-    </div>
+  <div class="rule"></div>
+  <div class="grow" style="display:flex;align-items:center;">
+    <svg viewBox="0 0 1180 300" width="100%" role="img" aria-label="The x402 payment flow, from request to delivery">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#bdbdbd" />
+        </marker>
+        <marker id="ara" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2469ff" />
+        </marker>
+      </defs>
+
+      <!-- the five beats -->
+      <g font-family="ui-sans-serif, -apple-system, Helvetica, Arial" >
+        <!-- 1 find -->
+        <rect x="0" y="60" width="196" height="92" rx="11" fill="#fff" stroke="rgba(0,0,0,.10)" />
+        <text x="18" y="86" font-size="10.5" letter-spacing="1.2" fill="#999">01 · AGENT</text>
+        <text x="18" y="110" font-size="15.5" font-weight="600" fill="#0a0a0a">Finds a tool</text>
+        <text x="18" y="132" font-size="12.5" fill="#5a5a5a">searches the catalog</text>
+
+        <!-- 2 402 -->
+        <rect x="246" y="60" width="196" height="92" rx="11" fill="#fff" stroke="rgba(255,85,0,.35)" />
+        <text x="264" y="86" font-size="10.5" letter-spacing="1.2" fill="#f50">02 · SERVER</text>
+        <text x="264" y="110" font-size="15.5" font-weight="600" fill="#0a0a0a">HTTP 402</text>
+        <text x="264" y="132" font-size="12.5" fill="#5a5a5a">a price and a payee</text>
+
+        <!-- 3 sign -->
+        <rect x="492" y="60" width="196" height="92" rx="11" fill="rgba(36,105,255,.09)" stroke="rgba(36,105,255,.35)" />
+        <text x="510" y="86" font-size="10.5" letter-spacing="1.2" fill="#2469ff">03 · AGENT</text>
+        <text x="510" y="110" font-size="15.5" font-weight="600" fill="#0a0a0a">Signs USDC</text>
+        <text x="510" y="132" font-size="12.5" fill="#5a5a5a">off-chain, costs nothing</text>
+
+        <!-- 4 settle -->
+        <rect x="738" y="60" width="196" height="92" rx="11" fill="#fff" stroke="rgba(36,105,255,.35)" />
+        <text x="756" y="86" font-size="10.5" letter-spacing="1.2" fill="#2469ff">04 · FACILITATOR</text>
+        <text x="756" y="110" font-size="15.5" font-weight="600" fill="#0a0a0a">Settles it</text>
+        <text x="756" y="132" font-size="12.5" fill="#5a5a5a">and pays the fee</text>
+
+        <!-- 5 deliver -->
+        <rect x="984" y="60" width="196" height="92" rx="11" fill="#fff" stroke="rgba(0,139,55,.32)" />
+        <text x="1002" y="86" font-size="10.5" letter-spacing="1.2" fill="#008b37">05 · SERVER</text>
+        <text x="1002" y="110" font-size="15.5" font-weight="600" fill="#0a0a0a">Delivers</text>
+        <text x="1002" y="132" font-size="12.5" fill="#5a5a5a">result + receipt</text>
+
+        <!-- connectors -->
+        <line x1="200" y1="106" x2="240" y2="106" stroke="#bdbdbd" stroke-width="1.5" marker-end="url(#ar)" />
+        <line x1="446" y1="106" x2="486" y2="106" stroke="#2469ff" stroke-width="1.5" marker-end="url(#ara)" />
+        <line x1="692" y1="106" x2="732" y2="106" stroke="#2469ff" stroke-width="1.5" marker-end="url(#ara)" />
+        <line x1="938" y1="106" x2="978" y2="106" stroke="#2469ff" stroke-width="1.5" marker-end="url(#ara)" />
+
+        <!-- what actually goes on chain -->
+        <rect x="492" y="196" width="442" height="80" rx="11" fill="#fff" stroke="rgba(0,0,0,.10)" stroke-dasharray="4 3" />
+        <text x="512" y="220" font-size="10.5" letter-spacing="1.2" fill="#999">ONE ATOMIC GROUP, BOTH OR NEITHER</text>
+        <rect x="512" y="230" width="196" height="30" rx="7" fill="#fafafa" stroke="rgba(0,0,0,.10)" />
+        <text x="524" y="250" font-size="12" fill="#5a5a5a">[0] facilitator fee</text>
+        <rect x="718" y="230" width="196" height="30" rx="7" fill="rgba(36,105,255,.09)" stroke="rgba(36,105,255,.35)" />
+        <text x="730" y="250" font-size="12" fill="#0a0a0a">[1] buyer's USDC · fee 0</text>
+        <line x1="590" y1="156" x2="590" y2="192" stroke="#bdbdbd" stroke-width="1.5" stroke-dasharray="3 3" />
+        <line x1="836" y1="156" x2="836" y2="192" stroke="#bdbdbd" stroke-width="1.5" stroke-dasharray="3 3" />
+      </g>
+    </svg>
   </div>
-  <div class="grow">
-    <div class="cols" style="gap:22px;">
-      <div>
-        <h3>What the buyer needs</h3>
-        <p class="body small">A wallet with USDC, and a budget. That is the whole onboarding: no account, no key, no card, and no ALGO, because the facilitator pays the network fee.</p>
-      </div>
-      <div>
-        <h3>What the seller needs</h3>
-        <p class="body small">An address that can receive USDC. Payment lands directly and we never custody it. The seller runs no facilitator and holds no key of ours.</p>
-      </div>
-    </div>
-  </div>
+  <p class="body" style="margin:20px 0 0;">
+    The buyer needs USDC and a budget. <strong>No account, no card, and no
+    ALGO</strong>, because the facilitator pays the network fee.
+  </p>
   <div class="foot"><span>05</span><span>the loop</span></div>
 </section>
 
@@ -396,100 +377,61 @@
 <section class="slide">
   <p class="eyebrow">why now</p>
   <h2>The rails got standardised. Nobody opened the shops.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols3" style="margin-bottom:14px;">
-    <div class="card" style="padding:12px 14px;">
+  <div class="rule"></div>
+  <div class="cols3" style="margin-bottom:30px;">
+    <div class="card">
       <p class="n">first</p>
       <h3>Agents became buyers</h3>
-      <p>Tool use went from a demo to the default. Agents now run long tasks needing data they were never provisioned for.</p>
+      <p>Tool use went from a demo to the default.</p>
     </div>
-    <div class="card" style="padding:12px 14px;">
+    <div class="card">
       <p class="n">then</p>
       <h3>x402 standardised payment</h3>
-      <p>HTTP 402 finally means something. A machine can be quoted a price and pay it inside the same request.</p>
+      <p>A machine can be quoted a price and pay it in the same request.</p>
     </div>
-    <div class="card accent" style="padding:12px 14px;">
+    <div class="card accent">
       <p class="n">the gap</p>
       <h3>Almost nothing is for sale</h3>
-      <p>The protocol defines how to pay. It does not create anything to buy. The supply side is where the market is.</p>
+      <p>The protocol says how to pay. It does not create anything to buy.</p>
     </div>
   </div>
-  <p class="body" style="margin:0 0 12px;">
-    Payment rails without merchants are just plumbing.
-    <strong>We are building the merchants, and the place they sell.</strong>
-  </p>
   <div class="grow">
-    <h3 style="margin-bottom:8px;">The gap, in the facilitator's own numbers</h3>
-    <div class="metrics" style="margin-bottom:10px;">
+    <div class="metrics">
       <div><p class="n">settlements / 24h</p><p class="v">12,601</p><p class="s">x402 payments already clearing</p></div>
       <div><p class="n">merchants</p><p class="v" style="color:var(--warn)">127</p><p class="s">everyone selling, worldwide</p></div>
-      <div><p class="n">on Algorand</p><p class="v">99%</p><p class="s">12,511 of 12,524 listed resources</p></div>
-      <div><p class="n">facilitators</p><p class="v">1</p><p class="s">GoPlausible, the one we settle through</p></div>
+      <div><p class="n">on Algorand</p><p class="v">99%</p><p class="s">of all listed resources</p></div>
+      <div><p class="n">facilitators</p><p class="v">1</p><p class="s">the one we settle through</p></div>
     </div>
-    <p class="body small" style="margin-top:9px;">
-      From <code>facilitator.goplausible.xyz/discovery/all</code>, 17 Aug 2026.
-      Twelve thousand payments a day against 127 sellers is not a demand problem.
-      <strong>It is a supply problem, almost entirely on Algorand.</strong>
-    </p>
   </div>
+  <p class="body small" style="margin:18px 0 0;">
+    From the facilitator's own registry, 17 Aug 2026. Twelve thousand payments a
+    day against 127 sellers is not a demand problem.
+    <strong>It is a supply problem, almost entirely on Algorand.</strong>
+  </p>
   <div class="foot"><span>06</span><span>timing</span></div>
 </section>
 
-<!-- 7 · see it work -->
+<!-- 7 · the demo -->
 <section class="slide">
   <p class="eyebrow">the demo</p>
   <h2>One sentence in. Four paid tools out. Four cents.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols" style="gap:22px;margin-bottom:10px;">
-    <div>
-      <h3 style="margin-bottom:8px;">What a user types</h3>
-      <pre style="font-size:12.5px;line-height:1.6;">"Get the live ALGO price, scrape
- algorand.co/blog, summarize it,
- and attest the summary."
-
-<span class="c">budget: $0.10</span></pre>
-      <p class="body small" style="margin-top:10px;">
-        It stops the moment the budget cannot cover the next call. That is the
-        point: <strong>the budget is the leash, not a person</strong>.
-      </p>
-    </div>
-    <div>
-      <h3 style="margin-bottom:8px;">What actually happened</h3>
-      <pre style="font-size:11.5px;line-height:1.62;"><span class="c">run ok: true   spent $0.037   left $0.063</span>
-
-<span class="g">✓</span> algo-market-data   $0.002  <span class="c">K3NVOG7AGNC3…</span>
-<span class="g">✓</span> page-scraper       $0.005  <span class="c">GMLZAZZQFMWV…</span>
-<span class="g">✓</span> text-summarizer    $0.010  <span class="c">D6TUZOEVJSCY…</span>
-<span class="g">✓</span> rwa-attestor       $0.020  <span class="c">HI4JXJ66QDIX…</span>
-
-<span class="c">four settlements on Algorand testnet,
-each one a real USDC transfer</span></pre>
-      <p class="body small" style="margin-top:10px;">
-        Live at <strong>agentifyos.xyz/agent</strong>, with the full wire trace.
-      </p>
+  <div class="rule"></div>
+  <div class="grow" style="display:flex;min-height:0;">
+    <div class="shot crop" style="flex:1 1 auto;min-height:0;">
+      <img src="assets/agent-trace.jpg" alt="The agent demo: four tools settled, with the x402 wire log showing the 402, the signature and the settlement" />
     </div>
   </div>
-  <div class="grow">
-    <h3 style="margin-bottom:8px;">
-      The same purchase, from three places, none of them privileged
-    </h3>
-    <div class="cols3" style="gap:14px;">
-      <div class="card" style="padding:12px 14px;">
-        <p class="n">in the browser</p>
-        <h3>The agent demo</h3>
-        <p>Type a task, watch it buy. No wallet needed: a shared testnet account under a daily cap.</p>
-      </div>
-      <div class="card" style="padding:12px 14px;">
-        <p class="n">in a terminal</p>
-        <h3>The CLI</h3>
-        <p><code>agentify call &lt;slug&gt;</code>. Its own key and budget, over the same public endpoint.</p>
-      </div>
-      <div class="card" style="padding:12px 14px;">
-        <p class="n">in an assistant</p>
-        <h3>The MCP server</h3>
-        <p>Wire into Claude or Cursor and the assistant buys tools itself, under a spend cap you set.</p>
-      </div>
-    </div>
+  <div class="cols" style="margin-top:18px;gap:32px;">
+    <p class="body small" style="margin:0;">
+      The agent plans the task, picks four listings, and pays for each as it goes.
+      It stops when the budget cannot cover the next call.
+      <strong>The budget is the leash, not a person.</strong>
+    </p>
+    <p class="body small" style="margin:0;">
+      Every step is on the wire: the 402 with its price, the two-transaction group
+      it signs, and the settlement. Live at
+      <a href="https://agentifyos.xyz/agent"><strong>agentifyos.xyz/agent</strong></a>.
+    </p>
   </div>
   <div class="foot"><span>07</span><span>live demo</span></div>
 </section>
@@ -497,50 +439,29 @@ each one a real USDC transfer</span></pre>
 <!-- 8 · proof -->
 <section class="slide">
   <p class="eyebrow">proof</p>
-  <h2>Real money moved, and you do not have to trust us.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="metrics" style="margin-bottom:16px;">
-    <div><p class="n">settlements</p><p class="v">6</p><p class="s">17 Aug 2026, Algorand testnet</p></div>
-    <div><p class="n">value moved</p><p class="v">$0.041</p><p class="s">USDC, ASA 10458941</p></div>
-    <div><p class="n">buyer's fee</p><p class="v" style="color:var(--success)">$0.00</p><p class="s">the facilitator sponsors it</p></div>
-    <div><p class="n">buyer's ALGO</p><p class="v" style="color:var(--success)">unchanged</p><p class="s">3.9990 before and after</p></div>
-  </div>
-  <div class="cols grow" style="gap:20px;">
+  <h2>Real money moved. Here is the block explorer.</h2>
+  <div class="rule"></div>
+  <div class="cols grow" style="grid-template-columns:1.35fr 1fr;gap:30px;align-items:start;">
     <div>
-      <h3 style="margin-bottom:8px;">Anyone can check it</h3>
-      <pre style="font-size:11px;">curl testnet-idx.algonode.cloud/v2/transactions/KD6GTL…
-
-type      <span class="k">axfer</span>
-sender    SMT5SJCV322C…  <span class="c">the agent</span>
-receiver  W7TYQROP7L6O…  <span class="c">the seller</span>
-amount    <span class="g">2000</span> micro of ASA <span class="g">10458941</span>
-fee       <span class="g">0</span>              <span class="c">the buyer pays nothing</span>
-note      <span class="k">x402-payment-v2</span>-1786944043684</pre>
-      <p class="body small" style="margin-top:10px;">
-        That is the public Algorand indexer: not our database, and not an explorer
-        we picked.
+      <div class="shot">
+        <img src="assets/lora-tx.jpg" alt="Lora block explorer showing the settled transaction: asset transfer, fee 0, USDC 10458941, amount 0.002" />
+      </div>
+      <p class="caption">
+        <a href="https://lora.algokit.io/testnet/transaction/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA">lora.algokit.io/testnet/transaction/KD6GTL4RAXJK…</a>
       </p>
     </div>
     <div>
-      <h3 style="margin-bottom:8px;">Why the buyer pays no fee</h3>
-      <p class="body small" style="margin-bottom:10px;">
-        The payment ships as an atomic group of two. Either both execute or
-        neither does.
-      </p>
-      <div class="grouprow">
-        <span class="idx">[0]</span>
-        <span>Facilitator's fee transaction</span>
-        <span class="who mono">fee 2000</span>
+      <div class="card ok" style="margin-bottom:16px;">
+        <p class="n">the line that matters</p>
+        <p class="stat">Fee 0</p>
+        <p>The buyer's transfer pays nothing. GoPlausible's fee transaction sits in the same atomic group.</p>
       </div>
-      <div class="grouprow you">
-        <span class="idx">[1]</span>
-        <span><strong>Buyer's USDC transfer</strong></span>
-        <span class="who mono">fee 0</span>
-      </div>
-      <p class="body small" style="margin-top:10px;">
-        So an agent needs one asset, not two. It never has to go and acquire a
-        native token before it can spend a dollar.
-      </p>
+      <ul style="font-size:13.5px;">
+        <li><strong>6 settlements</strong> on Algorand testnet, all listed in <code>docs/PROOF.md</code></li>
+        <li><strong>Buyer's USDC</strong> 20.0000 → 19.9590</li>
+        <li><strong>Buyer's ALGO</strong> 3.9990 → 3.9990, unchanged</li>
+        <li>Also readable straight off the <strong>public indexer</strong>, not just an explorer we chose</li>
+      </ul>
     </div>
   </div>
   <div class="foot"><span>08</span><span>verifiable settlement</span></div>
@@ -550,85 +471,85 @@ note      <span class="k">x402-payment-v2</span>-1786944043684</pre>
 <section class="slide">
   <p class="eyebrow">why algorand</p>
   <h2>The chain choice is a product decision.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
+  <div class="rule"></div>
   <div class="grow">
-    <table style="font-size:13.5px;">
-      <thead><tr><th style="width:25%">What a micro-payment market needs</th><th style="width:32%">What Algorand gives</th><th>Why a user feels it</th></tr></thead>
+    <table>
+      <thead><tr><th style="width:30%">What this market needs</th><th style="width:32%">What Algorand gives</th><th>Why a user feels it</th></tr></thead>
       <tbody>
         <tr>
           <td>Prices that are actually prices</td>
-          <td>USDC as a native asset, 6 decimals</td>
-          <td>$0.005 is 5000 units, exactly. No oracle, no conversion table, no drift between the quote and the charge.</td>
+          <td>USDC as a native asset</td>
+          <td>$0.005 is 5000 units, exactly. No oracle, no drift.</td>
         </tr>
         <tr>
           <td>Buyers who hold one thing</td>
-          <td>Fee sponsorship inside an atomic group</td>
-          <td>An agent funds a USDC balance and nothing else. Onboarding drops from two assets to one.</td>
+          <td>Fee sponsorship in an atomic group</td>
+          <td>Onboarding drops from two assets to one.</td>
         </tr>
         <tr>
           <td>Fees that do not eat the sale</td>
-          <td>A flat fee near zero, paid by the facilitator</td>
-          <td>A $0.002 call is viable. Where fees are variable and high, it simply is not.</td>
+          <td>A flat fee near zero</td>
+          <td>A $0.002 call is viable. Elsewhere it is not.</td>
         </tr>
         <tr>
           <td>Settlement inside a request</td>
-          <td>Instant finality, seconds not minutes</td>
-          <td>Payment fits inside the HTTP round trip, so an agent is never left holding a pending call.</td>
+          <td>Instant finality</td>
+          <td>Payment fits inside the HTTP round trip.</td>
         </tr>
         <tr>
           <td>Someone else to run the plumbing</td>
-          <td>GoPlausible's hosted facilitator</td>
-          <td>No key, no signup, and no infrastructure of ours in the settlement path. One less thing to trust and to operate.</td>
+          <td>A hosted facilitator</td>
+          <td>No key and no infrastructure of ours in the settlement path.</td>
         </tr>
       </tbody>
     </table>
   </div>
-  <p class="body" style="margin:14px 0 6px;">
-    The previous version of this project settled on another chain, and the port
-    took a chain abstraction rather than a rewrite. <strong>Everything above is
-    why Algorand is now the default</strong>, not merely the newest option.
+  <p class="body" style="margin:22px 0 0;">
+    This project settled on another chain before, and the port took a chain
+    abstraction rather than a rewrite. <strong>The reasons above are why Algorand
+    is now the default.</strong>
   </p>
   <div class="foot"><span>09</span><span>positioning</span></div>
 </section>
 
-<!-- 10 · business model -->
+<!-- 10 · business -->
 <section class="slide">
   <p class="eyebrow">the business</p>
-  <h2>We take a cut of what settles. Nothing settles, we earn nothing.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols3" style="margin-bottom:16px;">
+  <h2>We take a cut of what settles.</h2>
+  <div class="rule"></div>
+  <div class="cols3" style="margin-bottom:30px;">
     <div class="card ok">
       <p class="n">revenue model</p>
       <p class="stat">80 / 20</p>
-      <p>The publisher keeps 80% of every call. The marketplace takes 20%, and only on money that actually moved.</p>
+      <p>The publisher keeps 80%. We take 20%, and only on money that moved.</p>
     </div>
     <div class="card">
       <p class="n">no floor</p>
       <p class="stat small">$0.002 works</p>
-      <p>No minimum charge, no monthly fee and no invoice, because settlement costs the seller nothing to receive.</p>
+      <p>No minimum, no monthly fee, no invoice.</p>
     </div>
     <div class="card">
       <p class="n">aligned</p>
       <p class="stat small">Usage, not seats</p>
-      <p>We are paid when a listing is genuinely useful. A listing nobody calls costs us nothing and earns us nothing.</p>
+      <p>A listing nobody calls costs us nothing and earns us nothing.</p>
     </div>
   </div>
   <div class="grow">
-    <div class="cols" style="gap:22px;">
+    <div class="cols">
       <div>
-        <h3>Why it compounds</h3>
-        <ul style="font-size:13.5px;">
-          <li><strong>Reputation cannot be moved.</strong> A listing's standing comes from settled payments, so it cannot be carried to a competitor or bought.</li>
-          <li><strong>Discovery is the moat.</strong> Agents shop where the catalog is. Publishers list where the agents are.</li>
-          <li><strong>Every call is a signal.</strong> What agents actually pay for, and at what price, is demand data nobody else holds.</li>
+        <h3 style="margin-bottom:12px;">Why it compounds</h3>
+        <ul>
+          <li><strong>Reputation cannot be moved</strong> to a competitor, because it is made of settled payments.</li>
+          <li><strong>Discovery is the moat.</strong> Agents shop where the catalog is.</li>
+          <li><strong>Every call is demand data</strong> nobody else holds.</li>
         </ul>
       </div>
       <div>
-        <h3>Where it honestly stands</h3>
-        <ul style="font-size:13.5px;">
-          <li>The 80/20 split is <strong>modelled and shown in the dashboard</strong>. On-chain, payment currently goes to a single treasury.</li>
-          <li>Per-seller payouts are the next step, and need each seller to opt into USDC once.</li>
-          <li>Testnet only, by design. No real money has changed hands.</li>
+        <h3 style="margin-bottom:12px;">Where it honestly stands</h3>
+        <ul>
+          <li>The split is <strong>modelled in the dashboard</strong>. On-chain, payment goes to one treasury today.</li>
+          <li>Per-seller payouts are next, and need each seller to opt in once.</li>
+          <li>Testnet only, by design.</li>
         </ul>
       </div>
     </div>
@@ -640,86 +561,84 @@ note      <span class="k">x402-payment-v2</span>-1786944043684</pre>
 <section class="slide">
   <p class="eyebrow">under the hood</p>
   <h2>We built the market. The protocol is the protocol.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols grow" style="gap:22px;">
+  <div class="rule"></div>
+  <div class="cols grow" style="gap:32px;">
     <div>
-      <h3 style="margin-bottom:8px;">Who does what</h3>
-      <table style="font-size:13px;">
+      <h3 style="margin-bottom:12px;">Who does what</h3>
+      <table style="font-size:13.5px;">
         <tbody>
-          <tr><td>Decide the price and the payee</td><td style="color:var(--accent)"><strong>us</strong></td></tr>
+          <tr><td>Price and payee</td><td style="color:var(--accent)"><strong>us</strong></td></tr>
           <tr><td>Build and emit the 402</td><td class="mono" style="font-size:11.5px;">x402ResourceServer</td></tr>
-          <tr><td>Build and sign the payment group</td><td class="mono" style="font-size:11.5px;">ExactAvmScheme</td></tr>
-          <tr><td>Verify and settle</td><td>the facilitator</td></tr>
-          <tr><td>Sponsor the fee</td><td>the facilitator</td></tr>
-          <tr><td>Catalog, discovery, reputation, receipts</td><td style="color:var(--accent)"><strong>us</strong></td></tr>
+          <tr><td>Sign the payment group</td><td class="mono" style="font-size:11.5px;">ExactAvmScheme</td></tr>
+          <tr><td>Verify, settle, sponsor the fee</td><td>the facilitator</td></tr>
+          <tr><td>Catalog, discovery, reputation</td><td style="color:var(--accent)"><strong>us</strong></td></tr>
         </tbody>
       </table>
-      <p class="body small" style="margin-top:10px;">
+      <p class="body small" style="margin:16px 0 0;">
         None of the payment protocol is reimplemented. All of it is
         <code>@x402-avm</code>, and all four packages sit on an executed path.
       </p>
     </div>
     <div>
-      <h3 style="margin-bottom:8px;">Built to outlive one chain</h3>
-      <p class="body small" style="margin-bottom:10px;">
-        There is a chain picker in the nav. One click re-quotes every price in a
-        different asset, swaps the network, changes which signer moves the money,
-        and repoints every receipt link.
+      <h3 style="margin-bottom:12px;">Built to outlive one chain</h3>
+      <p class="body small" style="margin:0 0 14px;">
+        A chain picker in the nav. One click re-quotes every price, swaps the
+        network and asset, and changes which signer moves the money.
       </p>
-      <pre style="font-size:11px;"><span class="c"># same URL, same product, different rails</span>
-algorand → <span class="g">2000</span>       micro USDC   <span class="c">ASA 10458941</span>
-casper   → <span class="g">86580087</span>   motes WCSPR  <span class="c">CEP-18</span></pre>
-      <div class="cols4" style="margin-top:14px;gap:10px;">
-        <div class="card" style="padding:10px 12px;"><p class="n">typecheck</p><p class="stat small">clean</p></div>
-        <div class="card" style="padding:10px 12px;"><p class="n">self-test</p><p class="stat small">9 / 9</p></div>
-        <div class="card" style="padding:10px 12px;"><p class="n">end to end</p><p class="stat small">5 / 5</p></div>
-        <div class="card" style="padding:10px 12px;"><p class="n">chains</p><p class="stat small">2</p></div>
+      <pre style="font-size:11.5px;"><span class="c"># same URL, same product</span>
+algorand → <span class="g">2000</span>       micro USDC
+casper   → <span class="g">86580087</span>   motes WCSPR</pre>
+      <div class="cols4" style="margin-top:18px;gap:12px;">
+        <div class="card" style="padding:12px 14px;"><p class="n">typecheck</p><p class="stat small">clean</p></div>
+        <div class="card" style="padding:12px 14px;"><p class="n">self-test</p><p class="stat small">9/9</p></div>
+        <div class="card" style="padding:12px 14px;"><p class="n">e2e</p><p class="stat small">5/5</p></div>
+        <div class="card" style="padding:12px 14px;"><p class="n">chains</p><p class="stat small">2</p></div>
       </div>
     </div>
   </div>
   <div class="foot"><span>11</span><span>engineering</span></div>
 </section>
 
-<!-- 12 · shipped, next, close -->
+<!-- 12 · close -->
 <section class="slide">
   <div class="brandbar"></div>
-  <p class="eyebrow">where it stands</p>
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+    <img class="logo sm" src="assets/logo.png" alt="" />
+    <p class="eyebrow" style="margin:0;">where it stands</p>
+  </div>
   <h2>Shipped, and honest about the rest.</h2>
-  <div class="rule" style="margin-top:14px;"></div>
-  <div class="cols" style="gap:22px;margin-bottom:16px;">
+  <div class="rule"></div>
+  <div class="cols" style="margin-bottom:30px;">
     <div>
-      <h3 style="margin-bottom:8px;">Working today</h3>
-      <ul style="font-size:13.5px;">
-        <li>A catalog of 14 paid listings, discoverable by humans and machines</li>
-        <li>Real x402 settlement in USDC on Algorand testnet, 6 transactions on chain</li>
-        <li>An agent that plans a task, buys four tools and respects a budget</li>
-        <li>CLI and MCP server, both ordinary x402 clients with their own keys</li>
-        <li>A chain picker that moves the whole product between two chains</li>
+      <h3 style="margin-bottom:12px;">Working today</h3>
+      <ul>
+        <li>14 paid listings, discoverable by humans and machines</li>
+        <li>Real x402 settlement in USDC on Algorand testnet</li>
+        <li>An agent that plans, buys four tools and respects a budget</li>
+        <li>CLI and MCP server, both ordinary x402 clients</li>
       </ul>
     </div>
     <div>
-      <h3 style="margin-bottom:8px;">Next, in order</h3>
-      <ul style="font-size:13.5px;">
-        <li><strong>Wallet checkout</strong> with Pera and Defly, so a buyer pays from their own wallet instead of a demo account</li>
-        <li><strong>Per-seller payouts</strong>, turning the 80/20 split from modelled into settled</li>
-        <li><strong>Mainnet</strong>, which is the same code path and one environment variable</li>
-        <li><strong>Cross-market discovery</strong>, so agents shop every x402 seller, not only ours</li>
+      <h3 style="margin-bottom:12px;">Next, in order</h3>
+      <ul>
+        <li><strong>Wallet checkout</strong> with Pera and Defly</li>
+        <li><strong>Per-seller payouts</strong>, so the split settles on-chain</li>
+        <li><strong>Mainnet</strong>, one environment variable away</li>
+        <li><strong>Cross-market discovery</strong>, every x402 seller</li>
       </ul>
     </div>
   </div>
   <div class="grow links">
-    <div class="cols" style="gap:22px;">
+    <div class="cols">
       <div>
         <div><span class="lbl">Prototype</span><a href="https://agentifyos.xyz">agentifyos.xyz</a></div>
         <div><span class="lbl">Agent demo</span><a href="https://agentifyos.xyz/agent">agentifyos.xyz/agent</a></div>
-        <div><span class="lbl">Paid endpoint</span><a href="https://agentifyos.xyz/api/t/algo-market-data">/api/t/algo-market-data</a></div>
         <div><span class="lbl">Repo</span><a href="https://github.com/0xWeb3Research/agentifyos">github.com/0xWeb3Research/agentifyos</a></div>
       </div>
       <div>
         <div><span class="lbl">A settled payment</span><a href="https://lora.algokit.io/testnet/transaction/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA">KD6GTL4RAXJK… on Lora</a></div>
         <div><span class="lbl">Facilitator</span><a href="https://facilitator.goplausible.xyz">facilitator.goplausible.xyz</a></div>
-        <div><span class="lbl">Runbook</span>docs/ALGORAND.md</div>
-        <div><span class="lbl">Evidence</span>docs/PROOF.md</div>
+        <div><span class="lbl">Paid endpoint</span><a href="https://agentifyos.xyz/api/t/algo-market-data">/api/t/algo-market-data</a></div>
       </div>
     </div>
   </div>

@@ -65,15 +65,32 @@ agent, the CLI and the MCP server all pay.
 
 ## Rebuilding the deck
 
-`deck.html` is the source and is self-contained. Rendering needs the Playwright
-that the repo already installs for its e2e suite:
+`deck.html` is the source. Its images live in `assets/` and are referenced
+relatively, so the file stays readable; the renderer loads from `file://` and
+embeds them into the PDF. Rendering uses the Playwright the repo already
+installs for its e2e suite.
 
 ```bash
 cd apps/web && npx playwright install chromium   # once, if not already present
 cd ../../submit && node build-deck.mjs
 ```
 
-Writes `deck.pdf` here: 12 slides, landscape, well under the form's 10 MB limit.
+Writes `deck.pdf` here: 12 slides, landscape, 0.76 MB, well under the form's
+10 MB limit, with every link clickable.
+
+### Refreshing the screenshots
+
+The deck shows the real product and a real settled transaction, so the images go
+stale when either changes. With the dev server running:
+
+```bash
+node capture-shots.mjs && node build-deck.mjs
+```
+
+That recaptures the catalog, the agent demo mid-run, and the transaction on
+Lora, then rebuilds. The agent capture settles real payments, which is the
+point: the slide shows a run that actually happened. Set `PROOF_TX` to feature a
+different transaction.
 
 ***
 

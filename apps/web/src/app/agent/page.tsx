@@ -43,7 +43,7 @@ const TOOL_TASKS: Record<string, string> = {
   "page-scraper": "Scrape https://algorand.co/blog and summarize it.",
   "text-summarizer": "Scrape https://algorand.co/blog, then summarize the article.",
   "rwa-attestor":
-    "Get the live CSPR price and notarize the result as an on-chain attestation.",
+    "Get the live ALGO price and notarize the result as an on-chain attestation.",
 };
 
 // Per-kind reveal cadence: the on-chain settle gets the longest beat.
@@ -540,7 +540,10 @@ function summarizeResult(slug: string, result: unknown): string {
     const p = Number(r.priceUsd);
     const c = Number(r.change24hPct);
     if (!Number.isNaN(p)) {
-      return `CSPR $${p.toFixed(4)} · ${c >= 0 ? "+" : ""}${c.toFixed(2)}% 24h`;
+      const sym = typeof (result as { symbol?: unknown }).symbol === "string"
+        ? (result as { symbol: string }).symbol
+        : "ALGO";
+      return `${sym} $${p.toFixed(4)} · ${c >= 0 ? "+" : ""}${c.toFixed(2)}% 24h`;
     }
   }
   if (slug === "page-scraper") {
