@@ -34,9 +34,10 @@ playwright-report/
 # Rust contract build output
 contracts/*/target/
 
-# Submission workspace — deck, screenshots, form answers, judge notes. Local
-# only: it is scratch for a hackathon form, not part of the product.
-submit/
+# Submission workspace: deck, form answers, evaluator notes. Tracked, because
+# an evaluator reading the repo should be able to find the same claims the
+# submission makes and check them against the code. It holds no secrets, only
+# the names of the variables a deployment needs.
 
 # Agent transcripts dumped into the repo root while pairing.
 claude-session.jsonl
