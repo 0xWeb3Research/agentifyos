@@ -90,6 +90,57 @@ indexer, including the two-transaction group and the buyer's fee of zero.
 
 ***
 
+## Nightpass: the privacy layer, on Midnight
+
+Paying in public is a disclosure. Every settlement above lands on a public
+ledger, so the **sequence** of tools an agent buys is readable by anyone. For a
+real operator that sequence is the strategy: which data a fund reads minutes
+before it trades, which checks a bank runs and therefore which it skips. That is
+why serious agents still run on pre-provisioned enterprise keys rather than open
+markets.
+
+[**Nightpass**](docs/MIDNIGHT.md) closes that gap with a Compact contract on
+**Midnight Preview**. An agent proves in zero knowledge that it holds a paid pass
+for a tool, without revealing which agent it is, what else it holds, or how far
+through its quota it is.
+
+| | |
+|---|---|
+| Network | Midnight Preview |
+| Contract | [`a2658904b3df6b57…`](https://explorer.midnight.network/preview/contract/a2658904b3df6b5751637f041b7c72ec5ed62172c19372149c8ec6f1d1a85707) |
+| Deploy tx | `00cc663dd1a1e5ed8ded75342117608262fab11fdc70b627c37672a3c7b13505a6` |
+| Compiler | Compact 0.31.1, language 0.23.0, runtime 0.16.0 |
+| Circuits | `registerTool` · `setToolActive` · `issuePass` · `redeemCall` · `attestUsage` |
+
+**What stays public** so the market is auditable: a tool exists at a price, and
+how many calls it has genuinely served. **What stays private**: which agent holds
+which pass, which agent made any given call, whether two calls came from the same
+agent, and how much quota is left.
+
+The property that makes it work: a call's nullifier is
+`hash(passCommitment, callIndex)`, and `callIndex` is a private witness. Two
+calls drawn from the *same* pass therefore produce unrelated nullifiers. An
+observer counts anonymous calls and never recovers a pattern, which is the thing
+actually worth hiding.
+
+Privacy that cannot be lifted is useless to a regulated operator, so
+`attestUsage` lets an agent prove a complete and **exact** usage history to one
+named auditor, while the public learns only that some attestation exists.
+
+```bash
+pnpm nightpass:test      # the privacy properties, as adversarial tests
+pnpm nightpass:proof     # local proof server (Docker, :6300)
+pnpm nightpass:deploy    # deploy to Midnight preview
+pnpm nightpass:demo      # publish, buy a pass, spend it, attest, verify
+```
+
+Browse it at `/shielded`, which reads live contract state off Midnight's public
+indexer with no wallet at all. Select **Midnight preview** in the nav switcher to
+reveal it. Full write-up, including the revocation tradeoff we deliberately
+accepted: [docs/MIDNIGHT.md](docs/MIDNIGHT.md).
+
+***
+
 ## Quick start
 
 ```bash
@@ -131,6 +182,7 @@ pnpm test:e2e                # Playwright suite
 | MCP server | Claude / Cursor | `pnpm mcp`: lets an assistant buy tools itself |
 | Paid endpoint | agents | `/api/t/[slug]`: real HTTP 402 → pay → result |
 | Discovery | agents | `/api/discovery/*` · `/api/mcp` · `/llms.txt` |
+| Shielded access | agents | `/shielded`: live Nightpass state on Midnight |
 
 The CLI, the MCP server, and even the on-site agent demo are **ordinary x402
 clients**: their own keys, paying over the same public endpoint as anyone else,
@@ -198,6 +250,12 @@ apps/web
     algorand/*         keygen · balance · optin · fund · pay · preflight
     casper/*           keygen · balance · wrap · transfer · pay · sign-test
 contracts/tool-registry  our Casper smart contract (Rust)
+midnight
+  contract/src/nightpass.compact   the Compact contract, five circuits
+  contract/src/witnesses.ts        private state, never leaves the machine
+  contract/src/test/               the privacy properties, adversarially
+  cli/src/                         headless deploy and demo, no browser wallet
+  deployment.json                  the deployed address, per network
 docs/                  the documents above
 ```
 
