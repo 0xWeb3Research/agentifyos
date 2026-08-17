@@ -97,8 +97,17 @@ microALGO with note `x402-fee-payer`, and the buyer's USDC transfer with a fee o
 **0**. Across all six settlements the buyer's USDC went 20.0000 → 19.9590 while
 its ALGO stayed at 3.9990. The gasless claim is measured, not asserted.
 
-To reproduce from a clean checkout, `docs/ALGORAND.md` is the ten-minute runbook
-and the last step is one command, `pnpm algo:demo`.
+Two further settlements went through **the deployed domain**, not a dev server,
+thousands of rounds apart: [`5L67OPDLGB7H…`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA)
+and [`VUML2MX5KRZJ…`](https://lora.algokit.io/testnet/transaction/VUML2MX5KRZJREHAZUQDH2FLTKWULHRBQ6HSXTZ7IAABSPSAYLVA).
+You can produce one yourself against production with:
+
+```bash
+cd apps/web && pnpm algo:pay --base https://agentifyos.xyz
+```
+
+To reproduce from a clean checkout instead, `docs/ALGORAND.md` is the ten-minute
+runbook and the last step is one command, `pnpm algo:demo`.
 
 ### One thing we do not claim
 

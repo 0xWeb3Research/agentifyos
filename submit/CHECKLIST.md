@@ -7,17 +7,21 @@ because that is what has to work.
 
 ## 1. They open the prototype link
 
-- [ ] **Deploy so <https://agentifyos.xyz> serves the Algorand build.** This is
-      the last real blocker. Set on the host:
+- [x] **Deployed.** <https://agentifyos.xyz> serves the Algorand build. Host env:
       `CHAIN=algorand`, `MODE=real`, `ALGO_TREASURY_MNEMONIC`,
       `ALGO_AGENT_MNEMONIC`, `ALGO_TREASURY_ADDRESS`, `ALGO_AGENT_ADDRESS`,
       `NEXT_PUBLIC_CHAIN`, `NEXT_PUBLIC_ALGO_TREASURY_ADDRESS`,
       `NEXT_PUBLIC_ALGO_AGENT_ADDRESS`, `AUTH_SECRET`,
       `ALLOW_UNAUTH_SPEND=1`, `DEMO_DAILY_USD_CAP=2`
-- [ ] Confirm the deployed endpoint quotes Algorand and not Casper:
+- [x] The deployed endpoint quotes Algorand, and the old Casper slug 404s:
       `curl -i https://agentifyos.xyz/api/t/algo-market-data`
-- [ ] Confirm the deployed agent demo settles: run it once and click the receipt
-      through to Lora
+- [x] **Production settles real payments.** Two on-chain, thousands of rounds
+      apart, in `docs/PROOF.md` under "Settled against production"
+- [ ] **Confirm the deployed agent demo returns 200.** It answered 500 until the
+      fix in `22b9842`: the runner derived its own address from `req.url`, which
+      behind the proxy is the internal bind address. A production build with that
+      fix returns 200 locally; re-check the deployment once it has rebuilt.
+      This is the one button a judge is most likely to press
 - [x] `next build` clean, every page 200 on both chains
 - [x] The public demo works without a wallet: `ALLOW_UNAUTH_SPEND=1` under a
       daily cap, because there is no Algorand sign-in yet and a 401 would be a

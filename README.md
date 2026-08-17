@@ -77,6 +77,10 @@ ALGO is Algorand's locked minimum balance, which never moves.
 Rows 3 to 6 are one agent run: a single task, four tools discovered and paid for
 in sequence against a $0.10 budget.
 
+Two more settled against the **deployed domain** rather than a dev server, so
+production takes real payments: [`5L67OPDLGB7H…`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA)
+and [`VUML2MX5KRZJ…`](https://lora.algokit.io/testnet/transaction/VUML2MX5KRZJREHAZUQDH2FLTKWULHRBQ6HSXTZ7IAABSPSAYLVA).
+
 Across all six, the buyer's USDC went 20.0000 → 19.9590 and its **ALGO did not
 move at all**, 3.9990 before and after. That is the gasless claim measured rather
 than asserted.

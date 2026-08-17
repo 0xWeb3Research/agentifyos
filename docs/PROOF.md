@@ -114,12 +114,15 @@ marker, written by the SDK and not by us.
   `receipts are available for Algorand, Base and Solana MainNet settlements
   only`, so on testnet there is nothing to link. `facilitatorReceipt()` returns
   null rather than handing out a URL that errors.
-- **Not yet visible in the public Bazaar.** Listing happens when a resource is
-  paid for at a publicly reachable URL. The six above settled against
-  `http://localhost:8402`, and the production settlement below settled against
-  `https://agentifyos.xyz`, which is the condition for listing. It had not
-  appeared at <https://facilitator.goplausible.xyz/discovery/resources> when this
-  was written, and we would rather say that than claim a listing nobody can see.
+- **Not visible in the public Bazaar, and paying from the public domain turned
+  out not to be enough.** We expected that a settlement against a publicly
+  reachable URL would list the resource. The production payments below did
+  exactly that, and we still do not appear: not in
+  <https://facilitator.goplausible.xyz/discovery/resources>, not in
+  `/discovery/merchants`, and `/discovery/merchants/<our payout address>` answers
+  `Merchant not found`. Listing may require mainnet, the Global Challenge tag, or
+  simply more time. The earlier prediction is corrected rather than quietly
+  dropped: we tested it, and it did not happen.
 
 ### Settled against production
 
@@ -129,11 +132,14 @@ The same handshake against the deployed domain, with no privileged shortcut:
 cd apps/web && pnpm algo:pay --base https://agentifyos.xyz
 ```
 
-| Tool | Price | Transaction |
-|---|---|---|
-| algo-market-data | $0.002 | [`5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA) |
+| Tool | Price | Round | Transaction |
+|---|---|---|---|
+| algo-market-data | $0.002 | 66398524 | [`5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA) |
+| algo-market-data | $0.002 | 66407526 | [`VUML2MX5KRZJREHAZUQDH2FLTKWULHRBQ6HSXTZ7IAABSPSAYLVA`](https://lora.algokit.io/testnet/transaction/VUML2MX5KRZJREHAZUQDH2FLTKWULHRBQ6HSXTZ7IAABSPSAYLVA) |
 
-The agent's ALGO balance was unchanged across it, same as every row above.
+Two of them, thousands of rounds apart, so this is the deployment's normal
+behaviour rather than one lucky run. Both carry a buyer fee of 0, and the
+agent's ALGO balance was unchanged across both, same as every row above.
 
 ### Setup transactions
 

@@ -36,7 +36,8 @@ through it. **We built the supply side.**
 | | |
 |---|---|
 | Listings in the catalog | 14, from 6 publishers, $0.002 to $0.020 |
-| Settlements on Algorand testnet | 6, all verifiable on Lora |
+| Settlements on Algorand testnet | 8, all verifiable on Lora |
+| Settled against the live domain | 2, so production takes real payments |
 | What the buyer paid in network fees | **$0.00**, the facilitator sponsors it |
 | Revenue model | 80/20, on money that actually moved |
 

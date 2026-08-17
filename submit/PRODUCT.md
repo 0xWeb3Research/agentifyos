@@ -181,6 +181,11 @@ in sequence against a $0.10 budget.
 | 5 | text-summarizer | $0.010 | [`D6TUZOEVJSCY…`](https://lora.algokit.io/testnet/transaction/D6TUZOEVJSCYAU5U3ROQ4OFHTEPZ3ZDINTQNLEBGPDAUHAZJW3UA) |
 | 6 | rwa-attestor | $0.020 | [`HI4JXJ66QDIX…`](https://lora.algokit.io/testnet/transaction/HI4JXJ66QDIXOKM2NEBTGGLUNVLYJYCHWICZS2YOE7XLFCC7GMBQ) |
 
+Two more settled against **<https://agentifyos.xyz>** itself rather than a dev
+server, thousands of rounds apart, so the deployment takes real payments as a
+matter of course: [`5L67OPDLGB7H…`](https://lora.algokit.io/testnet/transaction/5L67OPDLGB7HMD6VOSQNEPYUL6Z5PVRVEPM37BXXYBQBIV7D5SMA)
+and [`VUML2MX5KRZJ…`](https://lora.algokit.io/testnet/transaction/VUML2MX5KRZJREHAZUQDH2FLTKWULHRBQ6HSXTZ7IAABSPSAYLVA).
+
 **The buyer paid no network fee, and we can show it rather than say it.** Across
 all six settlements the buyer's USDC went 20.0000 → 19.9590 while its ALGO stayed
 at 3.9990, unchanged to the microALGO.

@@ -18,9 +18,11 @@ Open these tabs in this order, so you never search for anything live:
 3. `https://lora.algokit.io/testnet/transaction/KD6GTL4RAXJKJWEYSKUTBOX5ZWSMFXI6WENDZ4ZFMVXS4KEIEAGA`
 4. A terminal, in `apps/web`, with nothing running
 
-Have a fallback: if the live run fails, the six settled transactions in
+Have a fallback: if the live run fails, the settled transactions in
 `docs/PROOF.md` are already on chain and prove the same thing. Say so plainly
-rather than retrying into silence.
+rather than retrying into silence. **Check the agent demo works on the deployed
+site before you present**, and if it does not, run it locally against
+`http://localhost:8402` and show the two production settlements on Lora instead.
 
 ***
 
