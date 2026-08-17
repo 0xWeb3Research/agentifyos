@@ -1,0 +1,24 @@
+{
+  "include": ["src/**/*.ts"],
+  "compilerOptions": {
+    "rootDir": "src",
+    // The CLI runs straight from source under Node's type stripping, which does
+    // not rewrite import extensions. So imports name the .ts file they mean.
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "lib": ["ESNext"],
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strict": true,
+    "isolatedModules": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  }
+}

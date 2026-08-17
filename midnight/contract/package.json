@@ -1,0 +1,32 @@
+{
+  "name": "@nightpass/contract",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "compact": "compact compile src/nightpass.compact src/managed/nightpass",
+    "build": "rm -rf dist && tsc --project tsconfig.build.json && cp -Rf ./src/managed ./dist/managed && cp ./src/nightpass.compact ./dist",
+    "test": "vitest run",
+    "test:compile": "npm run compact && vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-runtime": "0.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "5.9.3",
+    "vitest": "^3.0.0"
+  }
+}

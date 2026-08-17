@@ -1,0 +1,9 @@
+{
+  "preview": {
+    "network": "preview",
+    "contractAddress": "a2658904b3df6b5751637f041b7c72ec5ed62172c19372149c8ec6f1d1a85707",
+    "deployTxId": "00cc663dd1a1e5ed8ded75342117608262fab11fdc70b627c37672a3c7b13505a6",
+    "deployedAt": "2026-08-17T20:06:38.347Z",
+    "compiler": "0.31.1"
+  }
+}

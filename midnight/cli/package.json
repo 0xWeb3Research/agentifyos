@@ -1,0 +1,42 @@
+{
+  "name": "@nightpass/cli",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "proof-server": "docker compose -f proof-server.yml up -d && docker compose -f proof-server.yml logs -f",
+    "proof-server:up": "docker compose -f proof-server.yml up -d",
+    "proof-server:down": "docker compose -f proof-server.yml down",
+    "deploy": "node --no-warnings --experimental-strip-types src/main.ts deploy",
+    "demo": "node --no-warnings --experimental-strip-types src/main.ts demo",
+    "state": "node --no-warnings --experimental-strip-types src/main.ts state",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-js": "2.5.1",
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/ledger-v8": "8.1.0",
+    "@midnight-ntwrk/midnight-js": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/wallet-sdk-address-format": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "^3.0.0",
+    "@midnight-ntwrk/wallet-sdk-shielded": "^2.0.0",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "^2.0.0",
+    "@nightpass/contract": "workspace:*",
+    "dotenv": "^17.4.2",
+    "pino": "^9.5.0",
+    "rxjs": "^7.8.1",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "5.9.3"
+  }
+}

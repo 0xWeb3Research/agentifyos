@@ -49,3 +49,12 @@ codex-session.jsonl
 # public. Address findings in code; don't publish the map.
 .deepsec/
 security-findings/
+
+# Midnight / Nightpass
+midnight/*/.nightpass/
+midnight/*/logs/
+midnight/contract/src/managed/
+midnight/contract/dist/
+midnight/.env
+# The encrypted private state store: pass secrets and nonces live here.
+midnight/*/midnight-level-db/

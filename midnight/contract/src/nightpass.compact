@@ -1,0 +1,224 @@
+// Nightpass: shielded entitlement for autonomous agent tool calls.
+//
+// The problem this solves. Machine payment standards let an agent buy an API
+// call without a human, but they settle on public ledgers, so the sequence of
+// tools an agent buys is published. For a real operator that sequence IS the
+// strategy: which data sources a fund reads, which checks a bank runs, which
+// models a competitor calls. So serious agents still run on pre-provisioned
+// enterprise keys instead of open markets.
+//
+// Nightpass splits the two halves apart:
+//
+//   public and verifiable    a tool exists, at a price, and has served N calls
+//   private and provable     which agent called, how often, and what else it holds
+//
+// An agent pays once and receives a pass. Every later call proves in zero
+// knowledge that a pass exists in the issued set and that this particular call
+// has not been spent, disclosing only an opaque nullifier.
+//
+// The unlinkability property that makes this worth building: a call's nullifier
+// is hash(commitment, callIndex), so two calls drawn from the SAME pass produce
+// unrelated nullifiers. An observer counts anonymous calls. It never recovers a
+// pattern, which is the thing actually worth hiding.
+
+pragma language_version >= 0.23.0;
+
+import CompactStandardLibrary;
+
+// ---------------------------------------------------------------------------
+// Public state. Everything here is deliberately readable by anyone: this is the
+// half of the system that has to be publicly checkable for the market to work.
+// ---------------------------------------------------------------------------
+
+export struct ToolRecord {
+  // Who published this tool, as a commitment rather than a key. The publisher
+  // stays pseudonymous but can still prove it is them, in ZK, to toggle the
+  // listing. Nobody learns which publisher operates which tools.
+  publisherCommitment: Bytes<32>;
+  // Price of one pass, in the smallest unit the marketplace quotes in.
+  priceAtomic: Uint<64>;
+  // How many calls a single pass entitles the holder to.
+  quota: Uint<64>;
+  active: Boolean;
+}
+
+// The catalog. Public so agents can shop without asking permission.
+export ledger tools: Map<Bytes<32>, ToolRecord>;
+
+// Every issued pass, as a commitment. Public, and deliberately useless on its
+// own: a commitment reveals nothing about who holds it, and it is never
+// referenced again when the pass is used.
+export ledger passCommitments: HistoricMerkleTree<20, Bytes<32>>;
+
+// One nullifier per redeemed call. This is what stops a pass being spent twice
+// while still refusing to say which pass was spent.
+export ledger spentCalls: Set<Bytes<32>>;
+
+// Public reputation, derived from calls that actually happened. Faking it costs
+// a real pass, which costs real money.
+export ledger callsServed: Map<Bytes<32>, Uint<64>>;
+
+export ledger passesIssued: Counter;
+
+// Selective disclosure receipts. An agent that must answer to an auditor can
+// publish a tag here; only a party already holding the agent's pass secret can
+// interpret it. The public learns that some attestation exists, nothing more.
+export ledger attestations: Map<Bytes<32>, Bytes<32>>;
+
+// ---------------------------------------------------------------------------
+// Private inputs. These never leave the agent's machine; the proof server turns
+// them into a proof that the statements below hold.
+// ---------------------------------------------------------------------------
+
+// The agent's (or publisher's) long-lived secret.
+witness secretKey(): Bytes<32>;
+
+// Per-pass randomness, so one agent holding two passes for the same tool
+// produces two unrelated commitments. Keyed by tool so an agent can hold a
+// wallet of passes at once, which is the normal case for a working agent.
+witness passNonce(toolId: Bytes<32>): Bytes<32>;
+
+// Which call of the quota this is. Private: the public transcript must not
+// reveal how far through its allowance an agent is.
+witness callIndex(toolId: Bytes<32>): Uint<64>;
+
+// A Merkle path proving the pass commitment is in the issued set. The provider
+// rebuilds this from public state, so it costs the agent nothing to store.
+witness passPath(commitment: Bytes<32>): MerkleTreePath<20, Bytes<32>>;
+
+// ---------------------------------------------------------------------------
+// Derivations. Kept as named circuits so the off-chain TypeScript can mirror
+// them exactly and an auditor can recompute them by hand.
+// ---------------------------------------------------------------------------
+
+export pure circuit publisherCommitment(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "nightpass:publisher:"), sk]);
+}
+
+export pure circuit passCommitment(toolId: Bytes<32>, sk: Bytes<32>, nonce: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([pad(32, "nightpass:pass:"), toolId, sk, nonce]);
+}
+
+// Binding the index into the hash is what makes two calls from one pass
+// unlinkable. Drop the index and every call would share a nullifier; hash the
+// pass alone and the pass itself would become the identifier.
+export pure circuit callNullifier(commitment: Bytes<32>, index: Uint<64>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>(
+    [pad(32, "nightpass:call:"), commitment, index as Field as Bytes<32>]
+  );
+}
+
+export pure circuit auditTag(auditorId: Bytes<32>, commitment: Bytes<32>, callsClaimed: Uint<64>): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>(
+    [pad(32, "nightpass:audit:"), auditorId, commitment, callsClaimed as Field as Bytes<32>]
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Circuits
+// ---------------------------------------------------------------------------
+
+// List a tool. Price and quota are public, because an agent has to be able to
+// shop on them. The publisher is not.
+export circuit registerTool(toolId: Bytes<32>, priceAtomic: Uint<64>, quota: Uint<64>): [] {
+  assert(!tools.member(disclose(toolId)), "nightpass: tool already registered");
+  assert(quota > 0, "nightpass: quota must be positive");
+
+  tools.insert(disclose(toolId), ToolRecord {
+    publisherCommitment: disclose(publisherCommitment(secretKey())),
+    priceAtomic: disclose(priceAtomic),
+    quota: disclose(quota),
+    active: true
+  });
+  callsServed.insert(disclose(toolId), 0);
+}
+
+// Prove you are the publisher without saying who you are, then toggle listing.
+export circuit setToolActive(toolId: Bytes<32>, active: Boolean): [] {
+  assert(tools.member(disclose(toolId)), "nightpass: unknown tool");
+  const tool = tools.lookup(disclose(toolId));
+  assert(
+    tool.publisherCommitment == publisherCommitment(secretKey()),
+    "nightpass: caller is not the publisher of this tool"
+  );
+
+  tools.insert(disclose(toolId), ToolRecord {
+    publisherCommitment: tool.publisherCommitment,
+    priceAtomic: tool.priceAtomic,
+    quota: tool.quota,
+    active: disclose(active)
+  });
+}
+
+// Buy a pass. The commitment goes public; the secret and nonce behind it do
+// not, so the record says "a pass was issued", never "this agent bought one".
+export circuit issuePass(toolId: Bytes<32>): Bytes<32> {
+  assert(tools.member(disclose(toolId)), "nightpass: unknown tool");
+  const tool = tools.lookup(disclose(toolId));
+  assert(tool.active, "nightpass: tool is not accepting new passes");
+
+  const commitment = disclose(passCommitment(toolId, secretKey(), passNonce(toolId)));
+  passCommitments.insert(commitment);
+  passesIssued.increment(1);
+  return commitment;
+}
+
+// The heart of it. Spend one call against a pass, proving all of the following
+// without naming the pass:
+//   1. a commitment for THIS tool sits in the issued set
+//   2. the caller knows the secret and nonce behind that commitment
+//   3. this call is within the quota that was paid for
+//   4. this exact call has not been spent before
+export circuit redeemCall(toolId: Bytes<32>): Bytes<32> {
+  assert(tools.member(disclose(toolId)), "nightpass: unknown tool");
+  const tool = tools.lookup(disclose(toolId));
+  assert(tool.active, "nightpass: tool is not active");
+
+  // (1) and (2). Recomputing the commitment from the witnesses is what proves
+  // knowledge; a stolen commitment alone gets an attacker nowhere.
+  const commitment = passCommitment(toolId, secretKey(), passNonce(toolId));
+  const path = passPath(commitment);
+  assert(
+    passCommitments.checkRoot(merkleTreePathRoot<20, Bytes<32>>(disclose(path))),
+    "nightpass: pass is not in the issued set"
+  );
+  assert(path.leaf == commitment, "nightpass: merkle path is for a different pass");
+
+  // (3). The bound is public, the position within it is not.
+  const index = callIndex(toolId);
+  assert(index < tool.quota, "nightpass: pass quota exhausted");
+
+  // (4). The only thing this whole circuit puts on the public record.
+  const nullifier = disclose(callNullifier(commitment, index));
+  assert(!spentCalls.member(nullifier), "nightpass: this call was already redeemed");
+  spentCalls.insert(nullifier);
+
+  const served = callsServed.lookup(disclose(toolId));
+  callsServed.insert(disclose(toolId), served + 1 as Uint<64>);
+
+  return nullifier;
+}
+
+// Selective disclosure. An operator under a reporting obligation publishes a
+// tag committing to "under auditor A, I made N calls to tool T". Anyone can see
+// an attestation was made. Only a party the agent has handed its pass secret to
+// can recompute the tag, and from there re-derive every call nullifier and
+// check each one against `spentCalls`. Privacy by default, proof on demand.
+export circuit attestUsage(toolId: Bytes<32>, auditorId: Bytes<32>, callsClaimed: Uint<64>): Bytes<32> {
+  assert(tools.member(disclose(toolId)), "nightpass: unknown tool");
+  const tool = tools.lookup(disclose(toolId));
+  assert(callsClaimed <= tool.quota, "nightpass: cannot attest to more calls than the quota");
+
+  const commitment = passCommitment(toolId, secretKey(), passNonce(toolId));
+  const path = passPath(commitment);
+  assert(
+    passCommitments.checkRoot(merkleTreePathRoot<20, Bytes<32>>(disclose(path))),
+    "nightpass: pass is not in the issued set"
+  );
+  assert(path.leaf == commitment, "nightpass: merkle path is for a different pass");
+
+  const tag = disclose(auditTag(auditorId, commitment, callsClaimed));
+  assert(!attestations.member(tag), "nightpass: this attestation already exists");
+  attestations.insert(tag, disclose(auditorId));
+  return tag;
+}

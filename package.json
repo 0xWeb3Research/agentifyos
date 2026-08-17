@@ -15,7 +15,14 @@
     "db:down": "docker compose down",
     "db:push": "pnpm --filter @agentifyos/web db:push",
     "db:seed": "pnpm --filter @agentifyos/web db:seed",
-    "test:e2e": "pnpm --filter @agentifyos/web test:e2e"
+    "test:e2e": "pnpm --filter @agentifyos/web test:e2e",
+    "nightpass:compile": "pnpm --filter @nightpass/contract compact && pnpm --filter @nightpass/contract build",
+    "nightpass:test": "pnpm --filter @nightpass/contract test",
+    "nightpass:proof": "pnpm --filter @nightpass/cli proof-server:up",
+    "nightpass:proof:down": "pnpm --filter @nightpass/cli proof-server:down",
+    "nightpass:deploy": "pnpm --filter @nightpass/cli deploy",
+    "nightpass:demo": "pnpm --filter @nightpass/cli demo",
+    "nightpass:state": "pnpm --filter @nightpass/cli state"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -24,6 +31,9 @@
       "@prisma/engines",
       "esbuild",
       "sharp"
-    ]
+    ],
+    "overrides": {
+      "@midnight-ntwrk/onchain-runtime-v3": "3.0.0"
+    }
   }
 }
