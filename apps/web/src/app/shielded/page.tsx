@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Eyebrow, Button, Arrow, Chip } from "@/components/ui";
 import { explorerUrl, readNightpassState, type NightpassState } from "@/lib/nightpass";
-import { NightpassVerifier } from "@/components/nightpass-verifier";
+import { NightpassConsole } from "@/components/nightpass-console";
 
 export const metadata: Metadata = {
   title: "Nightpass — shielded tool access on Midnight",
@@ -294,13 +294,13 @@ export default async function ShieldedPage() {
           <h2 className="text-[22px] font-medium tracking-[-0.02em]">Check it yourself</h2>
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
-          Not a screenshot and not our word for it. Run the three checks below from
-          this page: read the contract off Midnight, recompute a tool id in your own
-          browser, and derive a pass to watch its calls stay unlinkable. Each step
-          says where it ran.
+          Not a screenshot and not our word for it. Buy a pass on the live network,
+          spend a call, then take the auditor&apos;s seat and confirm your own calls
+          against the chain. Each step says where it ran, and what it could not
+          learn about you.
         </p>
 
-        <NightpassVerifier />
+        <NightpassConsole />
 
         <p className="mt-10 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
           The privacy claims are enforced by the contract and asserted by its test

@@ -90,7 +90,9 @@ function Step({
   );
 }
 
-export function NightpassVerifier() {
+export type VerifierPrefill = { secretHex: string; nonceHex: string; slug: string; calls: number };
+
+export function NightpassVerifier({ prefill }: { prefill?: VerifierPrefill | null }) {
   const [state, setState] = useState<StateResponse | null>(null);
   const [stateErr, setStateErr] = useState<string | null>(null);
   const [loadingState, setLoadingState] = useState(false);
@@ -104,11 +106,24 @@ export function NightpassVerifier() {
   const [verify, setVerify] = useState<VerifyResponse | null>(null);
   const [verifyErr, setVerifyErr] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [adopted, setAdopted] = useState(false);
 
   useEffect(() => {
     setSecretHex(randomHex());
     setNonceHex(randomHex());
   }, []);
+
+  // A pass handed over from the live run above. Adopting it is what turns this
+  // from a demonstration into the visitor auditing their own calls.
+  useEffect(() => {
+    if (!prefill) return;
+    setSecretHex(prefill.secretHex);
+    setNonceHex(prefill.nonceHex);
+    setSlug(prefill.slug);
+    setCalls(Math.max(1, Math.min(5, prefill.calls)));
+    setVerify(null);
+    setAdopted(true);
+  }, [prefill]);
 
   const loadState = useCallback(async () => {
     setLoadingState(true);
@@ -220,11 +235,9 @@ export function NightpassVerifier() {
       {/* 3 ─────────────────────────────────────────────────────────────── */}
       <Step n="3" title="Derive a pass and watch it stay unlinkable" where="our server, then the chain">
         <p className="text-[13px] leading-relaxed text-fg-secondary">
-          These are throwaway values your browser generated, so the pass below was
-          never bought. Deriving needs Compact&apos;s hash, which runs on our
-          server, but whether a nullifier has been spent is answered by the chain.
-          Two things to look at: the nullifiers share nothing with each other, and
-          none of them is on chain, because nobody paid for this pass.
+          {adopted
+            ? "This is the pass you just bought above, and its secret is yours. Deriving needs Compact's hash, which runs on our server, but whether a nullifier has been spent is answered by the chain. The calls you spent should come back present, and the one after them absent: that is an auditor confirming an exact history."
+            : "These are throwaway values your browser generated, so the pass below was never bought. Deriving needs Compact's hash, which runs on our server, but whether a nullifier has been spent is answered by the chain. Two things to look at: the nullifiers share nothing with each other, and none of them is on chain, because nobody paid for this pass."}
         </p>
         <div className="mt-3 grid gap-2">
           <Row label="secret" value={short(secretHex, 16)} />
@@ -240,6 +253,7 @@ export function NightpassVerifier() {
               setSecretHex(randomHex());
               setNonceHex(randomHex());
               setVerify(null);
+              setAdopted(false);
             }}
             className={btn}
           >

@@ -72,7 +72,9 @@ export async function POST(req: Request) {
   // against a global daily allowance before doing any work. Signed-in callers
   // are accountable to an account and skip this.
   if (MODE === "real" && !auth.session) {
-    const demo = await reserveDemoSpend(budgetUsd);
+    // Metered against the chain actually settling, since the two wallets are
+    // funded separately and one running dry must not close the other down.
+    const demo = await reserveDemoSpend(budgetUsd, on === "casper" ? "casper" : "algorand");
     if (!demo.ok) {
       return NextResponse.json(
         {

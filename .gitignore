@@ -53,12 +53,17 @@ security-findings/
 # Midnight / Nightpass
 midnight/*/.nightpass/
 midnight/*/logs/
-# The generated decoder (152K) is committed: the deployed site needs it to read
-# public contract state, and it carries no secrets. The proving keys are 20M and
-# are regenerated with `pnpm nightpass:compile`.
-midnight/contract/src/managed/nightpass/keys/
-midnight/contract/src/managed/nightpass/zkir/
+# The generated contract artifacts are committed on purpose. The deployed site
+# proves circuits server-side for the live demo, which needs the prover keys
+# (20M) and the zkir, so a deploy has to be self-contained. None of it is
+# secret: the verifier keys are already public on-chain.
 midnight/contract/dist/
 midnight/.env
 # The encrypted private state store: pass secrets and nonces live here.
 midnight/*/midnight-level-db/
+
+# The global `keys/` rule above exists for private signing keys. Midnight's ZK
+# proving keys are not secret (their verifiers are already public on-chain) and
+# the deployed site needs them to prove circuits for the live demo, so this one
+# directory is exempt.
+!midnight/contract/src/managed/nightpass/keys/
