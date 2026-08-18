@@ -16,7 +16,7 @@ const LINKS = [
 export default function NotFound() {
   return (
     <main>
-      <Container className="grid items-center gap-14 pb-24 pt-20 lg:grid-cols-[1.05fr_0.95fr]">
+      <Container className="grid grid-cols-[minmax(0,1fr)] items-center gap-14 pb-24 pt-20 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
         <div className="animate-fade-up">
           <Eyebrow>404 · not found</Eyebrow>
           <h1 className="mt-4 max-w-[16ch] text-[40px] font-medium leading-[1.05] tracking-[-0.04em] sm:text-[52px]">
@@ -97,7 +97,7 @@ function Row({
   return (
     <div className="flex items-center gap-2.5 px-3.5 py-2.5">
       <span
-        className={`grid h-5 min-w-[34px] place-items-center rounded-[5px] font-mono text-[10px] font-medium text-surface ${
+        className={`grid h-5 min-w-[34px] shrink-0 place-items-center rounded-[5px] font-mono text-[10px] font-medium text-surface ${
           tone === "error" ? "bg-error" : "bg-muted"
         }`}
       >

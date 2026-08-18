@@ -82,7 +82,7 @@ export function ToolCard({
   );
 
   const className = clsx(
-    "group relative flex flex-col rounded-[var(--radius-card)] border bg-surface p-5",
+    "group relative flex min-w-0 flex-col rounded-[var(--radius-card)] border bg-surface p-5",
     "transition-[transform,border-color,box-shadow] duration-200 ease-[var(--ease-out)]",
     !preview && "hover:-translate-y-0.5 hover:border-border-hover hover:shadow-[var(--shadow-hover)]",
     "animate-fade-up",

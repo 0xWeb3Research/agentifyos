@@ -62,7 +62,7 @@ export function WireLog({
             <div className="flex items-center gap-2.5">
               <span
                 className={clsx(
-                  "grid h-5 min-w-[34px] place-items-center rounded-[5px] font-mono text-[10px] font-medium text-surface",
+                  "grid h-5 min-w-[34px] shrink-0 place-items-center rounded-[5px] font-mono text-[10px] font-medium text-surface",
                   KIND_COLOR[s.kind],
                 )}
               >
@@ -70,13 +70,13 @@ export function WireLog({
               </span>
               <span
                 className={clsx(
-                  "flex-1 truncate text-[13px]",
+                  "min-w-0 flex-1 truncate text-[13px]",
                   s.kind === "error" ? "text-error" : "text-fg",
                 )}
               >
                 {s.label}
               </span>
-              <span className="stat text-muted">+{s.atMs}ms</span>
+              <span className="stat shrink-0 text-muted">+{s.atMs}ms</span>
             </div>
             {!dense && s.detail != null && (
               <pre className="mt-1.5 max-h-40 overflow-auto rounded-[6px] bg-tint px-2.5 py-2 font-mono text-[11px] leading-relaxed text-fg-secondary">

@@ -275,7 +275,7 @@ export default function PublishPage() {
           {/* price */}
           <div className="rounded-[var(--radius-md)] border border-border p-4">
             <span className="label">price</span>
-            <div className="mt-3 grid grid-cols-[1fr_130px] gap-3">
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_110px] gap-3 sm:grid-cols-[minmax(0,1fr)_130px]">
               <div>
                 <span className="label">event</span>
                 <input
@@ -314,7 +314,7 @@ export default function PublishPage() {
             <span className="label">input schema</span>
             <div className="mt-3 space-y-2.5">
               {inputs.map((row, i) => (
-                <div key={i} className="grid grid-cols-[1fr_130px] gap-3">
+                <div key={i} className="grid grid-cols-[minmax(0,1fr)_110px] gap-3 sm:grid-cols-[minmax(0,1fr)_130px]">
                   <input
                     className={inputCls}
                     value={row.name}
@@ -337,7 +337,7 @@ export default function PublishPage() {
             </div>
 
             <span className="label mt-4 block">output</span>
-            <div className="mt-3 grid grid-cols-[1fr_130px] gap-3">
+            <div className="mt-3 grid grid-cols-[minmax(0,1fr)_110px] gap-3 sm:grid-cols-[minmax(0,1fr)_130px]">
               <input
                 className={inputCls}
                 value={output.name}

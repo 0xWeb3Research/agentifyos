@@ -67,7 +67,7 @@ export function CapabilityChip({ cap }: { cap: Capability }) {
 export function StatusPill({ status }: { status: ToolStatus }) {
   const verified = status === "verified";
   return (
-    <span className="label inline-flex items-center gap-1.5">
+    <span className="label inline-flex shrink-0 items-center gap-1.5">
       <span
         className={clsx(
           "inline-block h-1.5 w-1.5 rounded-full",

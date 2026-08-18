@@ -129,7 +129,7 @@ export default function RoadmapPage() {
           {PHASES.map((phase, pi) => (
             <section
               key={phase.label}
-              className="animate-fade-up grid gap-5 lg:grid-cols-[220px_1fr] lg:gap-8"
+              className="animate-fade-up grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-8"
               style={{ animationDelay: `${80 + pi * 70}ms` }}
             >
               <div className="lg:pt-1">

@@ -145,7 +145,7 @@ PAYMENT-RESPONSE: eyJzdWNjZXNzIjp0cnVlLC…
           real 402 handshake. A call from Claude produces a genuine on-chain settlement.
         </p>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <CodeBlock
             label="claude code"
             code={`claude mcp add-json agentifyos '{
@@ -277,7 +277,7 @@ receipt
               href={`${ALGO.facilitatorUrl}/discovery/resources`}
               target="_blank"
               rel="noreferrer"
-              className="font-mono text-[13px] text-accent hover:underline"
+              className="break-all font-mono text-[13px] text-accent hover:underline"
             >
               facilitator.goplausible.xyz/discovery/resources
             </a>
@@ -290,7 +290,7 @@ receipt
           <p className="mt-2.5 max-w-[64ch] text-[14px] leading-relaxed text-fg-secondary">
             A plain-text manifest of the whole marketplace, written for language models:
             every tool, its price, and how to call it. Point a crawler or an agent at{" "}
-            <a href="/llms.txt" className="font-mono text-[13px] text-accent hover:underline">
+            <a href="/llms.txt" className="break-all font-mono text-[13px] text-accent hover:underline">
               /llms.txt
             </a>{" "}
             and it can find its way in without reading a single HTML page.
