@@ -145,6 +145,7 @@ export function ensureStarted(): AgentStatus {
     void boot().catch((e) => {
       runtime.phase = "error";
       runtime.message = e instanceof Error ? e.message : "could not start the agent";
+      console.error("[nightpass] agent boot failed:", e);
     });
   }
   return status();
@@ -193,6 +194,18 @@ async function boot(): Promise<void> {
 
   setNetworkId(NETWORK);
   const ledger = ledgerMod;
+
+  const { Nightpass, witnesses, createNightpassPrivateState } = contractPkg;
+
+  runtime.message = "loading circuit assets";
+  const zkConfigProvider = new NodeZkConfigProvider(ZK_CONFIG_PATH);
+  const compiled = CompiledContract.make("nightpass", Nightpass.Contract).pipe(
+    CompiledContract.withWitnesses(witnesses),
+    CompiledContract.withCompiledFileAssets(ZK_CONFIG_PATH),
+  );
+  // Reading one prover key now turns "the keys did not ship" into a clear
+  // failure at boot rather than a confusing one on a visitor's first click.
+  await zkConfigProvider.getProverKey("issuePass" as never);
 
   const seed = process.env.NIGHTPASS_SEED!.trim();
   const hd = HDWallet.fromSeed(Buffer.from(seed, "hex"));
@@ -351,15 +364,19 @@ async function boot(): Promise<void> {
     submitTx: (tx: never) => wallet.submitTransaction(tx) as never,
   };
 
-  const zkConfigProvider = new NodeZkConfigProvider(ZK_CONFIG_PATH);
-
   // In-memory private state: each visitor's secret is written here immediately
   // before their call and never persisted to disk.
   const store = new Map<string, unknown>();
+  // The interface scopes every read and write by contract address, so keys are
+  // namespaced the same way rather than colliding across contracts.
+  let scope = "";
   const privateStateProvider = {
-    set: async (id: string, s: unknown) => void store.set(id, s),
-    get: async (id: string) => store.get(id) ?? null,
-    remove: async (id: string) => void store.delete(id),
+    setContractAddress: (address: string) => {
+      scope = address;
+    },
+    set: async (id: string, s: unknown) => void store.set(`${scope}:${id}`, s),
+    get: async (id: string) => store.get(`${scope}:${id}`) ?? null,
+    remove: async (id: string) => void store.delete(`${scope}:${id}`),
     clear: async () => void store.clear(),
     setSigningKey: async () => {},
     getSigningKey: async () => null,
@@ -375,12 +392,6 @@ async function boot(): Promise<void> {
     walletProvider,
     midnightProvider: walletProvider,
   };
-
-  const { Nightpass, witnesses, createNightpassPrivateState } = contractPkg;
-  const compiled = CompiledContract.make("nightpass", Nightpass.Contract).pipe(
-    CompiledContract.withWitnesses(witnesses),
-    CompiledContract.withCompiledFileAssets(ZK_CONFIG_PATH),
-  );
 
   await privateStateProvider.set(PRIVATE_STATE_ID, createNightpassPrivateState(new Uint8Array(randomBytes(32))));
   const contract = await findDeployedContract(providers as never, {
