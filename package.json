@@ -6,7 +6,7 @@
   "packageManager": "pnpm@10.24.0",
   "scripts": {
     "dev": "pnpm --filter @agentifyos/web dev",
-    "build": "pnpm --filter @agentifyos/web build",
+    "build": "pnpm --filter @nightpass/contract build && pnpm --filter @agentifyos/web build",
     "start": "pnpm --filter @agentifyos/web start",
     "lint": "pnpm --filter @agentifyos/web lint",
     "typecheck": "pnpm -r exec tsc --noEmit",
@@ -22,7 +22,8 @@
     "nightpass:proof:down": "pnpm --filter @nightpass/cli proof-server:down",
     "nightpass:deploy": "pnpm --filter @nightpass/cli deploy",
     "nightpass:demo": "pnpm --filter @nightpass/cli demo",
-    "nightpass:state": "pnpm --filter @nightpass/cli state"
+    "nightpass:state": "pnpm --filter @nightpass/cli state",
+    "audit:mobile": "node apps/web/scripts/mobile-audit.mjs"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

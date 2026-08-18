@@ -53,7 +53,11 @@ security-findings/
 # Midnight / Nightpass
 midnight/*/.nightpass/
 midnight/*/logs/
-midnight/contract/src/managed/
+# The generated decoder (152K) is committed: the deployed site needs it to read
+# public contract state, and it carries no secrets. The proving keys are 20M and
+# are regenerated with `pnpm nightpass:compile`.
+midnight/contract/src/managed/nightpass/keys/
+midnight/contract/src/managed/nightpass/zkir/
 midnight/contract/dist/
 midnight/.env
 # The encrypted private state store: pass secrets and nonces live here.

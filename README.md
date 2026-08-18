@@ -14,10 +14,12 @@ with **x402 on Algorand**: no API keys, no accounts, no human in the loop.
 [![x402](https://img.shields.io/badge/x402-exact%20scheme-2469ff?style=flat-square)](https://www.x402.org)
 [![asset](https://img.shields.io/badge/settled%20in-USDC-2775ca?style=flat-square)](https://lora.algokit.io/testnet/asset/10458941)
 [![facilitator](https://img.shields.io/badge/facilitator-GoPlausible-6f42c1?style=flat-square)](https://facilitator.goplausible.xyz)
+[![midnight](https://img.shields.io/badge/midnight-preview-1a1a2e?style=flat-square)](https://docs.midnight.network)
 
 [Live demo](https://agentifyos.xyz/agent) ·
 [Explainer](https://agentifyos.xyz/explain) ·
 [Algorand runbook](docs/ALGORAND.md) ·
+[Nightpass on Midnight](docs/MIDNIGHT.md) ·
 [Proof](docs/PROOF.md)
 
 </div>
@@ -135,9 +137,18 @@ pnpm nightpass:demo      # publish, buy a pass, spend it, attest, verify
 ```
 
 Browse it at `/shielded`, which reads live contract state off Midnight's public
-indexer with no wallet at all. Select **Midnight preview** in the nav switcher to
-reveal it. Full write-up, including the revocation tradeoff we deliberately
-accepted: [docs/MIDNIGHT.md](docs/MIDNIGHT.md).
+indexer with no wallet at all.
+
+**Midnight is a network you select, not a chain you settle on.** The nav switcher
+has two sections: *settle payments on* (Algorand, Casper) and *prove access on*
+(Midnight). Picking Midnight changes what the site says, reveals the shielded
+surface, and states plainly which chain is still moving the money underneath. It
+is deliberately not a `ChainId`: that type answers "which asset moves and who
+signs", and Nightpass moves no money, so folding it in would force every pricing
+and signing path to pretend it could settle in tNIGHT.
+
+Full write-up, including the revocation tradeoff we deliberately accepted:
+[docs/MIDNIGHT.md](docs/MIDNIGHT.md).
 
 ***
 
