@@ -5,7 +5,7 @@ import { WireLog } from "@/components/wire-log";
 import { ToolCard } from "@/components/tool-card";
 import { Arrow, Button, Container, Eyebrow, LogoTile } from "@/components/ui";
 import { getChain, getNetworkId } from "@/lib/chain-server";
-import type { ChainId, ChainMeta } from "@/lib/chain";
+import { networkMeta, type ChainMeta, type NetworkId } from "@/lib/chain";
 import { getToolsWithStats } from "@/lib/data";
 import { publishers } from "@/lib/seed";
 import { compact, pct, usd } from "@/lib/format";
@@ -30,19 +30,41 @@ const heroTrace = (chain: ChainMeta): WireStep[] => [
   { seq: 6, kind: "receipt", label: `receipt + ${chain.txLabel} → ${chain.explorerName}`, ok: true, atMs: 3_149 },
 ];
 
-// The demo film, per chain. Both are rendered from the same Remotion project in
-// video/ and uploaded to the same bucket; the route picks the object, this picks
-// what the page says about it. Lengths are the rendered durations, not estimates.
-const FILMS: Record<ChainId, { length: string; poster: string }> = {
-  algorand: { length: "03:26", poster: "/demo-poster-algorand.jpg" },
-  casper: { length: "03:28", poster: "/demo-poster-casper.jpg" },
+// The demo film, per network. All three are rendered from the same Remotion
+// project in video/ and uploaded to the same bucket; the route picks the object,
+// this picks what the page says about it. Lengths are the rendered durations,
+// not estimates.
+//
+// Keyed on NetworkId rather than ChainId because Midnight is a network a visitor
+// can pick but not a chain anything settles on, and it has its own film: the
+// settlement ones are about a payment landing, that one about a payment leaving
+// no trace of who made it.
+const FILMS: Record<NetworkId, { length: string; poster: string; headline: string }> = {
+  algorand: {
+    length: "03:26",
+    poster: "/demo-poster-algorand.jpg",
+    headline: "One agent. Four tools. Zero API keys.",
+  },
+  casper: {
+    length: "03:28",
+    poster: "/demo-poster-casper.jpg",
+    headline: "One agent. Four tools. Zero API keys.",
+  },
+  midnight: {
+    length: "03:22",
+    poster: "/demo-poster-midnight.jpg",
+    headline: "One agent. Three calls. No buyer on the record.",
+  },
 };
 
 export default async function Home() {
   const chain = await getChain();
   const network = await getNetworkId();
   const shielded = network === "midnight";
-  const film = FILMS[chain.id];
+  // The film follows the network the visitor picked; pricing and links still
+  // follow the settlement chain underneath it.
+  const net = networkMeta(network);
+  const film = FILMS[network];
   const tools = getToolsWithStats();
   const featured = tools.slice(0, 6);
   const totalCalls = tools.reduce((a, t) => a + t.stats.totalCalls, 0);
@@ -130,7 +152,7 @@ export default async function Home() {
             <div>
               <Eyebrow>watch it happen</Eyebrow>
               <h2 className="mt-3 text-[26px] font-medium tracking-[-0.03em]">
-                One agent. Four tools. Zero API keys.
+                {film.headline}
               </h2>
             </div>
             <span className="stat hidden text-muted sm:block">{film.length}</span>
@@ -141,24 +163,25 @@ export default async function Home() {
                 switch: without it the browser keeps playing the film it already
                 buffered, and the src is only a redirect either way. */}
             <video
-              key={chain.id}
+              key={network}
               controls
               playsInline
               preload="metadata"
               poster={film.poster}
-              src={`/api/demo-video?chain=${chain.id}`}
+              src={`/api/demo-video?chain=${network}`}
               className="block aspect-video w-full bg-surface"
             />
             <div className="pointer-events-none absolute right-2 top-2 sm:right-4 sm:top-4">
               <span className="label inline-flex items-center gap-1.5 rounded-[var(--radius-pill)] border border-success/25 bg-success-tint px-2.5 py-1 text-success backdrop-blur-md">
                 <span className="inline-block h-1.5 w-1.5 animate-pulse-dot rounded-full bg-success" />
-                recorded on {chain.networkLabel.toLowerCase()}
+                recorded on {net.networkLabel.toLowerCase()}
               </span>
             </div>
           </div>
           <p className="stat mt-3 text-muted">
-            a recorded run of the live demo on {chain.networkLabel.toLowerCase()} ·
-            every payment in it settled on-chain, and the current ones are in the{" "}
+            a recorded run of the live demo on {net.networkLabel.toLowerCase()} ·
+            everything in it is real and checkable, and the current settlements
+            are in the{" "}
             <Link href="/dashboard" className="text-accent hover:underline">
               dashboard
             </Link>

@@ -1,16 +1,18 @@
 import { createHmac, createHash } from "node:crypto";
 import { NextResponse } from "next/server";
-import { parseChainId, type ChainId } from "@/lib/chain";
-import { getChainId } from "@/lib/chain-server";
+import { parseNetworkId, type NetworkId } from "@/lib/chain";
+import { getNetworkId } from "@/lib/chain-server";
 
 // Streams the demo video from the project's Railway bucket. Buckets are
 // private, but bucket egress is free, so instead of proxying ~25 MB through
 // this service we mint a short-lived SigV4 presigned URL and 302 the browser
 // to the bucket, which serves Range requests itself.
 //
-// There is one film per settlement chain, rendered from the same source in
-// video/, so the run a visitor watches settles in the asset the rest of the page
-// is quoting. Switching chains switches the film.
+// There is one film per network, rendered from the same source in video/, so the
+// run a visitor watches matches the network they picked: the settlement films
+// show a payment landing in that chain's asset, and the Midnight one shows
+// Nightpass proving entitlement without disclosing a buyer. Switching switches
+// the film.
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -20,9 +22,10 @@ const KEY_ID = process.env.DEMO_BUCKET_KEY_ID || "";
 const SECRET = process.env.DEMO_BUCKET_SECRET || "";
 /** The pre-chain-picker film, and the fallback if a chain has no film uploaded. */
 const FALLBACK_OBJECT = process.env.DEMO_BUCKET_OBJECT || "agentifyos-demo.mp4";
-const OBJECTS: Record<ChainId, string> = {
+const OBJECTS: Record<NetworkId, string> = {
   algorand: process.env.DEMO_BUCKET_OBJECT_ALGORAND || FALLBACK_OBJECT,
   casper: process.env.DEMO_BUCKET_OBJECT_CASPER || FALLBACK_OBJECT,
+  midnight: process.env.DEMO_BUCKET_OBJECT_MIDNIGHT || FALLBACK_OBJECT,
 };
 const REGION = "auto";
 const EXPIRES = 3600;
@@ -71,12 +74,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "demo_video_not_configured" }, { status: 404 });
   }
   // The query param exists so the <video> element's src changes when a visitor
-  // switches chains, which is what makes the browser fetch the other film
+  // switches networks, which is what makes the browser fetch the other film
   // instead of reusing the one it already has. It is visitor-supplied, so it is
   // narrowed to a known id; anything else falls back to the request's cookie.
-  const asked = parseChainId(new URL(req.url).searchParams.get("chain"));
-  const chain = asked ?? (await getChainId());
-  return NextResponse.redirect(presign(OBJECTS[chain]), {
+  const asked = parseNetworkId(new URL(req.url).searchParams.get("chain"));
+  const network = asked ?? (await getNetworkId());
+  return NextResponse.redirect(presign(OBJECTS[network]), {
     status: 302,
     headers: { "Cache-Control": "no-store, private" },
   });
