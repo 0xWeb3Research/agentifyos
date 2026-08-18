@@ -22,8 +22,19 @@ import { randomBytes } from "node:crypto";
 import path from "node:path";
 import { readDeployment, type NightpassNetwork } from "./nightpass";
 
-const NETWORK: NightpassNetwork =
-  (process.env.NIGHTPASS_NETWORK as NightpassNetwork) === "preprod" ? "preprod" : "preview";
+/*
+ * Read through bracket access inside a function, never as a module-level
+ * `process.env.X`. The bundler substitutes the static form at build time, which
+ * freezes whatever the value was when the image was built: changing a variable
+ * afterwards then silently does nothing until the next rebuild. This shape
+ * keeps configuration a deploy-time concern rather than a build-time one.
+ */
+const env = (name: string): string | undefined => {
+  const v = process.env[name];
+  return v !== undefined && v.trim() !== "" ? v.trim() : undefined;
+};
+
+const NETWORK: NightpassNetwork = env("NIGHTPASS_NETWORK") === "preprod" ? "preprod" : "preview";
 
 const INDEXER = {
   preview: {
@@ -38,7 +49,7 @@ const INDEXER = {
   },
 }[NETWORK];
 
-const PROOF_SERVER = process.env.NIGHTPASS_PROOF_SERVER ?? "http://127.0.0.1:6300";
+const proofServerUrl = () => env("NIGHTPASS_PROOF_SERVER") ?? "http://127.0.0.1:6300";
 const ZK_CONFIG_PATH = path.resolve(
   process.cwd(),
   "..",
@@ -121,9 +132,9 @@ export function getVisitorPass(sessionId: string): VisitorPass | null {
 export function status(): AgentStatus {
   const deployment = readDeployment(NETWORK);
   return {
-    phase: process.env.NIGHTPASS_SEED ? runtime.phase : "unconfigured",
+    phase: env("NIGHTPASS_SEED") ? runtime.phase : "unconfigured",
     progress: runtime.progress,
-    message: process.env.NIGHTPASS_SEED
+    message: env("NIGHTPASS_SEED")
       ? runtime.message
       : "the demo wallet is not configured on this deployment",
     network: NETWORK,
@@ -137,7 +148,7 @@ export function status(): AgentStatus {
  * poll `status()` rather than waiting, because the first sync takes minutes.
  */
 export function ensureStarted(): AgentStatus {
-  if (!process.env.NIGHTPASS_SEED) return status();
+  if (!env("NIGHTPASS_SEED")) return status();
   if (runtime.startedAt === 0) {
     runtime.startedAt = Date.now();
     runtime.phase = "starting";
@@ -207,7 +218,7 @@ async function boot(): Promise<void> {
   // failure at boot rather than a confusing one on a visitor's first click.
   await zkConfigProvider.getProverKey("issuePass" as never);
 
-  const seed = process.env.NIGHTPASS_SEED!.trim();
+  const seed = env("NIGHTPASS_SEED")!;
   const hd = HDWallet.fromSeed(Buffer.from(seed, "hex"));
   if (hd.type !== "seedOk") throw new Error("NIGHTPASS_SEED is not a valid 32-byte hex seed");
   const derived = hd.hdWallet
@@ -227,7 +238,7 @@ async function boot(): Promise<void> {
     configuration: {
       networkId: getNetworkId(),
       indexerClientConnection: conn,
-      provingServerUrl: new URL(PROOF_SERVER),
+      provingServerUrl: new URL(proofServerUrl()),
       relayURL: new URL(INDEXER.node.replace(/^http/, "ws")),
       txHistoryStorage: new unshielded.InMemoryTransactionHistoryStorage(),
       costParameters: { additionalFeeOverhead: 300_000_000_000_000n, feeBlocksMargin: 5 },
@@ -388,7 +399,7 @@ async function boot(): Promise<void> {
     privateStateProvider,
     publicDataProvider: indexerPublicDataProvider(INDEXER.http, INDEXER.ws),
     zkConfigProvider,
-    proofProvider: httpClientProofProvider(PROOF_SERVER, zkConfigProvider),
+    proofProvider: httpClientProofProvider(proofServerUrl(), zkConfigProvider),
     walletProvider,
     midnightProvider: walletProvider,
   };
