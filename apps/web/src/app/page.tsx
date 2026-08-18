@@ -51,7 +51,7 @@ const FILMS: Record<NetworkId, { length: string; poster: string; headline: strin
     headline: "One agent. Four tools. Zero API keys.",
   },
   midnight: {
-    length: "03:22",
+    length: "03:37",
     poster: "/demo-poster-midnight.jpg",
     headline: "One agent. Three calls. No buyer on the record.",
   },
