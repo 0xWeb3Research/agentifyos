@@ -4,7 +4,7 @@ import { Marquee } from "@/components/marquee";
 import { WireLog } from "@/components/wire-log";
 import { ToolCard } from "@/components/tool-card";
 import { Arrow, Button, Container, Eyebrow, LogoTile } from "@/components/ui";
-import { getChain } from "@/lib/chain-server";
+import { getChain, getNetworkId } from "@/lib/chain-server";
 import type { ChainId, ChainMeta } from "@/lib/chain";
 import { getToolsWithStats } from "@/lib/data";
 import { publishers } from "@/lib/seed";
@@ -40,6 +40,8 @@ const FILMS: Record<ChainId, { length: string; poster: string }> = {
 
 export default async function Home() {
   const chain = await getChain();
+  const network = await getNetworkId();
+  const shielded = network === "midnight";
   const film = FILMS[chain.id];
   const tools = getToolsWithStats();
   const featured = tools.slice(0, 6);
@@ -49,7 +51,7 @@ export default async function Home() {
   return (
     <main>
         {/* ── hero ─────────────────────────────────────────────────────── */}
-        <Container className="grid items-center gap-12 pb-14 pt-16 lg:grid-cols-[1.05fr_0.95fr] lg:pt-24">
+        <Container className="grid grid-cols-[minmax(0,1fr)] items-center gap-12 pb-14 pt-16 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:pt-24">
           <div className="animate-fade-up">
             <Eyebrow>the machine economy needs a market</Eyebrow>
             <h1 className="mt-4 text-[32px] font-medium leading-[1.05] tracking-[-0.03em] sm:text-[44px] lg:text-[52px] sm:tracking-[-0.04em]">
@@ -58,9 +60,20 @@ export default async function Home() {
               AI agents shop for tools.
             </h1>
             <p className="mt-5 max-w-[38ch] text-[15px] leading-relaxed text-fg-secondary">
-              Developers publish a paid tool in 60 seconds. Autonomous agents
-              discover it, pay per call with x402 on {chain.name}. No API keys,
-              no accounts. Every settlement is the review.
+              {shielded ? (
+                <>
+                  Developers publish a paid tool in 60 seconds. Autonomous agents
+                  discover it and prove their right to call it on Midnight, in zero
+                  knowledge. Payment settles in {chain.symbol} on {chain.name}, and
+                  no observer learns which agent bought what.
+                </>
+              ) : (
+                <>
+                  Developers publish a paid tool in 60 seconds. Autonomous agents
+                  discover it, pay per call with x402 on {chain.name}. No API keys,
+                  no accounts. Every settlement is the review.
+                </>
+              )}
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <Button href="/agent" size="md">
@@ -179,7 +192,7 @@ export default async function Home() {
         {/* ── the payment is the review ────────────────────────────────── */}
         <Container className="py-16">
           <div className="rounded-[var(--radius-card)] border border-border bg-surface p-8 sm:p-12">
-            <div className="grid gap-8 lg:grid-cols-[1fr_0.8fr] lg:items-center">
+            <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)] lg:items-center">
               <div>
                 <Eyebrow>reputation, not reviews</Eyebrow>
                 <h2 className="mt-4 text-[28px] font-medium leading-tight tracking-[-0.03em]">

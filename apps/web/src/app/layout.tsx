@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Nav } from "@/components/nav";
+import { NetworkBanner } from "@/components/network-banner";
 import { Footer } from "@/components/footer";
 import { JsonLd } from "@/components/json-ld";
 import { SITE_URL, SITE_NAME, abs } from "@/lib/site";
@@ -123,6 +124,7 @@ export default async function RootLayout({
         <JsonLd data={siteGraph} />
         <ChainProvider id={chainId}>
           <Nav chainReady={chainReadiness()} network={network} />
+          <NetworkBanner />
           {children}
           <Footer />
         </ChainProvider>
