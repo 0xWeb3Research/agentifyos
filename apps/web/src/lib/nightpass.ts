@@ -174,3 +174,114 @@ export async function readNightpassState(
     return null;
   }
 }
+
+/* ── in-browser verification ───────────────────────────────────────────────
+ *
+ * What a visitor can check for themselves, and what they still have to take on
+ * trust, kept explicitly apart.
+ *
+ * Deriving a commitment or a nullifier means running Compact's persistentHash,
+ * which lives in the contract's generated code and is not reproducible with
+ * WebCrypto, so it happens here on the server. Membership is then decided by
+ * the chain's own state, not by us. The recomputation of tool ids is plain
+ * SHA-256 and is done in the visitor's browser, where it is genuinely
+ * trustless.
+ */
+
+export type NullifierCheck = {
+  callIndex: number;
+  nullifier: string;
+  onChain: boolean;
+};
+
+export type VerifyResult = {
+  contractAddress: string;
+  toolId: string;
+  commitment: string;
+  auditTag: string;
+  calls: NullifierCheck[];
+  /** A nullifier for a call index beyond those claimed. Must be absent. */
+  beyond: NullifierCheck;
+  spentCallsTotal: string;
+};
+
+const hexToBytes = (hex: string): Uint8Array => {
+  const clean = hex.replace(/^0x/, "").toLowerCase();
+  if (!/^[0-9a-f]*$/.test(clean) || clean.length !== 64) {
+    throw new Error("expected 32 bytes of hex (64 characters)");
+  }
+  return Uint8Array.from(Buffer.from(clean, "hex"));
+};
+
+/**
+ * Derives a pass's commitment and call nullifiers, then asks the live contract
+ * whether each one has been spent. The secret is supplied by the caller and is
+ * never stored: a visitor generates a throwaway value in their own browser.
+ */
+export async function verifyPass(input: {
+  network?: NightpassNetwork;
+  slug: string;
+  secretHex: string;
+  nonceHex: string;
+  calls: number;
+  auditor: string;
+}): Promise<VerifyResult | null> {
+  const network = input.network ?? "preview";
+  const deployment = readDeployment(network);
+  if (deployment === null) return null;
+
+  const secret = hexToBytes(input.secretHex);
+  const nonce = hexToBytes(input.nonceHex);
+  const calls = Math.max(0, Math.min(8, Math.floor(input.calls)));
+
+  const { ContractState } = await import("@midnight-ntwrk/midnight-js-protocol/compact-runtime");
+  const { setNetworkId } = await import("@midnight-ntwrk/midnight-js/network-id");
+  const { Nightpass } = await import("@nightpass/contract");
+  const { pureCircuits } = Nightpass;
+
+  const res = await fetch(INDEXERS[network], {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: CONTRACT_STATE_QUERY,
+      variables: { address: deployment.contractAddress },
+    }),
+    cache: "no-store",
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { data?: { contractAction?: { state?: string } | null } };
+  const stateHex = body.data?.contractAction?.state;
+  if (!stateHex) return null;
+
+  setNetworkId(network);
+  const ledger = Nightpass.ledger(
+    ContractState.deserialize(Uint8Array.from(Buffer.from(stateHex, "hex"))).data,
+  );
+
+  const toolId = new Uint8Array(createHash("sha256").update(input.slug).digest());
+  const commitment = pureCircuits.passCommitment(toolId, secret, nonce);
+  const auditorId = new Uint8Array(createHash("sha256").update(input.auditor).digest());
+
+  const check = (i: number): NullifierCheck => {
+    const n = pureCircuits.callNullifier(commitment, BigInt(i));
+    return { callIndex: i, nullifier: hex(n), onChain: ledger.spentCalls.member(n) };
+  };
+
+  return {
+    contractAddress: deployment.contractAddress,
+    toolId: hex(toolId),
+    commitment: hex(commitment),
+    auditTag: hex(pureCircuits.auditTag(auditorId, commitment, BigInt(calls))),
+    calls: Array.from({ length: calls }, (_, i) => check(i)),
+    beyond: check(calls),
+    spentCallsTotal: ledger.spentCalls.size().toString(),
+  };
+}
+
+/** The on-chain tool ids, so a browser can recompute and compare them. */
+export async function toolIdsOnChain(
+  network: NightpassNetwork = "preview",
+): Promise<{ toolId: string; slug: string | null }[]> {
+  const state = await readNightpassState(network);
+  return state === null ? [] : state.tools.map((t) => ({ toolId: t.toolId, slug: t.slug }));
+}

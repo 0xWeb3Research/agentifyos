@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container, Eyebrow, Button, Arrow, Chip } from "@/components/ui";
 import { explorerUrl, readNightpassState, type NightpassState } from "@/lib/nightpass";
+import { NightpassVerifier } from "@/components/nightpass-verifier";
 
 export const metadata: Metadata = {
   title: "Nightpass — shielded tool access on Midnight",
@@ -293,8 +294,17 @@ export default async function ShieldedPage() {
           <h2 className="text-[22px] font-medium tracking-[-0.02em]">Check it yourself</h2>
         </div>
         <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
-          The privacy claims above are enforced by the contract and asserted by its test
-          suite, not by this page.
+          Not a screenshot and not our word for it. Run the three checks below from
+          this page: read the contract off Midnight, recompute a tool id in your own
+          browser, and derive a pass to watch its calls stay unlinkable. Each step
+          says where it ran.
+        </p>
+
+        <NightpassVerifier />
+
+        <p className="mt-10 max-w-[68ch] text-[14px] leading-relaxed text-fg-secondary">
+          The privacy claims are enforced by the contract and asserted by its test
+          suite, not by this page. With the repo cloned, the whole thing runs locally:
         </p>
         <pre className="mt-5 overflow-x-auto rounded-[var(--radius-md)] border border-border bg-tint p-4 font-mono text-[12.5px] leading-relaxed">
           {`pnpm nightpass:test      # the privacy properties, as adversarial tests
