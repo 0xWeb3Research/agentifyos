@@ -251,34 +251,40 @@ verified.
 | Deploy tx | `00cc663dd1a1e5ed8ded75342117608262fab11fdc70b627c37672a3c7b13505a6` |
 | Deployed | 2026-08-17, block 463586 onward |
 
-Two independent agent runs against it, blocks 463583 to 463728:
+Three independent agent runs against it, blocks 463583 to 469466:
 
 | | Circuit | Total on-chain |
 |---|---|---|
 | Tools listed | `registerTool` | 3 |
-| Passes bought | `issuePass` | 2 |
-| Calls spent | `redeemCall` | 6 |
-| Attestations | `attestUsage` | 2 |
+| Passes bought | `issuePass` | 3 |
+| Calls spent | `redeemCall` | 9 |
+| Attestations | `attestUsage` | 3 |
 
-From the second run, one pass and its three calls:
+From the third run, one pass and its three calls, recorded while filming it:
 
 ```
-commitment   087d8f534419e798…e3c6
-nullifier    447f9f154f44d956705a666619aa8d888f5e65c06bba2fb2a828013b9f4b8e01
-nullifier    bae0248845551176bf7f78d3d48409784aa18635458036b44734ec6d76f97722
-audit tag    cd5a6465d413a86778e1873b91842ddb2ab82449c55f1a5334eb90f4242475f7
+commitment   a6df8d0236e6f4d4d04369f5974e9403c2737baff71a3582d0b7154de5285a9c
+nullifier    83b04da03055a71a1ea7a34e0b397f8f5a155325173d96cd4d445ac31a72b63c
+nullifier    f759d236c80950df7a0629349472ddc75063b3b5bd4de88e55728b0fe6489e49
+nullifier    004e5054055974c58b409a21742bc7cf1061b99afbd3aef452d256d98818bca2
+audit tag    8084f7554136d5defeac649ea052161e91d125ae9fa0abe6257c5519c3538068
 ```
 
-Those nullifiers came from **one** pass. They share no derivable relationship,
-which is the unlinkability claim made visible rather than asserted.
+Those three nullifiers came from **one** pass, issued in block 469450 and
+attested in 469466. They share no derivable relationship, which is the
+unlinkability claim made visible rather than asserted.
 
-Both runs ended with the auditor check: tag **matches**, every claimed call
+Every run ended with the auditor check: tag **matches**, every claimed call
 **found on-chain**, and the claim **exact, not a lower bound**.
+
+The whole run took **466 seconds**, nearly all of it proving. That is the honest
+cost of doing this locally, and it is why the film replays the session from timed
+stdout rather than showing eight minutes of a spinner.
 
 ### Two readings that look wrong and are not
 
-**`served 6` against `quota 5`.** A quota is per pass, not per tool. Two passes
-were bought and each spent three of its five calls, so the tool has served six.
+**`served 9` against `quota 5`.** A quota is per pass, not per tool. Three passes
+were bought and each spent three of its five calls, so the tool has served nine.
 The suite asserts the per-pass bound directly: a sixth call on a single pass is
 rejected with `quota exhausted`.
 
